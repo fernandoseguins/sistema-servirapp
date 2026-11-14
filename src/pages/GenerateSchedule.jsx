@@ -231,7 +231,7 @@ export default function GenerateSchedule() {
         .eq('departamento_id', departamentoId)
 
       let equipa = membrosDept ? membrosDept.map(m => m.users_profile).filter(Boolean) : []
-      if (equipa.length === 0) throw new Error('A sua equipe está vazia!')
+      if (equipa.length === 0) throw new Error('Sua equipe está vazia!')
 
       equipa = equipa.filter(m => !membrosExcluidos.includes(m.id))
 
@@ -447,7 +447,7 @@ export default function GenerateSchedule() {
       } 
 
       avancarEtapa(4, 'A notificar líderes...')
-      toast.success(`${listaCultos.length} escala(s) gerada(s) em rascunho!`)
+      toast.success(listaCultos.length === 1 ? '1 escala gerada em rascunho!' : `${listaCultos.length} escalas geradas em rascunho!`)
 
       // ✅ Avisa sobre CONFLITOS entre departamentos (pessoa escalada em 2 lugares no mesmo dia/turno)
       if (conflitosDetectados.length > 0) {
@@ -468,8 +468,10 @@ export default function GenerateSchedule() {
           await enviarNotificacaoEmMassa({
             userIds:       liderIds,
             departamentoId,
-            titulo:        `📋 Escalas prontas para revisão — ${departamentoNome}`,
-            mensagem:      `${listaCultos.length} escala(s) foram geradas em rascunho. Acesse para revisar e publicar.`,
+            titulo:        '📋 Escalas prontas para revisar',
+            mensagem:      listaCultos.length === 1
+              ? `1 escala de ${departamentoNome} foi gerada em rascunho. Revise e publique.`
+              : `${listaCultos.length} escalas de ${departamentoNome} foram geradas em rascunho. Revise e publique.`,
             tipo:          'escala',
             link:          `/dashboard/${departamentoId}`,
           })
@@ -484,58 +486,110 @@ export default function GenerateSchedule() {
     }
   }
 
-  // Notifica sobre conflitos: a pessoa escalada em 2 depts + líderes dos 2 depts
+  // Notifica sobre conflitos de forma AGREGADA:
+  //   - 1 push por pessoa em conflito (com todas as datas dela)
+  //   - 1 push por líder (resumo das pessoas em conflito que envolvem o dept dele)
+  //   - o líder que é a própria pessoa em conflito não recebe o resumo sobre si mesmo
   async function processarConflitos(conflitos, deptAtualId, deptAtualNome) {
     try {
+      const fmtData = d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+
+      // Agrupa conflitos por pessoa
+      const porPessoa = new Map()
       for (const conf of conflitos) {
-        // Descobre em qual OUTRO departamento a pessoa já está nesse dia+turno
+        if (!porPessoa.has(conf.userId)) porPessoa.set(conf.userId, [])
+        porPessoa.get(conf.userId).push(conf)
+      }
+
+      // Para cada pessoa, descobre os OUTROS departamentos envolvidos (1 query por pessoa)
+      const resumoPessoas = [] // { userId, datas: ['dd/mm'], outros: Map(deptId|nome → nome) }
+      for (const [userId, confs] of porPessoa) {
+        const datasIso = [...new Set(confs.map(c => c.data))]
         const { data: outras } = await supabase
           .from('schedule_roles')
           .select('schedules!inner(data, turno, departamento_id, departamentos(nome))')
-          .eq('user_id', conf.userId)
-          .eq('schedules.data', conf.data)
+          .eq('user_id', userId)
+          .in('schedules.data', datasIso)
           .neq('schedules.departamento_id', deptAtualId)
 
-        const outraEscala = outras?.find(o =>
-          o.schedules.turno === conf.turno || o.schedules.turno === 'Integral'
-        )
-        const deptOutroNome = outraEscala?.schedules?.departamentos?.nome || 'outro departamento'
-        const deptOutroId   = outraEscala?.schedules?.departamento_id
-
-        const dataFmt = new Date(conf.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-
-        // 1. Notifica a PRÓPRIA pessoa
-        await enviarNotificacao({
-          userId:   conf.userId,
-          titulo:   '⚠️ Você está escalado em dois lugares',
-          mensagem: `No dia ${dataFmt} você foi escalado(a) em "${deptAtualNome}" e também em "${deptOutroNome}" no mesmo turno. Avise um líder se não puder servir nos dois.`,
-          tipo:     'aviso',
-        })
-
-        // 2. Notifica os LÍDERES dos dois departamentos
-        const deptsParaAvisar = [deptAtualId, deptOutroId].filter(Boolean)
-        if (deptsParaAvisar.length > 0) {
-          const { data: lideres } = await supabase
-            .from('membros_departamentos')
-            .select('user_id')
-            .in('departamento_id', deptsParaAvisar)
-            .in('role', ['líder', 'admin'])
-
-          // Pega o nome da pessoa em conflito
-          const { data: perfilPessoa } = await supabase
-            .from('users_profile').select('nome').eq('id', conf.userId).single()
-          const nomePessoa = perfilPessoa?.nome || 'Um membro'
-
-          const liderIdsUnicos = [...new Set((lideres || []).map(l => l.user_id))]
-          if (liderIdsUnicos.length > 0) {
-            await enviarNotificacaoEmMassa({
-              userIds:  liderIdsUnicos,
-              titulo:   '⚠️ Conflito de escala detectado',
-              mensagem: `${nomePessoa} está escalado(a) em "${deptAtualNome}" e "${deptOutroNome}" no dia ${dataFmt}, mesmo turno.`,
-              tipo:     'aviso',
-            })
+        const outros = new Map()
+        for (const conf of confs) {
+          const outra = outras?.find(o =>
+            o.schedules.data === conf.data &&
+            (o.schedules.turno === conf.turno || o.schedules.turno === 'Integral')
+          )
+          if (outra?.schedules?.departamento_id) {
+            outros.set(outra.schedules.departamento_id, outra.schedules.departamentos?.nome || 'outro departamento')
           }
         }
+        resumoPessoas.push({ userId, datas: datasIso.sort().map(fmtData), outros })
+      }
+
+      // Nomes (primeiro nome) das pessoas em conflito — 1 query
+      const { data: perfis } = await supabase
+        .from('users_profile').select('id, nome').in('id', [...porPessoa.keys()])
+      const primeiroNome = id => (perfis?.find(p => p.id === id)?.nome || 'Um membro').split(' ')[0]
+
+      // 1. Um push por PESSOA em conflito
+      for (const p of resumoPessoas) {
+        const nomesOutros = [...p.outros.values()]
+        const outroTxt = nomesOutros.length === 1 ? nomesOutros[0] : 'outro departamento'
+        const quando = p.datas.length === 1 ? `Em ${p.datas[0]}` : `Em ${p.datas.length} datas (${p.datas.join(', ')})`
+        await enviarNotificacao({
+          userId:         p.userId,
+          departamentoId: deptAtualId,
+          titulo:         '⚠️ Você está em duas escalas',
+          mensagem:       `${quando} você está em ${deptAtualNome} e em ${outroTxt} no mesmo turno. Avise um líder.`,
+          tipo:           'aviso',
+          link:           '/escalas',
+        })
+      }
+
+      // 2. Um push por LÍDER (dept atual + depts dos outros lados do conflito)
+      const deptsOutros = [...new Set(resumoPessoas.flatMap(p => [...p.outros.keys()]))]
+      const { data: lideres } = await supabase
+        .from('membros_departamentos')
+        .select('user_id, departamento_id')
+        .in('departamento_id', [deptAtualId, ...deptsOutros])
+        .in('role', ['líder', 'admin'])
+
+      // líder → { deptId (para link), pessoas: Set(userId) }
+      const porLider = new Map()
+      for (const l of lideres || []) {
+        const envolvidas = l.departamento_id === deptAtualId
+          ? resumoPessoas
+          : resumoPessoas.filter(p => p.outros.has(l.departamento_id))
+        if (!porLider.has(l.user_id)) {
+          porLider.set(l.user_id, { deptId: l.departamento_id, pessoas: new Set() })
+        }
+        const entrada = porLider.get(l.user_id)
+        // Prefere o dept atual como destino do link/departamento da notificação
+        if (l.departamento_id === deptAtualId) entrada.deptId = deptAtualId
+        for (const p of envolvidas) {
+          if (p.userId !== l.user_id) entrada.pessoas.add(p.userId)
+        }
+      }
+
+      for (const [liderId, { deptId, pessoas }] of porLider) {
+        if (pessoas.size === 0) continue
+        const ids = [...pessoas]
+        let mensagem
+        if (ids.length === 1) {
+          const p = resumoPessoas.find(r => r.userId === ids[0])
+          const quando = p.datas.length === 1 ? `em ${p.datas[0]}` : `em ${p.datas.length} datas`
+          mensagem = `${primeiroNome(ids[0])} está em duas escalas no mesmo turno ${quando} (${deptAtualNome}). Revise a escala.`
+        } else {
+          const nomes = ids.slice(0, 3).map(primeiroNome).join(', ') + (ids.length > 3 ? '…' : '')
+          mensagem = `${ids.length} pessoas estão em duas escalas no mesmo turno (${deptAtualNome}): ${nomes}. Revise as escalas.`
+        }
+        await enviarNotificacao({
+          userId:         liderId,
+          departamentoId: deptId,
+          titulo:         '⚠️ Conflito de escala',
+          mensagem,
+          tipo:           'aviso',
+          link:           `/dashboard/${deptId}`,
+        })
       }
     } catch (err) {
       console.warn('Erro ao processar conflitos:', err.message)

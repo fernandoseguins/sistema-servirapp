@@ -120,7 +120,7 @@ export default function Unavailability() {
   function alternarData(dataDbFormat) {
     // Bloqueia se a pessoa já está escalada o dia todo (Integral) nessa data
     if (dataTotalmenteTravada(dataDbFormat)) {
-      toast.warning('Você já está escalado(a) o dia todo nesta data. Não é possível marcar indisponibilidade.')
+      toast.warning('Você já está na escala o dia todo nesta data. Não é possível marcar indisponibilidade.')
       return
     }
     if (datasSelecionadas.some(d => d.data === dataDbFormat)) {
@@ -157,7 +157,7 @@ export default function Unavailability() {
       return turnosOcup.includes(sel.turno)
     })
     if (conflitoTurno) {
-      toast.error('Você já está escalado(a) em ' + formatarDataBR(conflitoTurno.data) + ' neste turno. Remova essa data para continuar.')
+      toast.error('Você já está na escala em ' + formatarDataBR(conflitoTurno.data) + ' neste turno. Remova essa data para continuar.')
       return
     }
 
@@ -206,8 +206,8 @@ export default function Unavailability() {
           await enviarNotificacaoEmMassa({
             userIds:       liderIds,
             departamentoId,
-            titulo:        `⚠️ Indisponibilidade — ${departamentoNome}`,
-            mensagem:      `${primeiroNome} registou ${qtd} data${qtd > 1 ? 's' : ''} de indisponibilidade. Verifique as escalas do período.`,
+            titulo:        '⚠️ Nova indisponibilidade',
+            mensagem:      `${primeiroNome} registrou ${qtd} data${qtd > 1 ? 's' : ''} de indisponibilidade em ${departamentoNome}. Confira as escalas.`,
             tipo:          'aviso',
             link:          `/equipe`,
           })
@@ -316,7 +316,7 @@ export default function Unavailability() {
                   <button 
                     disabled={isPassado || isTravadoTotal}
                     onClick={() => alternarData(dataFormatada)}
-                    title={isTravadoTotal ? 'Você já está escalado(a) o dia todo nesta data' : ''}
+                    title={isTravadoTotal ? 'Você já está na escala o dia todo nesta data' : ''}
                     className={`w-10 h-10 flex flex-col items-center justify-center rounded-full text-sm font-bold transition-all relative
                       ${isPassado ? 'text-gray-300 cursor-not-allowed' : 
                         isTravadoTotal ? 'text-gray-300 cursor-not-allowed bg-gray-50' :
@@ -462,7 +462,7 @@ export default function Unavailability() {
             </div>
             <h2 className="text-lg font-bold text-center text-gray-900 mb-2">Atenção! Conflito de Escala</h2>
             <p className="text-sm text-gray-600 text-center mb-4">
-              Você já está escalado para o(s) dia(s) abaixo:
+              Você já está na escala nestas datas:
             </p>
             <div className="flex flex-wrap gap-2 justify-center mb-5">
               {modalConflito.datas.map(d => (

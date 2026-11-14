@@ -115,6 +115,15 @@ export default function ScheduleDetails() {
       link: linkInterno,
     })
 
+  // Textos das notificações: "Louvor · 16/11 (Culto da noite)", primeiro nome e
+  // lista de funções com singular/plural correto ("Violão" / "Violão e Teclado").
+  const primeiroNome = (nome) => (nome || '').trim().split(/\s+/)[0] || ''
+  const separarFuncoes = (texto) => (texto || '').split(/[+/]/).map(f => f.trim()).filter(Boolean)
+  const juntarFuncoes = (lista) => lista.length <= 1 ? (lista[0] || '') : `${lista.slice(0, -1).join(', ')} e ${lista[lista.length - 1]}`
+  const rotuloFuncoes = (lista) => `${lista.length > 1 ? 'funções' : 'função'}: ${juntarFuncoes(lista)}`
+  const dataCurta = (iso) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : ''
+  const contextoEscala = () => [departamentoNome, `${dataCurta(escala?.data)} (${rotuloTurno(escala?.turno)})`].filter(Boolean).join(' · ')
+
   // ✅ Tema centralizado via utils/departmentThemes.jsx
 
   const funcoesMidia = ['Computador', 'Fotografia', 'Redação']
@@ -360,7 +369,7 @@ if (papelEncontrado) {
         setEscala(prev => ({ ...prev, schedule_roles: prev.schedule_roles.map(r => r.id === papelExistente.id ? { ...r, funcao: funcaoCombinada } : r) }))
         toast.success('Novas funções adicionadas!')
         setNovoMembroId(''); setNovasFuncoes([])
-        if (escala.status === 'Publicada') notificar(novoMembroId, "🔄 Escala Atualizada", `Suas funções foram alteradas para: ${funcaoCombinada}.`, "escala", `/escala/${idDaEscala}`)
+        if (escala.status === 'Publicada') notificar(novoMembroId, "🔄 Sua escala mudou", `${contextoEscala()} — ${funcoesIneditas.length > 1 ? 'novas funções' : 'nova função'}: ${juntarFuncoes(funcoesIneditas)}. Agora você tem ${juntarFuncoes(separarFuncoes(funcaoCombinada))}.`, "escala", `/escala/${idDaEscala}`)
       } else (() => { console.error('Erro:', error); toast.error('Ocorreu um erro. Tente novamente.') })()
     } else {
       const { data: novoRole, error } = await supabase
@@ -373,7 +382,7 @@ if (papelEncontrado) {
         setEscala(prev => ({ ...prev, schedule_roles: [...prev.schedule_roles, novoRole] }))
         toast.success('Membro adicionado com sucesso!')
         setNovoMembroId(''); setNovasFuncoes([])
-        if (escala.status === 'Publicada') notificar(novoMembroId, "🪖 Nova Convocação!", `Você foi escalado como ${stringDasNovasFuncoes}.`, "escala", `/escala/${idDaEscala}`)
+        if (escala.status === 'Publicada') notificar(novoMembroId, "📅 Você entrou na escala", `${contextoEscala()} — ${rotuloFuncoes(novasFuncoes)}.`, "escala", `/escala/${idDaEscala}`)
       } else { console.error('Erro ao adicionar:', error); toast.error('Não foi possível adicionar. Tente novamente.') }
     }
   }
@@ -385,7 +394,7 @@ if (papelEncontrado) {
       // ✅ Atualiza o estado imediatamente sem esperar o servidor
       setEscala(prev => ({ ...prev, schedule_roles: prev.schedule_roles.filter(r => r.id !== roleId) }))
       toast.success(`${nomePessoa} removido(a).`)
-      if (escala.status === 'Publicada') notificar(userId, "❌ Escala Cancelada", `A sua escala foi removida pelo líder.`, "escala", `/escala/${idDaEscala}`)
+      if (escala.status === 'Publicada') notificar(userId, "❌ Você saiu da escala", `O líder removeu você da escala de ${contextoEscala()}.`, "escala", `/escala/${idDaEscala}`)
     } else toast.error('Erro ao remover.')
   }
 
@@ -431,7 +440,7 @@ if (papelEncontrado) {
 
     if (!error) {
       const { data: lideres } = await supabase.from('membros_departamentos').select('user_id').eq('departamento_id', escala.departamento_id).in('role', ['líder', 'admin'])
-      if (lideres) lideres.forEach(async (lider) => { if (lider.user_id !== meuId) await notificar(lider.user_id, "🚨 Pedido de Troca", `${eu.nome} quer repassar a função para ${ele.nome}.`, "aviso", `/trocas/${escala.departamento_id}`) })
+      if (lideres) lideres.forEach(async (lider) => { if (lider.user_id !== meuId) await notificar(lider.user_id, "🔁 Pedido de troca", `${contextoEscala()} — ${primeiroNome(eu.nome)} quer passar ${juntarFuncoes(funcoesSelecionadasTroca)} para ${primeiroNome(ele.nome)}.`, "aviso", `/trocas/${escala.departamento_id}`) })
       setModalTrocaAberto(false)
       toast.success('Pedido de troca enviado!')
     } else (() => { console.error('Erro:', error); toast.error('Ocorreu um erro. Tente novamente.') })()
@@ -441,16 +450,21 @@ if (papelEncontrado) {
   async function avaliarTroca(pedido, aprovado) {
     if (!await confirm({ title: `${aprovado ? 'Aprovar' : 'Rejeitar'} troca?`, message: `${pedido.requester_nome} → ${pedido.substitute_nome}`, danger: !aprovado, labelOk: aprovado ? 'Aprovar' : 'Rejeitar', labelCancel: 'Cancelar' })) return
     // Aprovação/rejeição atômica no banco (uma única transação)
-    const { error: erroTroca } = await supabase.rpc('responder_troca', { p_pedido_id: pedido.id, p_aprovar: aprovado })
+    const { data: funcoesDaRpc, error: erroTroca } = await supabase.rpc('responder_troca', { p_pedido_id: pedido.id, p_aprovar: aprovado })
     if (erroTroca) { console.error('Erro ao processar troca:', erroTroca); return toast.error(erroTroca.code === 'P0001' ? erroTroca.message : 'Não foi possível processar a troca. Tente novamente.') }
+    // Mesmos textos de SwapRequests.jsx (avaliarTroca)
+    const funcoesDaTroca = juntarFuncoes(separarFuncoes(
+      (typeof funcoesDaRpc === 'string' && funcoesDaRpc) || pedido.funcoes_alvo || escala.schedule_roles.find(r => r.id === pedido.role_id)?.funcao
+    )) || 'a função'
+    const ctxTroca = contextoEscala()
     if (aprovado) {
       if (escala.status === 'Publicada') {
         // ✅ Sem await — notificações não bloqueiam a UI
-        notificar(pedido.requester_id, "✅ Troca Aprovada!", `Sua troca foi aprovada.`, "escala", `/escala/${idDaEscala}`)
-        notificar(pedido.substitute_id, "🪖 Nova Convocação (Substituição)!", `O líder aprovou a troca e você assumiu a função.`, "escala", `/escala/${idDaEscala}`)
+        notificar(pedido.requester_id, "✅ Troca aprovada", `${ctxTroca} — ${primeiroNome(pedido.substitute_nome)} assume ${funcoesDaTroca} no seu lugar.`, "escala", `/escala/${idDaEscala}`)
+        notificar(pedido.substitute_id, "📅 Você entrou na escala", `${ctxTroca} — você assume ${funcoesDaTroca} no lugar de ${primeiroNome(pedido.requester_nome)}.`, "escala", `/escala/${idDaEscala}`)
       }
     } else {
-      if (escala.status === 'Publicada') notificar(pedido.requester_id, "❌ Troca Rejeitada", `A sua solicitação de troca não foi aprovada.`, "escala", `/escala/${idDaEscala}`)
+      if (escala.status === 'Publicada') notificar(pedido.requester_id, "❌ Troca rejeitada", `${ctxTroca} — o líder não aprovou passar ${funcoesDaTroca} para ${primeiroNome(pedido.substitute_nome)}.`, "escala", `/escala/${idDaEscala}`)
     }
     // ✅ Remove troca da lista + atualiza roles no estado
     setPedidosTroca(prev => prev.filter(t => t.id !== pedido.id))
@@ -494,7 +508,9 @@ if (papelEncontrado) {
     const { error } = await supabase.from('schedules').update({ status_repertorio: 'pendente' }).eq('id', idDaEscala)
     if (!error) {
       const { data: lideres } = await supabase.from('membros_departamentos').select('user_id').eq('departamento_id', escala.departamento_id).in('role', ['líder', 'admin'])
-      if (lideres) lideres.forEach(async (lider) => { await notificar(lider.user_id, "🎵 Aprovação de Repertório", `O condutor enviou o repertório para a sua análise.`, "aviso", `/escala/${idDaEscala}`) })
+      const condutor = escala.schedule_roles.find(r => (r.funcao || '').includes('Condução'))
+      const nomeCondutor = primeiroNome(condutor?.users_profile?.nome || membrosEquipa.find(m => m.id === meuId)?.nome) || 'O condutor'
+      if (lideres) lideres.forEach(async (lider) => { if (lider.user_id !== meuId) await notificar(lider.user_id, "🎵 Repertório para aprovar", `${contextoEscala()} — ${nomeCondutor} enviou o repertório para sua análise.`, "aviso", `/escala/${idDaEscala}`) })
       setEscala(prev => ({ ...prev, status_repertorio: 'pendente' }))
       toast.success("Repertório enviado para aprovação!")
     } else (() => { console.error('Erro ao enviar aprovação:', error); toast.error('Erro ao enviar aprovação. Tente novamente.') })()
@@ -508,7 +524,7 @@ if (papelEncontrado) {
     if (!error) {
       escala.schedule_roles.forEach(async (r) => {
         if (r.funcao.includes('Condução') || r.funcao.includes('Voz Principal')) {
-          await notificar(r.user_id, aprovado ? "✅ Repertório Aprovado!" : "❌ Repertório Rejeitado", aprovado ? `O líder aprovou suas músicas. Já pode enviar no WhatsApp!` : `O líder solicitou alterações no repertório.`, "louvor", `/escala/${idDaEscala}`)
+          await notificar(r.user_id, aprovado ? "✅ Repertório aprovado" : "❌ Repertório devolvido", aprovado ? `${contextoEscala()} — o líder aprovou as músicas. Já pode enviar para a equipe.` : `${contextoEscala()} — o líder pediu ajustes no repertório.`, "louvor", `/escala/${idDaEscala}`)
         }
       })
       setEscala(prev => ({ ...prev, status_repertorio: novoStatus }))
@@ -577,12 +593,13 @@ if (papelEncontrado) {
     const { error } = await supabase.from('schedules').update({ status: 'Publicada' }).eq('id', idDaEscala)
     if (!error) { 
       // Notifica todos os escalados de uma vez (1 insert em vez de N)
-      const idsEscalados = [...new Set((escala.schedule_roles || []).map(m => m.user_id).filter(Boolean))]
+      // Quem publicou não recebe o próprio aviso
+      const idsEscalados = [...new Set((escala.schedule_roles || []).map(m => m.user_id).filter(id => id && id !== meuId))]
       await enviarNotificacaoEmMassa({
         userIds: idsEscalados,
         departamentoId: escala.departamento_id,
-        titulo: "📅 Escala Publicada!",
-        mensagem: "A escala já está disponível no app.",
+        titulo: "📅 Escala publicada",
+        mensagem: `Você está na escala de ${contextoEscala()}. Abra para ver sua função e confirmar presença.`,
         tipo: "escala",
         link: `/escala/${idDaEscala}`,
       })

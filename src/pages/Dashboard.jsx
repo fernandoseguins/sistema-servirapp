@@ -116,37 +116,36 @@ export default function Dashboard() {
   async function publicarTodosRascunhos() {
     if (!await confirm({ title: 'Publicar todas as escalas?', message: 'Todas as escalas em rascunho deste departamento ficarão visíveis para a equipe.', labelOk: 'Publicar tudo', labelCancel: 'Cancelar' })) return
 
-    const { error } = await supabase
+    // .select() devolve SÓ as escalas que acabaram de passar de Rascunho → Publicada,
+    // para não notificar de novo quem está em escalas já publicadas antes.
+    const { data: recemPublicadas, error } = await supabase
       .from('schedules')
       .update({ status: 'Publicada' })
       .eq('departamento_id', departamentoId)
       .eq('status', 'Rascunho')
+      .select('id, schedule_roles(user_id)')
 
     if (!error) {
       toast.success('Todas as escalas foram publicadas!')
 
-      // ✅ Notificar todos os membros das escalas recém publicadas
-      const { data: escalasPublicadas } = await supabase
-        .from('schedules')
-        .select('id, schedule_roles(user_id)')
-        .eq('departamento_id', departamentoId)
-        .eq('status', 'Publicada')
-
-      if (escalasPublicadas?.length > 0) {
+      // ✅ Notificar apenas os membros das escalas recém publicadas (1 push por pessoa)
+      const qtd = recemPublicadas?.length || 0
+      if (qtd > 0) {
         const { data: { user } } = await supabase.auth.getUser()
         const userIdsUnicos = [...new Set(
-          escalasPublicadas.flatMap(e => e.schedule_roles.map(r => r.user_id))
-          .filter(id => id !== user?.id)
-        )]
+          recemPublicadas.flatMap(e => (e.schedule_roles || []).map(r => r.user_id))
+        )].filter(id => id && id !== user?.id)
 
         if (userIdsUnicos.length > 0) {
           await enviarNotificacaoEmMassa({
             userIds:       userIdsUnicos,
             departamentoId,
-            titulo:        `📅 Escalas publicadas — ${departamentoNome}`,
-            mensagem:      'As escalas do mês foram publicadas. Acesse o app para ver os seus cultos.',
+            titulo:        qtd === 1 ? '📅 Nova escala publicada' : '📅 Novas escalas publicadas',
+            mensagem:      qtd === 1
+              ? `1 escala de ${departamentoNome} foi publicada. Confira seus cultos.`
+              : `${qtd} escalas de ${departamentoNome} foram publicadas. Confira seus cultos.`,
             tipo:          'escala',
-            link:          `/dashboard/${departamentoId}`,
+            link:          '/escalas',
           })
         }
       }

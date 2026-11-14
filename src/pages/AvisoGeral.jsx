@@ -107,12 +107,14 @@ export default function AvisoGeral() {
 
         if (userIdsAlvo.length > 0) {
           const tituloNotif = urgente
-            ? `🚨 Aviso URGENTE da Gestão da Igreja`
-            : `📢 Aviso da Gestão da Igreja`
+            ? '🚨 Aviso urgente da gestão'
+            : '📢 Aviso da gestão da igreja'
+          // Título do aviso truncado para caber no push
+          const tituloCurto = titulo.length > 60 ? `${titulo.slice(0, 59).trimEnd()}…` : titulo
           await enviarNotificacaoEmMassa({
             userIds:   userIdsAlvo,
             titulo:    tituloNotif,
-            mensagem:  `"${titulo}" — abra o app para ver os detalhes.`,
+            mensagem:  `"${tituloCurto}". Toque para ler.`,
             tipo:      'aviso',
             link:      '/hub',
           })

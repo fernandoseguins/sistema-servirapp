@@ -144,7 +144,7 @@ export default function CantinaSchedule() {
 
   // Remove um culto extra inteiro (com confirmação)
   async function removerCultoExtra(escalaId, nome) {
-    if (!await confirm({ title: 'Remover culto extra', message: `Remover "${nome}" e toda a sua escala?`, danger: true, labelOk: 'Remover', labelCancel: 'Cancelar' })) return
+    if (!await confirm({ title: 'Remover culto extra', message: `Remover "${nome}" e toda a escala desse culto?`, danger: true, labelOk: 'Remover', labelCancel: 'Cancelar' })) return
     // Remove os papéis primeiro, depois a escala
     await supabase.from('schedule_roles').delete().eq('schedule_id', escalaId)
     const { error } = await supabase.from('schedules').delete().eq('id', escalaId)
@@ -191,7 +191,7 @@ export default function CantinaSchedule() {
     if (conflito) {
       const ok = await confirm({
         title: '⚠️ Conflito de escala',
-        message: `${usuario.nome} já está escalado(a) em "${conflito.schedules.departamentos?.nome}" neste mesmo dia e turno. Escalar mesmo assim?`,
+        message: `${usuario.nome} já está na escala de "${conflito.schedules.departamentos?.nome}" neste mesmo dia e turno. Escalar mesmo assim?`,
         danger: true, labelOk: 'Escalar mesmo assim', labelCancel: 'Cancelar',
       })
       if (!ok) { setAdicionando(false); return }
@@ -213,17 +213,19 @@ export default function CantinaSchedule() {
         const escala = dom.escala || { id: escalaId, data, turno: 'Noite', schedule_roles: [] }
         return { ...dom, escala: { ...escala, id: escalaId, schedule_roles: [...(escala.schedule_roles || []), novoRole] } }
       }))
-      toast.success(`${usuario.nome.split(' ')[0]} escalado(a) como ${funcao}!`)
+      toast.success(`${usuario.nome.split(' ')[0]} está na escala como ${funcao}!`)
       // Notifica
+      const dataCurta = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
       const ocasiao = turnoData === 'Extra'
-        ? `no culto extra (${formatarData(data)})`
-        : 'no domingo à noite'
+        ? `no culto extra de ${dataCurta}`
+        : `no domingo ${dataCurta}, à noite`
       enviarNotificacao({
         userId: usuario.id,
-        titulo: '☕ Escala da Cantina',
-        mensagem: `Você foi escalado(a) na Cantina como ${funcao} ${ocasiao}.`,
+        departamentoId,
+        titulo: '☕ Você está na escala da cantina',
+        mensagem: `Você está na cantina como ${funcao} ${ocasiao}.`,
         tipo: 'escala',
-        link: '/hub',
+        link: '/escalas',
       })
       setModalAberto(null)
       setBusca('')
@@ -247,7 +249,7 @@ export default function CantinaSchedule() {
           return { ...dom, escala: { ...dom.escala, schedule_roles: dom.escala.schedule_roles.filter(r => r.id !== roleId) } }
         }))
       }
-      toast.success('Removido(a) da cantina.')
+      toast.success('Pessoa removida da cantina.')
     }
   }
 

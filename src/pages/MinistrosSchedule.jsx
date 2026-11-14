@@ -152,7 +152,7 @@ export default function MinistrosSchedule() {
   }
 
   async function removerCultoExtra(escalaId, nome) {
-    if (!await confirm({ title: 'Remover culto extra', message: `Remover "${nome}" e toda a sua escala?`, danger: true, labelOk: 'Remover', labelCancel: 'Cancelar' })) return
+    if (!await confirm({ title: 'Remover culto extra', message: `Remover "${nome}" e toda a escala desse culto?`, danger: true, labelOk: 'Remover', labelCancel: 'Cancelar' })) return
     await supabase.from('schedule_roles').delete().eq('schedule_id', escalaId)
     const { error } = await supabase.from('schedules').delete().eq('id', escalaId)
     if (error) { (() => { console.error('Erro ao remover:', error); toast.error('Não foi possível remover. Tente novamente.') })(); return }
@@ -199,7 +199,7 @@ export default function MinistrosSchedule() {
     if (conflito) {
       const ok = await confirm({
         title: '⚠️ Conflito de escala',
-        message: `${usuario.nome} já está escalado(a) em "${conflito.schedules.departamentos?.nome}" (${conflito.funcao}) neste mesmo dia e turno. Escalar mesmo assim?`,
+        message: `${usuario.nome} já está na escala de "${conflito.schedules.departamentos?.nome}" (${conflito.funcao}) neste mesmo dia e turno. Escalar mesmo assim?`,
         danger: true, labelOk: 'Escalar mesmo assim', labelCancel: 'Cancelar',
       })
       if (!ok) return
@@ -238,12 +238,14 @@ export default function MinistrosSchedule() {
         return { ...c, escala: { ...escala, id: escalaId, schedule_roles: [...(escala.schedule_roles || []), novoRole] } }
       }))
       const nomeExibe = nome || nomeExterno
-      toast.success(`${nomeExibe.split(' ')[0]} escalado(a) como ${funcao}!`)
+      toast.success(`${nomeExibe.split(' ')[0]} está na escala como ${funcao}!`)
       if (userId) {
+        const dataCurta = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
         enviarNotificacao({
-          userId, titulo: '🙏 Escala de Ministros',
-          mensagem: `Você foi escalado(a) como ${funcao} (${modalAberto.tipo}).`,
-          tipo: 'escala', link: '/hub',
+          userId, departamentoId,
+          titulo: '🙏 Você está na escala de ministros',
+          mensagem: `Você está na escala como ${funcao} em ${dataCurta} (${modalAberto.tipo}).`,
+          tipo: 'escala', link: '/escalas',
         })
       }
       setModalAberto(null); setBusca(''); setNomeVisitante('')
@@ -266,7 +268,7 @@ export default function MinistrosSchedule() {
           return { ...c, escala: { ...c.escala, schedule_roles: c.escala.schedule_roles.filter(r => r.id !== roleId) } }
         }))
       }
-      toast.success('Removido(a).')
+      toast.success('Pessoa removida da escala.')
     }
   }
 

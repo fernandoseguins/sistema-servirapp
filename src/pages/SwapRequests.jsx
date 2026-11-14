@@ -6,7 +6,15 @@ import { ArrowLeft, RefreshCw, Check, X, Calendar, ChevronRight, MessageSquare, 
 import { useUI } from '../context/UIContext'
 import { getDeptTheme } from '../utils/departmentThemes'
 import { enviarNotificacao } from '../utils/notificacoes'
+import { rotuloTurno } from '../utils/escalas'
 import EmptyState from '../components/EmptyState'
+
+// Textos das notificações (mesmo padrão de ScheduleDetails.jsx):
+// "Louvor · 16/11 (Culto da noite)", primeiro nome e funções "Violão e Teclado".
+const primeiroNome = (nome) => (nome || '').trim().split(/\s+/)[0] || ''
+const separarFuncoes = (texto) => (texto || '').split(/[+/]/).map(f => f.trim()).filter(Boolean)
+const juntarFuncoes = (lista) => lista.length <= 1 ? (lista[0] || '') : `${lista.slice(0, -1).join(', ')} e ${lista[lista.length - 1]}`
+const dataCurta = (iso) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : ''
 
 function SwapSkeleton() {
   const P = ({ className }) => <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />
@@ -99,12 +107,15 @@ export default function SwapRequests() {
       const { data: funcoesTrocadas, error: erroTroca } = await supabase.rpc('responder_troca', { p_pedido_id: pedido.id, p_aprovar: aprovado })
       if (erroTroca) throw erroTroca
 
+      // Mesmos textos de ScheduleDetails.jsx (avaliarTroca)
+      const esc = pedido.schedules || {}
+      const ctxTroca = [esc.departamentos?.nome || departamentoNome, `${dataCurta(esc.data)} (${rotuloTurno(esc.turno)})`].filter(Boolean).join(' · ')
+      const funcoesDaTroca = juntarFuncoes(separarFuncoes(funcoesTrocadas || pedido.funcoes_alvo)) || 'a função'
       if (aprovado) {
-        const funcoesTrocadasStr = funcoesTrocadas || pedido.funcoes_alvo || ''
-        await notificar(pedido.requester_id, 'Troca Aprovada!', `A sua troca com ${pedido.substitute_nome} (${funcoesTrocadasStr}) foi aprovada.`, 'escala', `/escala/${pedido.schedule_id}`)
-        await notificar(pedido.substitute_id, 'Nova Convocação!', `Você assumiu a(s) função(ões) de ${funcoesTrocadasStr} no lugar de ${pedido.requester_nome}.`, 'escala', `/escala/${pedido.schedule_id}`)
+        await notificar(pedido.requester_id, '✅ Troca aprovada', `${ctxTroca} — ${primeiroNome(pedido.substitute_nome)} assume ${funcoesDaTroca} no seu lugar.`, 'escala', `/escala/${pedido.schedule_id}`)
+        await notificar(pedido.substitute_id, '📅 Você entrou na escala', `${ctxTroca} — você assume ${funcoesDaTroca} no lugar de ${primeiroNome(pedido.requester_nome)}.`, 'escala', `/escala/${pedido.schedule_id}`)
       } else {
-        await notificar(pedido.requester_id, 'Troca Rejeitada', `A sua solicitação de troca com ${pedido.substitute_nome} não foi aprovada.`, 'escala', `/escala/${pedido.schedule_id}`)
+        await notificar(pedido.requester_id, '❌ Troca rejeitada', `${ctxTroca} — o líder não aprovou passar ${funcoesDaTroca} para ${primeiroNome(pedido.substitute_nome)}.`, 'escala', `/escala/${pedido.schedule_id}`)
       }
       setPedidos(prev => prev.filter(p => p.id !== pedido.id))
       toast.success(`Troca ${aprovado ? 'aprovada' : 'rejeitada'} com sucesso!`)

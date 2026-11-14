@@ -2,8 +2,27 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2' // ✅ Corrigido aqui: supabase-js
 import { exigirServiceRole, escaparHtml } from '../_shared/seguranca.ts'
 
-// Puxa a chave do Resend que guardámos no servidor
+// Puxa a chave do Resend que guardamos no servidor
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+
+const APP_URL = 'https://servirapp.netlify.app'
+
+// Mesma regra de src/utils/escalas.js (rotuloTurno): "Noite" → "Culto da noite"
+function rotuloTurno(turno?: string | null): string {
+  if (!turno) return 'Culto'
+  if (turno === 'Integral') return 'Culto principal'
+  if (turno === 'Extra') return 'Culto extra'
+  return `Culto da ${turno.toLowerCase()}`
+}
+
+function primeiroNome(nome?: string | null): string {
+  return (nome || '').trim().split(' ')[0] || ''
+}
+
+// "2026-11-18" → "18/11"
+function ddmm(iso: string): string {
+  return `${iso.slice(8, 10)}/${iso.slice(5, 7)}`
+}
 
 serve(async (req) => {
   // Só o cron (Service Role Key) pode disparar — senão qualquer um com a chave anon mandaria e-mails em massa.
@@ -21,7 +40,7 @@ serve(async (req) => {
   dataAlvo.setDate(dataAlvo.getDate() + 4)
   const dataFormatada = dataAlvo.toISOString().split('T')[0]
 
-  // Busca todas as escalas do Louvor para essa data
+  // Busca todas as escalas publicadas do Louvor para essa data
   const { data: escalas, error } = await supabaseAdmin
     .from('schedules')
     .select(`
@@ -32,6 +51,7 @@ serve(async (req) => {
     `)
     .eq('data', dataFormatada)
     .eq('departamentos.nome', 'Louvor')
+    .eq('status', 'Publicada')
 
   if (error) {
     console.error('Erro ao buscar escalas:', error.message)
@@ -42,50 +62,62 @@ serve(async (req) => {
 
   for (const esc of escalas || []) {
     const quantidadeMusicas = esc.schedule_songs?.length || 0
-    
+
     // Se a pessoa não colocou pelo menos 1 música, a cobrança acontece!
-    if (quantidadeMusicas === 0) {
-      // Procura quem é o condutor desta escala
-      const condutor = esc.schedule_roles.find(r => r.funcao.includes('Condução'))
-      
-      if (condutor) {
-        const userId = condutor.user_id
-        const emailCondutor = condutor.users_profile.email
-        const nomeCondutor = condutor.users_profile.nome
+    if (quantidadeMusicas !== 0) continue
 
-        // 1. Envia NOTIFICAÇÃO no Sininho do App
-        await supabaseAdmin.from('notifications').insert([{
-          user_id: userId,
-          departamento_id: esc.departamento_id,
-          titulo: "🚨 Repertório Vazio!",
-          mensagem: `Atenção ${nomeCondutor}! Faltam 4 dias para o culto de ${esc.turno} e você ainda não adicionou os louvores. A equipa precisa ensaiar!`,
-          tipo: "aviso"
-        }])
+    // Procura quem é o condutor desta escala
+    // deno-lint-ignore no-explicit-any
+    const condutor = (esc.schedule_roles || []).find((r: any) => r.funcao?.includes('Condução'))
+    const perfil = condutor?.users_profile
+    if (!condutor?.user_id || !perfil) continue
 
-        // 2. Dispara o E-MAIL via Resend
-        if (emailCondutor) {
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${RESEND_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              from: 'Portal da Igreja <onboarding@resend.dev>', // O e-mail padrão gratuito do Resend
-              to: emailCondutor,
-              subject: `🚨 Lembrete URGENTE: Repertório do dia ${dataFormatada}`,
-              html: `<div style="font-family: sans-serif; padding: 20px; background: #f9fafb; border-radius: 10px;">
-                      <h2 style="color: #dc2626;">Graça e Paz, ${escaparHtml(nomeCondutor)}!</h2>
-                      <p>Faltam apenas <strong>4 dias</strong> para o seu culto de condução (<strong>${escaparHtml(esc.turno)}</strong>) e o repertório ainda está em branco.</p>
-                      <p>Por favor, aceda ao portal e adicione as músicas para que a banda possa estudar as cifras e os tons.</p>
-                      <p><em>Equipa de Liderança 🦅</em></p>
-                     </div>`
-            })
+    const userId = condutor.user_id
+    const emailCondutor = perfil.email
+    const nomeCompleto = perfil.nome || ''
+    const nome = primeiroNome(nomeCompleto)
+    const turno = rotuloTurno(esc.turno)
+    const data = ddmm(esc.data || dataFormatada)
+    const caminho = `/escala/${esc.id}`
+
+    // 1. Envia NOTIFICAÇÃO no Sininho do App
+    // Obs.: o push sai pelo gatilho da tabela notifications, que não repassa `tag`.
+    const { error: erroNotif } = await supabaseAdmin.from('notifications').insert([{
+      user_id: userId,
+      departamento_id: esc.departamento_id,
+      titulo: "🎵 Repertório pendente",
+      mensagem: `Oi, ${nome}! Faltam 4 dias para o ${turno} (${data}) e o repertório ainda está vazio. A equipe precisa ensaiar!`,
+      tipo: "aviso",
+      link_redirecionamento: caminho,
+    }])
+    if (erroNotif) console.error('Erro ao inserir notificação:', erroNotif.message)
+
+    // 2. Dispara o E-MAIL via Resend
+    if (emailCondutor) {
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'Portal da Igreja <onboarding@resend.dev>', // O e-mail padrão gratuito do Resend
+            to: emailCondutor,
+            subject: `🎵 Lembrete: repertório do dia ${data}`,
+            html: `<div style="font-family: sans-serif; padding: 20px; background: #f9fafb; border-radius: 10px;">
+                    <h2 style="color: #dc2626;">Graça e paz, ${escaparHtml(nome)}!</h2>
+                    <p>Faltam apenas <strong>4 dias</strong> para o culto que você vai conduzir (<strong>${escaparHtml(turno)}</strong>, ${data}) e o repertório ainda está em branco.</p>
+                    <p>Por favor, <a href="${APP_URL}${caminho}">acesse o app</a> e adicione as músicas para que a banda possa estudar as cifras e os tons.</p>
+                    <p><em>Equipe de liderança 🦅</em></p>
+                   </div>`
           })
-        }
-        cobrancasFeitas++
+        })
+      } catch (err) {
+        console.error('Erro ao enviar e-mail:', err)
       }
     }
+    cobrancasFeitas++
   }
 
   return new Response(JSON.stringify({ message: `Cálculo terminado! ${cobrancasFeitas} cobranças enviadas.` }), {

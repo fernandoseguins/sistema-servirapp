@@ -9,6 +9,9 @@ import { enviarNotificacao } from '../utils/notificacoes'
 import { ArrowLeft, Users, Shield, ShieldAlert, Trash2, User, Mic, Mic2, Settings2, Music, Monitor, Camera, PenTool, Baby, Smile, HeartHandshake, Edit2, XCircle, Save, Star, UserPlus, Plus, CalendarX, Calendar, CalendarCheck, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
+// Rótulo legível do cargo para notificações
+const ROTULO_CARGO = { membro: 'Membro', 'líder': 'Líder', admin: 'Administrador' }
+
 export default function Equipa() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -143,8 +146,8 @@ export default function Equipa() {
       await enviarNotificacao({
         userId:         novoMembroId,
         departamentoId,
-        titulo:         `🎉 Bem-vindo à equipe de ${departamentoNome}!`,
-        mensagem:       `Você foi adicionado(a) à equipe de ${departamentoNome}. Acesse o app para ver as suas escalas.`,
+        titulo:         '👋 Boas-vindas à equipe!',
+        mensagem:       `Boas-vindas à equipe de ${departamentoNome}! Abra o app para ver suas escalas.`,
         tipo:           'admin',
         link:           `/dashboard/${departamentoId}`,
       })
@@ -164,9 +167,10 @@ export default function Equipa() {
       await enviarNotificacao({
         userId,
         departamentoId,
-        titulo: 'Nível de acesso atualizado',
-        mensagem: `O seu cargo no departamento de ${departamentoNome} foi alterado para: ${novoCargo}.`,
+        titulo: '👤 Seu cargo mudou',
+        mensagem: `Seu cargo em ${departamentoNome} agora é ${ROTULO_CARGO[novoCargo] || novoCargo}.`,
         tipo: 'admin',
+        link: `/dashboard/${departamentoId}`,
       })
 
       toast.success('Cargo atualizado com sucesso!')
@@ -174,7 +178,7 @@ export default function Equipa() {
     }
   }
 
-  async function removerMembro(vinculoId, nomeMembro) {
+  async function removerMembro(vinculoId, nomeMembro, userIdRemovido) {
     if (!await confirm({ title: `Remover ${nomeMembro}?`, message: 'Esta pessoa será removida do departamento.', danger: true, labelOk: 'Remover', labelCancel: 'Cancelar' })) return
     
     const { error } = await supabase.from('membros_departamentos').delete().eq('id', vinculoId)
@@ -182,19 +186,18 @@ export default function Equipa() {
     if (error) {
       toast.error('Erro ao remover membro.')
     } else {
-      // ✅ Notificar o membro removido (buscar userId pelo nome antes de deletar)
-      const membroRemovido = equipa.find(m => m.users_profile?.nome === nomeMembro)
-      if (membroRemovido?.user_id) {
+      // ✅ Notificar o membro removido (pelo user_id do vínculo — nunca pelo nome, que pode repetir)
+      if (userIdRemovido) {
         await enviarNotificacao({
-          userId:    membroRemovido.user_id,
+          userId:    userIdRemovido,
           departamentoId,
-          titulo:    `Equipe de ${departamentoNome}`,
-          mensagem:  `Você foi removido(a) da equipe de ${departamentoNome}.`,
+          titulo:    '❌ Você saiu de uma equipe',
+          mensagem:  `Você não faz mais parte da equipe de ${departamentoNome}. Dúvidas? Fale com um líder.`,
           tipo:      'admin',
           link:      '/hub',
         })
       }
-      toast.info(`${nomeMembro} foi removido(a) da equipe.`)
+      toast.info(`${nomeMembro} não faz mais parte da equipe.`)
       buscarEquipa()
     }
   }
@@ -490,7 +493,7 @@ export default function Equipa() {
 
                   {/* Lixeira protegida: não encolhe e mantém distância dos outros ícones */}
                   <button 
-                    onClick={() => removerMembro(membro.id, membro.users_profile?.nome || 'Membro')}
+                    onClick={() => removerMembro(membro.id, membro.users_profile?.nome || 'Membro', membro.user_id)}
                     className="p-2 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0 ml-2"
                     title="Remover Membro"
                   >

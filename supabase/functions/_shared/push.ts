@@ -20,6 +20,7 @@ export type MensagemPush = {
   titulo: string
   mensagem: string
   link?: string
+  tag?: string   // mesma tag = o aparelho substitui a notificação anterior
 }
 
 export type ResultadoEnvio = {
@@ -69,9 +70,17 @@ async function enviarParaToken(token: string, msg: MensagemPush): Promise<Envio>
     body: JSON.stringify({
       message: {
         token,
-        notification: { title: msg.titulo, body: msg.mensagem },
-        // o link só pode apontar para o próprio app
-        webpush: { fcm_options: { link: linkSeguroDoApp(msg.link) } },
+        // Só `data` (sem `notification`): quem exibe é o service worker
+        // (public/firebase-messaging-sw.js). Com `notification` o SDK do Firebase
+        // exibia sozinho E o service worker exibia de novo → push duplicado.
+        data: {
+          titulo: msg.titulo,
+          mensagem: msg.mensagem,
+          // o link só pode apontar para o próprio app
+          link: linkSeguroDoApp(msg.link),
+          ...(msg.tag ? { tag: msg.tag } : {}),
+        },
+        webpush: { headers: { Urgency: 'high' } },
       },
     }),
   })

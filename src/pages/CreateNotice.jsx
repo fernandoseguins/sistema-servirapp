@@ -87,12 +87,10 @@ export default function CreateNotice() {
       const userIdsAlvo = membros.map(m => m.user_id).filter(id => id !== user.id)
 
       if (userIdsAlvo.length > 0) {
-        const tituloNotif = urgente
-          ? `🚨 Aviso URGENTE — ${departamentoNome}`
-          : `📢 Novo aviso — ${departamentoNome}`
-        const mensagemNotif = urgente
-          ? `URGENTE: "${titulo}". Abra o app para ver os detalhes.`
-          : `O líder publicou: "${titulo}".`
+        // Título do aviso truncado para caber no push
+        const tituloCurto = titulo.length > 60 ? `${titulo.slice(0, 59).trimEnd()}…` : titulo
+        const tituloNotif = urgente ? '🚨 Aviso urgente' : '📢 Novo aviso'
+        const mensagemNotif = `${departamentoNome}: "${tituloCurto}". Toque para ler.`
 
         await enviarNotificacaoEmMassa({
           userIds:       userIdsAlvo,
@@ -105,7 +103,8 @@ export default function CreateNotice() {
       }
     }
 
-    toast.success(`Aviso publicado! ${membros?.length - 1 > 0 ? `${membros.length - 1} membro(s) notificado(s).` : ''}`)
+    const qtdNotificados = (membros || []).filter(m => m.user_id !== user.id).length
+    toast.success(`Aviso publicado!${qtdNotificados > 0 ? ` ${qtdNotificados} ${qtdNotificados === 1 ? 'membro notificado' : 'membros notificados'}.` : ''}`)
     setTitulo('')
     setConteudo('')
     setUrgente(false)

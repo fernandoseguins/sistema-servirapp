@@ -17,17 +17,23 @@ const messaging = firebase.messaging();
 
 // ✅ Notificação em background — app fechado ou em outra aba
 messaging.onBackgroundMessage(function(payload) {
-  const { title, body } = payload.notification ?? {}
-  const link = payload.data?.link ?? payload.fcmOptions?.link ?? '/'
+  // Mensagem com bloco `notification`: o próprio SDK do Firebase já exibe.
+  // Exibir de novo aqui fazia a notificação chegar DUPLICADA.
+  if (payload.notification) return
 
-  // Mostra a notificação com ícone e badge
-  self.registration.showNotification(title ?? 'SerVir', {
-    body:  body ?? '',
-    icon:  '/logo1.png',
-    badge: '/logo1.png',
-    tag:   'servir-notificacao',        // agrupa notificações do mesmo app
-    renotify: true,                     // vibra mesmo com tag repetida
-    data: { link },
+  // Mensagem só com `data` (formato enviado por _shared/push.ts): exibimos nós.
+  const dados = payload.data ?? {}
+  const titulo = dados.titulo || 'SerVir'
+  const link = dados.link || '/hub'
+
+  return self.registration.showNotification(titulo, {
+    body:  dados.mensagem || '',
+    icon:  '/icon-192x192.png',
+    badge: '/icon-192x192.png',
+    // Mesma tag = substitui a anterior. Uma por notificação (id) para não sumir
+    // aviso anterior; sem id, agrupa pelo link (ex.: lembretes da mesma escala).
+    tag:   dados.tag || link,
+    data:  { link },
   })
 })
 

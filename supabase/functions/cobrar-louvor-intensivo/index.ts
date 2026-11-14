@@ -4,6 +4,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { exigirServiceRole } from '../_shared/seguranca.ts'
 import { enviarPushParaUsuario } from '../_shared/push.ts'
 
+const MINIMO_MUSICAS = 3
+
+// Mesma regra de src/utils/escalas.js (rotuloTurno): "Noite" → "Culto da noite"
+function rotuloTurno(turno?: string | null): string {
+  if (!turno) return 'Culto'
+  if (turno === 'Integral') return 'Culto principal'
+  if (turno === 'Extra') return 'Culto extra'
+  return `Culto da ${turno.toLowerCase()}`
+}
+
+function primeiroNome(nome?: string | null): string {
+  return (nome || '').trim().split(' ')[0] || ''
+}
+
+// "2026-11-18" → "18/11"
+function ddmm(iso: string): string {
+  return `${iso.slice(8, 10)}/${iso.slice(5, 7)}`
+}
+
+// 1 → "1 música"; 2 → "2 músicas"
+function musicas(n: number): string {
+  return `${n} ${n === 1 ? 'música' : 'músicas'}`
+}
+
 serve(async (req) => {
   // Só o cron (Service Role Key) pode disparar — a chave anon pública não serve.
   const negado = exigirServiceRole(req)
@@ -18,7 +42,7 @@ serve(async (req) => {
   })
 
   const hoje = new Date().toISOString().split('T')[0]
-  
+
   const dataLimite = new Date()
   dataLimite.setDate(dataLimite.getDate() + 3)
   const limiteFormatado = dataLimite.toISOString().split('T')[0]
@@ -38,9 +62,9 @@ serve(async (req) => {
       )
     `)
     .eq('departamentos.nome', 'Louvor')
-    .gte('data', hoje)           
-    .lte('data', limiteFormatado) 
-    .eq('status', 'Publicada')    
+    .gte('data', hoje)
+    .lte('data', limiteFormatado)
+    .eq('status', 'Publicada')
 
   if (error) {
     console.error("Erro no banco:", error.message)
@@ -53,40 +77,45 @@ serve(async (req) => {
 
   for (const esc of escalas || []) {
     const qtdMusicas = esc.schedule_songs?.length || 0
+    if (qtdMusicas >= MINIMO_MUSICAS) continue
 
-    if (qtdMusicas < 3) {
-      const condutor = esc.schedule_roles.find(r => r.funcao.includes('Condução'))
-      const perfil = condutor?.users_profile
+    // deno-lint-ignore no-explicit-any
+    const condutor = (esc.schedule_roles || []).find((r: any) => r.funcao?.includes('Condução'))
+    const perfil = condutor?.users_profile
+    if (!condutor?.user_id || !perfil) continue
 
-      if (condutor?.user_id && perfil) {
-        const dataEscala = esc.data;
-        const eHoje = dataEscala === hoje;
-        
-        const titulo = eHoje ? "🚨 REPERTÓRIO URGENTE!" : "🎸 Lembrete de Repertório";
-        
-        let mensagem = "";
-        if (qtdMusicas === 0) {
-          mensagem = eHoje 
-            ? `ATENÇÃO ${perfil.nome}! Sua escala é HOJE (${esc.turno}) e o repertório está VAZIO. Adicione agora!`
-            : `Olá ${perfil.nome}! Sua escala (${esc.turno}) está chegando e ainda não tem músicas.`;
-        } else {
-          mensagem = eHoje
-            ? `URGENTE: Sua escala é hoje e só tem ${qtdMusicas} música(s). Complete o mínimo de 3!`
-            : `Olá ${perfil.nome}! Faltam apenas ${3 - qtdMusicas} música(s) para completar o mínimo da sua escala.`;
-        }
+    const eHoje = esc.data === hoje
+    const nome = primeiroNome(perfil.nome)
+    const turno = rotuloTurno(esc.turno)
+    const faltam = MINIMO_MUSICAS - qtdMusicas
 
-        try {
-          // Todos os aparelhos do condutor (o client usa a Service Role → passa pelo RLS de push_tokens)
-          const r = await enviarPushParaUsuario(supabaseAdmin, condutor.user_id, {
-            titulo: titulo,
-            mensagem: mensagem,
-            link: `https://servirapp.netlify.app/escala/${esc.id}`
-          })
-          if (r.enviados > 0) lembretesEnviados++
-        } catch (err) {
-          console.error("Erro ao enviar push:", err)
-        }
-      }
+    let titulo: string
+    let mensagem: string
+    if (eHoje) {
+      titulo = qtdMusicas === 0 ? "⚠️ Repertório de hoje vazio" : "⚠️ Repertório de hoje incompleto"
+      mensagem = qtdMusicas === 0
+        ? `Oi, ${nome}! Hoje (${turno}) o repertório ainda não tem músicas. Adicione agora.`
+        : `Oi, ${nome}! Hoje (${turno}) o repertório tem só ${musicas(qtdMusicas)}. Adicione mais ${faltam} para chegar a ${MINIMO_MUSICAS}.`
+    } else {
+      const data = ddmm(esc.data)
+      titulo = "🎵 Repertório pendente"
+      mensagem = qtdMusicas === 0
+        ? `Oi, ${nome}! O repertório de ${data} (${turno}) ainda não tem músicas. Que tal montar agora?`
+        : `Oi, ${nome}! ${faltam === 1 ? 'Falta' : 'Faltam'} ${musicas(faltam)} no repertório de ${data} (${turno}) para chegar a ${MINIMO_MUSICAS}.`
+    }
+
+    try {
+      // Todos os aparelhos do condutor (o client usa a Service Role → passa pelo RLS de push_tokens)
+      // Mesma tag do cobrador-louvor: cobranças repetidas substituem a anterior no aparelho.
+      const r = await enviarPushParaUsuario(supabaseAdmin, condutor.user_id, {
+        titulo,
+        mensagem,
+        link: `https://servirapp.netlify.app/escala/${esc.id}`,
+        tag: `repertorio-${esc.id}`,
+      })
+      if (r.enviados > 0) lembretesEnviados++
+    } catch (err) {
+      console.error("Erro ao enviar push:", err)
     }
   }
 
