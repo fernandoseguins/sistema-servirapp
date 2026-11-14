@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { exigirServiceRole } from '../_shared/seguranca.ts'
+import { enviarPushParaUsuario } from '../_shared/push.ts'
 
 serve(async (req) => {
   // Só o cron (Service Role Key) pode disparar — a chave anon pública não serve.
@@ -33,7 +34,7 @@ serve(async (req) => {
       schedule_roles!inner(
         user_id,
         funcao,
-        users_profile(nome, fcm_token)
+        users_profile(nome)
       )
     `)
     .eq('departamentos.nome', 'Louvor')
@@ -57,7 +58,7 @@ serve(async (req) => {
       const condutor = esc.schedule_roles.find(r => r.funcao.includes('Condução'))
       const perfil = condutor?.users_profile
 
-      if (perfil?.fcm_token) {
+      if (condutor?.user_id && perfil) {
         const dataEscala = esc.data;
         const eHoje = dataEscala === hoje;
         
@@ -75,20 +76,13 @@ serve(async (req) => {
         }
 
         try {
-          await fetch(`${supabaseUrl}/functions/v1/enviar-notificacao`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': authHeader
-            },
-            body: JSON.stringify({
-              fcmToken: perfil.fcm_token,
-              titulo: titulo,
-              mensagem: mensagem,
-              link: `https://servirapp.netlify.app/escala/${esc.id}`
-            })
+          // Todos os aparelhos do condutor (o client usa a Service Role → passa pelo RLS de push_tokens)
+          const r = await enviarPushParaUsuario(supabaseAdmin, condutor.user_id, {
+            titulo: titulo,
+            mensagem: mensagem,
+            link: `https://servirapp.netlify.app/escala/${esc.id}`
           })
-          lembretesEnviados++
+          if (r.enviados > 0) lembretesEnviados++
         } catch (err) {
           console.error("Erro ao enviar push:", err)
         }

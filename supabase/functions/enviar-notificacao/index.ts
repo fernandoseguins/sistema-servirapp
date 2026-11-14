@@ -1,9 +1,15 @@
 // supabase/functions/enviar-notificacao/index.ts
 // Função INTERNA: só é chamada por outras funções/crons/webhooks com a Service Role Key.
 // (Antes aceitava a chave anon pública — qualquer um podia mandar push com link falso.)
+//
+// Corpo aceito:
+// - { userId, titulo, mensagem, link }   → envia para TODOS os aparelhos do usuário
+// - { fcmToken, titulo, mensagem, link } → legado: descobre o dono do token e envia
+//   para todos os aparelhos dele (se não achar o dono, envia só para o token)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { JWT } from "npm:google-auth-library@9";
-import { exigirServiceRole, json, linkSeguroDoApp, texto } from "../_shared/seguranca.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { exigirServiceRole, json, texto } from "../_shared/seguranca.ts";
+import { donoDoToken, enviarParaTokens, enviarPushParaUsuario } from "../_shared/push.ts";
 
 serve(async (req) => {
   if (req.method !== 'POST') return json({ erro: 'Método não permitido' }, 405);
@@ -12,56 +18,39 @@ serve(async (req) => {
   if (negado) return negado;
 
   try {
-    // 1. Recebe os dados (Token do celular, Título, Mensagem e o LINK)
+    // 1. Recebe os dados (usuário ou token, Título, Mensagem e o LINK)
     const body = await req.json().catch(() => ({}));
+    const userId   = texto(body.userId, 64);
     const fcmToken = texto(body.fcmToken, 4096);
     const titulo   = texto(body.titulo, 200);
     const mensagem = texto(body.mensagem, 1000);
+    const link     = typeof body.link === 'string' ? body.link : undefined;
 
-    if (!fcmToken) return json({ erro: "Token FCM não fornecido." }, 400);
+    if (!userId && !fcmToken) return json({ erro: "Informe userId ou fcmToken." }, 400);
 
-    // 2. Pega a Chave Mestra do Firebase das variáveis de ambiente
-    const serviceAccountKey = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
-    if (!serviceAccountKey) {
+    if (!Deno.env.get('FIREBASE_SERVICE_ACCOUNT')) {
       console.error("FIREBASE_SERVICE_ACCOUNT não configurada.");
       return json({ erro: "Serviço de notificação indisponível." }, 500);
     }
-    const serviceAccount = JSON.parse(serviceAccountKey);
 
-    // 3. Gera um "crachá de acesso" temporário usando a biblioteca do Google
-    const jwtClient = new JWT({
-      email: serviceAccount.client_email,
-      key: serviceAccount.private_key,
-      scopes: ['https://www.googleapis.com/auth/firebase.messaging'],
-    });
-    const accessToken = await jwtClient.getAccessToken();
+    // 2. Client com Service Role (push_tokens tem RLS)
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
 
-    // 4. Monta a notificação — o link só pode apontar para o próprio app
-    const fcmPayload = {
-      message: {
-        token: fcmToken,
-        notification: { title: titulo, body: mensagem },
-        webpush: { fcm_options: { link: linkSeguroDoApp(body.link) } },
-      },
-    };
+    // 3. Envia para cada aparelho (tokens mortos são apagados no caminho)
+    const msg = { titulo, mensagem, link };
+    const dono = userId || await donoDoToken(admin, fcmToken);
+    const resultado = dono
+      ? await enviarPushParaUsuario(admin, dono, msg)
+      : await enviarParaTokens(admin, [fcmToken], msg);
 
-    // 5. Envia para o Firebase
-    const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(fcmPayload),
-    });
-
-    if (!response.ok) {
-      // Detalhes só no log do servidor — nunca na resposta
-      console.error("Erro do Firebase:", await response.text());
+    if (resultado.enviados === 0 && resultado.falhas > 0) {
       return json({ erro: "Falha ao enviar notificação." }, 502);
     }
 
-    return json({ sucesso: true });
+    return json({ sucesso: true, ...resultado });
   } catch (error) {
     console.error("Erro na Edge Function:", error);
     return json({ erro: "Erro interno." }, 500);

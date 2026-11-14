@@ -1,6 +1,7 @@
 // src/pages/Profile.jsx
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
+import { removerTokenPushDoAparelho } from '../utils/pushTokens'
 import { User, CalendarHeart, Music, Shield, Save, Plus, Trash2,
          Mic, Mic2, Settings2, Monitor, Camera, PenTool, Baby, Smile,
          HeartHandshake, Star, Lock, CheckCircle2, Eye, EyeOff,
@@ -102,6 +103,7 @@ export default function Profile() {
   const [ehSuperAdmin, setEhSuperAdmin] = useState(false)
 
   async function sair() {
+    await removerTokenPushDoAparelho()
     await supabase.auth.signOut()
     navigate('/')
   }

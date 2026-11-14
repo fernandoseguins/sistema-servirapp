@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabase'
 import { solicitarTokenFCM } from './firebase'
+import { registrarTokenPush } from './utils/pushTokens'
 
 // ✅ Componentes globais carregados imediatamente (aparecem em todas as telas)
 import InstallPrompt from './components/InstallPrompt'
@@ -80,14 +81,8 @@ function App() {
         console.warn('⚠️ O navegador não suporta Service Workers.')
       }
 
-      if (token) {
-        const { error } = await supabase
-          .from('users_profile')
-          .update({ fcm_token: token })
-          .eq('id', userId)
-
-        if (error) console.error('❌ Erro ao salvar token:', error.message)
-      }
+      // ✅ Um registro por aparelho (push_tokens) + users_profile.fcm_token (compatibilidade)
+      if (token) await registrarTokenPush(userId, token)
     } catch (error) {
       console.error('❌ Erro crítico na vinculação do dispositivo:', error)
     }
@@ -113,6 +108,9 @@ function App() {
       // ✅ O ref garante que mesmo chamado várias vezes aqui, só vincula uma vez
       if (session?.user?.id) {
         vincularDispositivo(session.user.id)
+      } else {
+        // Saiu da conta: a próxima conta que entrar neste aparelho vincula de novo
+        jaVinculou.current = false
       }
     })
 
