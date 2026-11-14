@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Segredos / variáveis de ambiente
+.env
+.env.*
+!.env.example
+supabase/.env
+supabase/functions/.env
+*.pem
+*service-account*.json
+
+# Google Drive sync temp files
+.tmp.driveupload/
+.tmp.drivedownload/
+
+# Supabase CLI: arquivos locais/temporários (podem conter segredos do ambiente local)
+supabase/.temp/start-secrets/
+supabase/.branches/
+
+# Claude Code: permissões locais
+.claude/settings.local.json

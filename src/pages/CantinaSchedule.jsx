@@ -10,23 +10,9 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import { Coffee, UserPlus, Trash2, CalendarDays, ChevronLeft, ChevronRight, Search, X, Lock, CalendarPlus, Plus, Star } from 'lucide-react'
 import { enviarNotificacao } from '../utils/notificacoes'
-
-// Sequência fixa de responsáveis por domingo
-const SEQUENCIA_DEPTS = ['Louvor', 'Diaconia', 'Infantil', 'Mídia']
-
-// Domingo-âncora: marco zero da sequência (este domingo = índice 0 = Louvor).
-// A sequência conta os domingos desde esta data, de forma CONTÍNUA entre meses.
-// (escolha um domingo onde a sequência começou no Louvor)
-const DOMINGO_ANCORA = new Date(2026, 5, 7) // 07/06/2026 (domingo) — calibrado: 28/06/2026 = Mídia
-
-// Conta quantos domingos existem entre a âncora e uma data (inclusive crescente)
-function indiceDomingoGlobal(dataDomingo) {
-  const MS_POR_SEMANA = 7 * 24 * 60 * 60 * 1000
-  // Zera horas para evitar problema de fuso/horário
-  const a = new Date(DOMINGO_ANCORA.getFullYear(), DOMINGO_ANCORA.getMonth(), DOMINGO_ANCORA.getDate())
-  const b = new Date(dataDomingo.getFullYear(), dataDomingo.getMonth(), dataDomingo.getDate())
-  return Math.round((b - a) / MS_POR_SEMANA)
-}
+// Regra da rotação (sequência + âncora) mora em utils/cantinaRotacao.js —
+// compartilhada com ScheduleBoard.jsx. Recalibrar só lá.
+import { deptResponsavelCantina } from '../utils/cantinaRotacao'
 
 // Funções fixas da cantina
 const FUNCOES_CANTINA = ['Caixa', 'Atendente 1', 'Atendente 2']
@@ -78,11 +64,10 @@ export default function CantinaSchedule() {
     for (let d = new Date(primeiroDia); d <= ultimoDia; d.setDate(d.getDate() + 1)) {
       if (d.getDay() === 0) { // domingo
         const dataStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-        // Índice GLOBAL contínuo (não reseta a cada mês) — usa a âncora fixa
-        const idxGlobal = indiceDomingoGlobal(d)
         listaDomingos.push({
           data: dataStr,
-          deptResponsavel: SEQUENCIA_DEPTS[((idxGlobal % SEQUENCIA_DEPTS.length) + SEQUENCIA_DEPTS.length) % SEQUENCIA_DEPTS.length],
+          // Rotação contínua entre meses (ver utils/cantinaRotacao.js)
+          deptResponsavel: deptResponsavelCantina(d),
         })
       }
     }

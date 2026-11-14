@@ -16,11 +16,17 @@ export default function PrintSchedules() {
   const [escalas, setEscalas] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+  // ✅ Volta para a tela anterior só se ela for do app; aberto direto (link/aba nova) vai para o Hub
+  const voltar = () => {
+    if ((window.history.state?.idx ?? 0) > 0) navigate(-1)
+    else navigate('/hub', { replace: true })
+  }
+
+  const nomesMeses =['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
   useEffect(() => {
     if (!departamentoId || mes === undefined || ano === undefined) {
-      navigate(-1)
+      voltar()
       return
     }
     buscarEscalasDoMes()
@@ -64,7 +70,7 @@ export default function PrintSchedules() {
       
       {/* BARRA DE AÇÕES (Esconde na hora de imprimir) */}
       <div className="max-w-4xl mx-auto bg-white p-4 rounded-xl shadow-sm mb-6 flex justify-between items-center print:hidden">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-bold px-4 py-2 bg-gray-100 rounded-lg transition">
+        <button onClick={voltar}className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-bold px-4 py-2 bg-gray-100 rounded-lg transition">
           <ArrowLeft className="w-5 h-5" /> Voltar
         </button>
         <button onClick={() => window.print()} className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 font-bold px-6 py-2 rounded-lg shadow-md transition">

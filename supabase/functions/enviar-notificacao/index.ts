@@ -1,31 +1,30 @@
 // supabase/functions/enviar-notificacao/index.ts
+// Função INTERNA: só é chamada por outras funções/crons/webhooks com a Service Role Key.
+// (Antes aceitava a chave anon pública — qualquer um podia mandar push com link falso.)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { JWT } from "npm:google-auth-library@9";
-
-// Configuração para permitir que o seu app React converse com esta função (CORS)
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { exigirServiceRole, json, linkSeguroDoApp, texto } from "../_shared/seguranca.ts";
 
 serve(async (req) => {
-  // Responde rápido às verificações de segurança do navegador (Preflight)
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  if (req.method !== 'POST') return json({ erro: 'Método não permitido' }, 405);
+
+  const negado = exigirServiceRole(req);
+  if (negado) return negado;
 
   try {
-    // 1. Recebe os dados do React (Token do celular, Título, Mensagem e agora o LINK!)
-    const { fcmToken, titulo, mensagem, link } = await req.json();
+    // 1. Recebe os dados (Token do celular, Título, Mensagem e o LINK)
+    const body = await req.json().catch(() => ({}));
+    const fcmToken = texto(body.fcmToken, 4096);
+    const titulo   = texto(body.titulo, 200);
+    const mensagem = texto(body.mensagem, 1000);
 
-    if (!fcmToken) {
-      throw new Error("Token FCM não fornecido.");
-    }
+    if (!fcmToken) return json({ erro: "Token FCM não fornecido." }, 400);
 
-    // 2. Pega a Chave Mestra do Firebase que vamos salvar nas variáveis de ambiente
+    // 2. Pega a Chave Mestra do Firebase das variáveis de ambiente
     const serviceAccountKey = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
     if (!serviceAccountKey) {
-      throw new Error("Chave do Firebase não encontrada nas variáveis de ambiente.");
+      console.error("FIREBASE_SERVICE_ACCOUNT não configurada.");
+      return json({ erro: "Serviço de notificação indisponível." }, 500);
     }
     const serviceAccount = JSON.parse(serviceAccountKey);
 
@@ -37,24 +36,16 @@ serve(async (req) => {
     });
     const accessToken = await jwtClient.getAccessToken();
 
-    // 4. Monta a encomenda (A notificação push com o Link de Redirecionamento)
+    // 4. Monta a notificação — o link só pode apontar para o próprio app
     const fcmPayload = {
       message: {
         token: fcmToken,
-        notification: {
-          title: titulo,
-          body: mensagem,
-        },
-        // ✅ O SEGREDO ESTÁ AQUI: Diz pro PWA abrir esse link ao ser clicado
-        webpush: {
-          fcm_options: {
-            link: link || "https://servirapp.netlify.app/hub"
-          }
-        }
+        notification: { title: titulo, body: mensagem },
+        webpush: { fcm_options: { link: linkSeguroDoApp(body.link) } },
       },
     };
 
-    // 5. Envia a encomenda para o servidor do Firebase
+    // 5. Envia para o Firebase
     const response = await fetch(`https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`, {
       method: 'POST',
       headers: {
@@ -64,24 +55,15 @@ serve(async (req) => {
       body: JSON.stringify(fcmPayload),
     });
 
-    const responseData = await response.json();
-
     if (!response.ok) {
-      console.error("Erro do Firebase:", responseData);
-      throw new Error(`Erro ao enviar pelo Firebase: ${JSON.stringify(responseData)}`);
+      // Detalhes só no log do servidor — nunca na resposta
+      console.error("Erro do Firebase:", await response.text());
+      return json({ erro: "Falha ao enviar notificação." }, 502);
     }
 
-    // 6. Retorna o sucesso para o React
-    return new Response(JSON.stringify({ sucesso: true, dados: responseData }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
-
+    return json({ sucesso: true });
   } catch (error) {
     console.error("Erro na Edge Function:", error);
-    return new Response(JSON.stringify({ erro: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
-    });
+    return json({ erro: "Erro interno." }, 500);
   }
 });

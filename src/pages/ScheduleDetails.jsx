@@ -2,11 +2,23 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { urlSegura } from '../utils/url'
 import { ScheduleDetailsSkeleton } from '../components/Skeletons'
 import { useUI } from '../context/UIContext'
 import { getDeptTheme } from '../utils/departmentThemes'
 import { enviarNotificacao, enviarNotificacaoEmMassa } from '../utils/notificacoes'
 import { ArrowLeft, CalendarDays, Clock, Palette, UserPlus, CheckCircle2, XCircle, Trash2, Send, AlertCircle, ShieldAlert, Music, Plus, PlayCircle, Edit2, FileText, Tag, MessageCircle, Search, ChevronUp, ChevronDown, RefreshCw, Check, X, ListChecks, Upload, Download, MessageSquare, PenLine, Mic2 } from 'lucide-react'
+
+// Upload do mapa vocal: tipos aceitos e tamanho máximo
+const MIME_MAPA = {
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+  gif: 'image/gif', heic: 'image/heic', heif: 'image/heif',
+}
+const EXTENSOES_MAPA   = Object.keys(MIME_MAPA)
+const TAMANHO_MAX_MAPA = 15 * 1024 * 1024
 
 export default function ScheduleDetails() {
   const params = useParams()
@@ -61,7 +73,7 @@ export default function ScheduleDetails() {
   const [checklistEscala,  setChecklistEscala]  = useState(null)
   const [meuPapel,         setMeuPapel]         = useState(null)
   // ── Mapa Vocal ──
-  const [mapaVocalUrl,     setMapaVocalUrl]      = useState(null)
+  const [mapasVocais,      setMapasVocais]       = useState([])  // [{id, url, nome_arquivo}]
   const [uploadingMapa,    setUploadingMapa]     = useState(false)
   // ── Observações ──
   const [obsCondutor,      setObsCondutor]       = useState('')
@@ -85,10 +97,10 @@ export default function ScheduleDetails() {
     { key: 'bancada_ok',      label: 'Bancada / Mesa organizada' },
   ]
 
-  // ✅ enviarNotificacao agora vem de utils/notificacoes.js
-  // Wrapper para manter a mesma assinatura usada neste arquivo
+  // ✅ enviarNotificacao vem de utils/notificacoes.js — dispara o push via
+  // trigger no banco. Wrapper para manter a mesma assinatura usada neste arquivo.
   const notificar = (userId, titulo, mensagemTexto, tipo, linkInterno = null) =>
-    notificar({
+    enviarNotificacao({
       userId,
       departamentoId: departamentoId || escala?.departamento_id,
       titulo,
@@ -228,16 +240,25 @@ export default function ScheduleDetails() {
       if (esc) {
         esc.schedule_roles = esc.schedule_roles || []
         if (!esc.status_repertorio) esc.status_repertorio = 'rascunho'
-        if (esc.mapa_vocal_url) setMapaVocalUrl(esc.mapa_vocal_url)
-        if (esc.mapa_vocal_digital) setMapaVocalDigital(esc.mapa_vocal_digital)
-        if (esc.obs_condutor) setObsCondutor(esc.obs_condutor)
-        if (esc.obs_lideres) setObsLideres(esc.obs_lideres)
-        if (esc.mapa_vocal_url) setMapaVocalUrl(esc.mapa_vocal_url)
         if (esc.mapa_vocal_digital) setMapaVocalDigital(esc.mapa_vocal_digital)
         if (esc.obs_condutor) setObsCondutor(esc.obs_condutor)
         if (esc.obs_lideres) setObsLideres(esc.obs_lideres)
 
-        if (esc) setEscala(esc)
+        setEscala(esc)
+
+        // Busca a lista de mapas vocais enviados para esta escala
+        const { data: mapasData } = await supabase
+          .from('mapas_vocais')
+          .select('id, url, nome_arquivo')
+          .eq('schedule_id', idDaEscala)
+          .order('enviado_em', { ascending: true })
+        if (mapasData && mapasData.length > 0) {
+          setMapasVocais(mapasData)
+        } else if (esc.mapa_vocal_url) {
+          // Compat: mapa enviado antes da migração para a tabela mapas_vocais.
+          // id sintético — removerMapaVocal trata este caso limpando a coluna.
+          setMapasVocais([{ id: '__legado__', url: esc.mapa_vocal_url, nome_arquivo: 'Mapa vocal' }])
+        }
         setMusicasEscala((esc.schedule_songs || []).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)))
 
         if (user) {
@@ -648,22 +669,55 @@ if (papelEncontrado) {
   }
 
 
-  // ── Upload de ficheiro do mapa vocal ──────────────────────────────────────
+  // ── Upload de arquivo(s) do mapa vocal — aceita vários de uma vez ──────────
   async function uploadMapaVocal(e) {
-    const file = e.target.files[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    // Bucket é público: só aceita documentos/imagens e com tamanho limitado
+    // (bloqueia .html/.svg/.js que poderiam ser servidos como página).
+    const invalido = files.find(f => {
+      const ext = (f.name.split('.').pop() || '').toLowerCase()
+      return !EXTENSOES_MAPA.includes(ext) || f.size > TAMANHO_MAX_MAPA
+    })
+    if (invalido) {
+      toast.error(`"${invalido.name}" não é permitido. Envie PDF, Word ou imagem (até 15 MB).`)
+      e.target.value = ''
+      return
+    }
     setUploadingMapa(true)
     try {
-      const ext  = file.name.split('.').pop()
-      const path = `mapas/${idDaEscala}-${Date.now()}.${ext}`
-      const { error: upErr } = await supabase.storage.from('mapas-vocais').upload(path, file)
-      if (upErr) throw upErr
-      const { data: { publicUrl } } = supabase.storage.from('mapas-vocais').getPublicUrl(path)
-      await supabase.from('schedules').update({ mapa_vocal_url: publicUrl }).eq('id', idDaEscala)
-      setMapaVocalUrl(publicUrl)
-      toast.success('Mapa vocal enviado!')
+      const { data: { user } } = await supabase.auth.getUser()
+      const novos = []
+      for (const file of files) {
+        const ext  = file.name.split('.').pop().toLowerCase()
+        const path = `mapas/${idDaEscala}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
+        const { error: upErr } = await supabase.storage.from('mapas-vocais').upload(path, file, { contentType: MIME_MAPA[ext] })
+        if (upErr) throw upErr
+        const { data: { publicUrl } } = supabase.storage.from('mapas-vocais').getPublicUrl(path)
+        const { data: inserted, error: insErr } = await supabase
+          .from('mapas_vocais')
+          .insert([{ schedule_id: idDaEscala, url: publicUrl, nome_arquivo: file.name, enviado_por: user?.id }])
+          .select('id, url, nome_arquivo')
+          .single()
+        if (insErr) throw insErr
+        novos.push(inserted)
+      }
+      setMapasVocais(prev => [...prev, ...novos])
+      toast.success(novos.length > 1 ? `${novos.length} arquivos enviados!` : 'Mapa vocal enviado!')
     } catch (err) { (() => { console.error('Erro ao enviar:', err); toast.error('Não foi possível enviar. Tente novamente.') })() }
     setUploadingMapa(false)
+    e.target.value = ''  // permite reenviar o mesmo arquivo depois, se precisar
+  }
+
+  // ── Remove um mapa vocal específico da lista ────────────────────────────────
+  async function removerMapaVocal(mapa) {
+    if (!await confirm({ title: 'Remover arquivo?', message: `Remover "${mapa.nome_arquivo || 'arquivo'}" desta escala?`, danger: true, labelOk: 'Remover', labelCancel: 'Cancelar' })) return
+    const { error } = mapa.id === '__legado__'
+      ? await supabase.from('schedules').update({ mapa_vocal_url: null }).eq('id', idDaEscala)
+      : await supabase.from('mapas_vocais').delete().eq('id', mapa.id)
+    if (error) { console.error('Erro ao remover mapa vocal:', error); toast.error('Não foi possível remover. Tente novamente.'); return }
+    setMapasVocais(prev => prev.filter(m => m.id !== mapa.id))
+    toast.success('Arquivo removido.')
   }
 
 
@@ -772,49 +826,48 @@ if (papelEncontrado) {
             </div>
 
             <div className="p-4">
-              {(true) && (
-                <div className="space-y-3">
-                  {mapaVocalUrl ? (
-                    <div className="space-y-2">
-                      <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-3">
+              <div className="space-y-3">
+                {mapasVocais.length > 0 && (
+                  <div className="space-y-2">
+                    {mapasVocais.map(mapa => (
+                      <div key={mapa.id} className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-green-800">Mapa vocal enviado</p>
+                          <p className="text-sm font-bold text-green-800 truncate">{mapa.nome_arquivo || 'Mapa vocal'}</p>
                         </div>
-                        <a href={mapaVocalUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 flex items-center gap-1">
+                        <a href={urlSegura(mapa.url)} target="_blank" rel="noopener noreferrer"
+                          className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 flex items-center gap-1 flex-shrink-0">
                           <Download className="w-3 h-3" /> Baixar
                         </a>
+                        {(souConducao || isLiderOuAdmin) && (
+                          <button onClick={() => removerMapaVocal(mapa)} className="p-1.5 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0" title="Remover arquivo">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
-                      {(souConducao || isLiderOuAdmin) && (
+                    ))}
+                  </div>
+                )}
+
+                {(souConducao || isLiderOuAdmin) ? (
+                  <>
+                    <label htmlFor="mapa-upload" className={`w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition ${uploadingMapa ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}`}>
+                      {uploadingMapa ? (
+                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
                         <>
-                          <label htmlFor="mapa-substituir" className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-xs text-gray-500 cursor-pointer hover:border-blue-300 hover:text-blue-600 transition">
-                            <Upload className="w-4 h-4" /> Substituir arquivo
-                          </label>
-                          <input id="mapa-substituir" type="file" className="hidden" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*" onChange={uploadMapaVocal} />
+                          <Upload className="w-8 h-8 text-gray-300" />
+                          <p className="text-sm font-medium text-gray-500">{mapasVocais.length > 0 ? 'Enviar mais arquivos' : 'Enviar mapa vocal preenchido'}</p>
+                          <p className="text-xs text-gray-400">PDF, Word ou imagem — pode selecionar vários</p>
                         </>
                       )}
-                    </div>
-                  ) : (souConducao || isLiderOuAdmin) ? (
-                    <>
-                      <label htmlFor="mapa-upload" className={`w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition ${uploadingMapa ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}`}>
-                        {uploadingMapa ? (
-                          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-gray-300" />
-                            <p className="text-sm font-medium text-gray-500">Enviar mapa vocal preenchido</p>
-                            <p className="text-xs text-gray-400">PDF, Word ou imagem</p>
-                          </>
-                        )}
-                      </label>
-                      <input id="mapa-upload" type="file" className="hidden" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*" onChange={uploadMapaVocal} disabled={uploadingMapa} />
-                    </>
-                  ) : (
-                    <p className="text-sm text-gray-400 text-center py-6 font-medium">Mapa vocal ainda não enviado.</p>
-                  )}
-                </div>
-              )}
+                    </label>
+                    <input id="mapa-upload" type="file" multiple className="hidden" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*" onChange={uploadMapaVocal} disabled={uploadingMapa} />
+                  </>
+                ) : mapasVocais.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6 font-medium">Mapa vocal ainda não enviado.</p>
+                ) : null}
+              </div>
             </div>
 
             {/* ── Dica de app ── */}
@@ -900,7 +953,15 @@ if (papelEncontrado) {
               </div>
             </div>
             <div className="p-2">
-              {musicasEscala.length === 0 ? <p className="text-sm text-gray-400 text-center py-6 font-medium">Nenhuma música definida.</p> : (
+              {/* Membros comuns da escala só veem o repertório após aprovação da liderança.
+                  Condutor e líderes/admins sempre veem, pois estão trabalhando nele. */}
+              {!(isLiderOuAdmin || souConducao) && escala.status_repertorio !== 'aprovado' ? (
+                <div className="p-5 text-center">
+                  <Clock className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400 font-medium">Repertório em preparação</p>
+                  <p className="text-xs text-gray-300 mt-1">Assim que a liderança aprovar, as músicas aparecem aqui.</p>
+                </div>
+              ) : musicasEscala.length === 0 ? <p className="text-sm text-gray-400 text-center py-6 font-medium">Nenhuma música definida.</p> : (
                 <div className="divide-y divide-gray-50">
                   {musicasEscala.map((relacao, index) => {
                     const mus = relacao.songs; if (!mus) return null; const tomExibido = relacao.tom || mus.tom || '?';
@@ -924,8 +985,8 @@ if (papelEncontrado) {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {mus.link_cifra && <a href={mus.link_cifra} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 bg-blue-50 p-1.5 rounded-md"><FileText className="w-4 h-4" /></a>}
-                          {mus.link_youtube && <a href={mus.link_youtube} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-600 bg-red-50 p-1.5 rounded-md"><PlayCircle className="w-4 h-4" /></a>}
+                          {mus.link_cifra && <a href={urlSegura(mus.link_cifra)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 bg-blue-50 p-1.5 rounded-md"><FileText className="w-4 h-4" /></a>}
+                          {mus.link_youtube && <a href={urlSegura(mus.link_youtube)} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-600 bg-red-50 p-1.5 rounded-md"><PlayCircle className="w-4 h-4" /></a>}
                           {podeGerirMusicas && <button onClick={() => removerMusicaDaEscala(relacao.id)} className="text-gray-300 hover:text-red-500 p-1.5"><Trash2 className="w-4 h-4" /></button>}
                         </div>
                       </div>
@@ -954,7 +1015,12 @@ if (papelEncontrado) {
                 </span>
               )}
             </div>
-            {repertorioLouvor.length === 0 ? (
+            {statusRepLouvor !== 'aprovado' ? (
+              <div className="p-5 text-center">
+                <p className="text-sm text-gray-400 font-medium">Repertório em preparação</p>
+                <p className="text-xs text-gray-300 mt-1">Assim que a liderança do Louvor aprovar, as músicas aparecem aqui.</p>
+              </div>
+            ) : repertorioLouvor.length === 0 ? (
               <div className="p-5 text-center">
                 <p className="text-sm text-gray-400 font-medium">Repertório ainda não definido.</p>
                 <p className="text-xs text-gray-300 mt-1">O Louvor ainda não adicionou músicas para este dia.</p>

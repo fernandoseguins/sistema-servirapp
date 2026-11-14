@@ -1,13 +1,13 @@
 // supabase/functions/cobrar-louvor-intensivo/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { exigirServiceRole } from '../_shared/seguranca.ts'
 
 serve(async (req) => {
-  const authHeader = req.headers.get('Authorization')
-
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401 })
-  }
+  // Só o cron (Service Role Key) pode disparar — a chave anon pública não serve.
+  const negado = exigirServiceRole(req)
+  if (negado) return negado
+  const authHeader = req.headers.get('Authorization')!
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -43,7 +43,7 @@ serve(async (req) => {
 
   if (error) {
     console.error("Erro no banco:", error.message)
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    return new Response(JSON.stringify({ error: 'Erro interno' }), { status: 500 })
   }
 
   console.log(`Analisando ${escalas?.length || 0} escalas de louvor.`)

@@ -15,6 +15,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabase'
+import { concluirCadastroPendente } from '../utils/concluirCadastro'
 
 const IgrejaContext = createContext(null)
 
@@ -32,6 +33,10 @@ export function IgrejaProvider({ children }) {
         setIgrejaId(null); setIgreja(null); setLoadingIgreja(false)
         return
       }
+
+      // ✅ Cobre quem entrou pelo link de confirmação de e-mail (sem passar pelo login):
+      // grava igreja/departamentos/instrumentos pendentes antes de ler o perfil
+      await concluirCadastroPendente(user)
 
       // Pega o igreja_id do perfil do usuário
       const { data: perfil } = await supabase

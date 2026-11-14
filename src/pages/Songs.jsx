@@ -1,6 +1,7 @@
 // src/pages/Songs.jsx
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
+import { urlSegura } from '../utils/url'
 import { useUI } from '../context/UIContext'
 import { getDeptTheme } from '../utils/departmentThemes'
 import PageHeader from '../components/PageHeader'
@@ -220,13 +221,13 @@ export default function Songs() {
         <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-50">
           
           {musica.link_cifra && (
-            <a href={musica.link_cifra} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition">
+            <a href={urlSegura(musica.link_cifra)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition">
               <FileText className="w-3.5 h-3.5" /> Cifra
             </a>
           )}
 
           {musica.link_youtube && (
-            <a href={musica.link_youtube} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition ml-auto">
+            <a href={urlSegura(musica.link_youtube)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition ml-auto">
               <PlayCircle className="w-3.5 h-3.5" /> Ouvir
             </a>
           )}

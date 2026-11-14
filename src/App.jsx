@@ -60,6 +60,10 @@ function App() {
     if (jaVinculou.current) return
     jaVinculou.current = true
 
+    // ✅ Supabase local (testes): não registra o aparelho no Firebase de produção
+    const url = import.meta.env.VITE_SUPABASE_URL || ''
+    if (url.includes('127.0.0.1') || url.includes('localhost')) return
+
     try {
       let token = null
 
@@ -143,7 +147,7 @@ function App() {
           <Route path="/licoes"          element={session  ? <InfantilLessons />  : <Navigate to="/" replace />} />
           <Route path="/checkin"         element={session  ? <InfantilCheckin />  : <Navigate to="/" replace />} />
           <Route path="/frequencia"      element={session  ? <FrequencyReport />  : <Navigate to="/" replace />} />
-          <Route path="/imprimir-escalas" element={<PrintSchedules />} />
+          <Route path="/imprimir-escalas" element={session  ? <PrintSchedules />   : <Navigate to="/" replace />} />
           <Route path="/cabine/:id?"        element={session  ? <Cabine />           : <Navigate to="/" replace />} />
           <Route path="/checklist-midia"    element={session  ? <ChecklistMidia />   : <Navigate to="/" replace />} />
           <Route path="/gestao-igreja"      element={session  ? <GestaoIgreja />     : <Navigate to="/" replace />} />
@@ -153,6 +157,8 @@ function App() {
           <Route path="/criar-igreja"       element={session  ? <CriarIgreja />       : <Navigate to="/" replace />} />
           <Route path="/painel-dono"        element={session  ? <PainelDono />        : <Navigate to="/" replace />} />
           <Route path="/igreja/:id"         element={session  ? <IgrejaDetalhes />    : <Navigate to="/" replace />} />
+          {/* ✅ Rota desconhecida: em vez de página em branco, manda para o início */}
+          <Route path="*"                   element={<Navigate to={session ? '/hub' : '/'} replace />} />
         </Routes>
       </Suspense>
 

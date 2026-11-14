@@ -85,7 +85,7 @@ export default function Hub() {
         const { data: todosDepts } = await supabase.from('departamentos').select('id, nome, cor, icone, tipo').eq('igreja_id', perfil?.igreja_id).order('nome')
         if (todosDepts) {
           const deptsMaster = todosDepts.map(d => ({ role: 'admin', departamentos: { id: d.id, nome: d.nome, cor: d.cor, icone: d.icone } }))
-          setMeusDepartamentos(deptsMaster)
+          setMeusDepartamentos(deptsMaster.filter(v => v.departamentos))
         }
       } else {
         let listaDepts = depts || []
@@ -107,7 +107,9 @@ export default function Hub() {
             })
           }
         }
-        setMeusDepartamentos(listaDepts)
+        // Defesa: remove vínculos órfãos (departamento apagado mas o vínculo ficou).
+        // Sem isso, uma pessoa com dado inconsistente trava a tela inteira.
+        setMeusDepartamentos(listaDepts.filter(v => v.departamentos))
       }
 
       const { data: minhasEscalas } = await supabase
@@ -362,19 +364,19 @@ export default function Hub() {
                   // (membros acessam pelo calendário/agenda do Hub)
                   // Só a Cantina fica restrita a líderes/admin (ninguém se inscreve nela).
                   // Ministros virou departamento normal: quem tem vínculo vê (membro ou líder).
-                  const soLideranca = vinculo.departamentos.tipo === 'cantina' || vinculo.departamentos.nome === 'Cantina'
+                  const soLideranca = vinculo.departamentos?.tipo === 'cantina' || vinculo.departamentos?.nome === 'Cantina'
                   if (!soLideranca) return true
                   return isMasterUser || vinculo.role === 'líder' || vinculo.role === 'admin'
                 })
                 .map((vinculo) => {
-                const estilo = getEstiloDepartamento(vinculo.departamentos.nome, vinculo.departamentos.cor, vinculo.departamentos.icone)
+                const estilo = getEstiloDepartamento(vinculo.departamentos?.nome, vinculo.departamentos?.cor, vinculo.departamentos?.icone)
                 const pers = estilo.tema?.personalizado
                 const st = estilo.tema?.styles || {}
                 return (
-                  <div key={vinculo.departamentos.id} onClick={() => navigate('/dashboard', { state: { departamentoId: vinculo.departamentos.id, departamentoNome: vinculo.departamentos.nome, departamentoTipo: vinculo.departamentos.tipo, userRole: vinculo.role } })} className={`bg-white p-4 md:p-7 rounded-2xl shadow-sm border-2 border-transparent ${pers ? '' : estilo.borderHover + ' ' + estilo.shadowHover} hover:shadow-lg active:scale-95 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center text-center gap-2 md:gap-4 group`}>
+                  <div key={vinculo.departamentos?.id} onClick={() => navigate('/dashboard', { state: { departamentoId: vinculo.departamentos?.id, departamentoNome: vinculo.departamentos?.nome, departamentoTipo: vinculo.departamentos?.tipo, userRole: vinculo.role } })} className={`bg-white p-4 md:p-7 rounded-2xl shadow-sm border-2 border-transparent ${pers ? '' : estilo.borderHover + ' ' + estilo.shadowHover} hover:shadow-lg active:scale-95 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center text-center gap-2 md:gap-4 group`}>
                     <div className={`p-3 md:p-4 rounded-full ${pers ? '' : estilo.bgLight + ' ' + estilo.corTexto} group-hover:scale-110 transition-all duration-300`} style={pers ? { ...st.bgLight, ...st.textPrimary } : {}}>{estilo.icone}</div>
                     <div>
-                      <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1.5">{vinculo.departamentos.nome}</h3>
+                      <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1.5">{vinculo.departamentos?.nome}</h3>
                       <span className={`text-[10px] md:text-xs font-bold px-2.5 py-0.5 md:px-3 md:py-1 rounded-full uppercase tracking-wider ${pers ? '' : estilo.cor} text-white inline-block shadow-sm`} style={pers ? st.bgPrimary : {}}>{vinculo.role}</span>
                     </div>
                   </div>

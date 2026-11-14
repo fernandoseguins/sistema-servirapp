@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { caminhoInterno } from '../utils/url'
 import { Bell, XCircle, Trash2, User, LogOut, ChevronDown, Crown } from 'lucide-react'
 
 export default function GlobalUserMenu() {
@@ -110,7 +111,8 @@ export default function GlobalUserMenu() {
 
   async function clicarNaNotificacao(notif) {
     if (!notif.lida) await supabase.from('notifications').update({ lida: true }).eq('id', notif.id)
-    if (notif.link_redirecionamento) { setModalAberto(false); navigate(notif.link_redirecionamento) }
+    const destino = caminhoInterno(notif.link_redirecionamento)
+    if (destino) { setModalAberto(false); navigate(destino) }
   }
 
   async function apagarNotificacao(e, id) {

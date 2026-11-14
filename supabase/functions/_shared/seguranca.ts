@@ -1,0 +1,84 @@
+// supabase/functions/_shared/seguranca.ts
+// Helpers de segurança compartilhados pelas Edge Functions.
+//
+// IMPORTANTE: `verify_jwt = true` só garante que o JWT é válido — a chave ANON
+// (pública, embutida no front) também é um JWT válido. Por isso as funções
+// internas (crons / webhooks) precisam checar explicitamente a Service Role.
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+export const APP_URL = (Deno.env.get('APP_URL') ?? 'https://servirapp.netlify.app').replace(/\/+$/, '')
+
+export function json(body: unknown, status = 200, headers: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...headers, 'Content-Type': 'application/json' },
+  })
+}
+
+function tokenDaRequisicao(req: Request): string | null {
+  const auth = req.headers.get('Authorization') ?? ''
+  const m = auth.match(/^Bearer\s+(.+)$/i)
+  return m ? m[1].trim() : null
+}
+
+// Comparação em tempo constante (evita timing attack na comparação de segredos)
+function iguaisTempoConstante(a: string, b: string): boolean {
+  const ea = new TextEncoder().encode(a)
+  const eb = new TextEncoder().encode(b)
+  if (ea.length !== eb.length) return false
+  let diff = 0
+  for (let i = 0; i < ea.length; i++) diff |= ea[i] ^ eb[i]
+  return diff === 0
+}
+
+// Só deixa passar chamadas feitas com a Service Role Key (cron / webhook / outra função).
+// Retorna uma Response 401 se não for, ou null se estiver ok.
+export function exigirServiceRole(req: Request): Response | null {
+  const token = tokenDaRequisicao(req)
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (!token || !serviceKey || !iguaisTempoConstante(token, serviceKey)) {
+    return json({ error: 'Não autorizado' }, 401)
+  }
+  return null
+}
+
+// Exige um usuário LOGADO de verdade (rejeita a chave anon).
+// Retorna { user, client } com um client que respeita o RLS do usuário
+// (ou { erro } com a Response 401 pronta).
+export async function exigirUsuario(req: Request) {
+  const token = tokenDaRequisicao(req)
+  if (!token) return { erro: json({ error: 'Não autorizado' }, 401) }
+
+  const client = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: `Bearer ${token}` } } },
+  )
+  const { data, error } = await client.auth.getUser(token)
+  if (error || !data?.user) return { erro: json({ error: 'Não autorizado' }, 401) }
+  return { user: data.user, client }
+}
+
+// Aceita apenas caminhos internos ("/escala/123") ou URLs do próprio app.
+// Qualquer outra coisa (domínio externo, javascript:, //evil.com) cai no /hub.
+export function linkSeguroDoApp(link: unknown): string {
+  const padrao = `${APP_URL}/hub`
+  if (typeof link !== 'string' || !link) return padrao
+  try {
+    const url = new URL(link, APP_URL)
+    if (url.origin !== new URL(APP_URL).origin) return padrao
+    return url.href
+  } catch {
+    return padrao
+  }
+}
+
+export function escaparHtml(s: unknown): string {
+  return String(s ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+}
+
+export function texto(v: unknown, max: number): string {
+  return typeof v === 'string' ? v.slice(0, max) : ''
+}

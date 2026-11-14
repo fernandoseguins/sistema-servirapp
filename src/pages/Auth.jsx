@@ -1,8 +1,28 @@
 // src/pages/Auth.jsx
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import { concluirCadastroPendente } from '../utils/concluirCadastro'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, ArrowRight, ArrowLeft, Mic, Mic2, Settings2, Music, Check, Monitor, Camera, PenTool, Baby, Smile, HeartHandshake, Star, Shield } from 'lucide-react'
+
+// ✅ Mensagem de login conforme o erro real do Supabase (antes era sempre "senha incorreta")
+function mensagemErroLogin(error) {
+  const code = error?.code || ''
+  const msg = (error?.message || '').toLowerCase()
+  if (code === 'email_not_confirmed' || msg.includes('not confirmed')) {
+    return '❌ Seu e-mail ainda não foi confirmado. Abra o link que enviamos para a sua caixa de entrada.'
+  }
+  if (code === 'invalid_credentials' || msg.includes('invalid login')) {
+    return '❌ Erro: Email ou senha incorretos.'
+  }
+  if (code === 'over_request_rate_limit' || error?.status === 429) {
+    return '❌ Muitas tentativas. Aguarde alguns minutos e tente de novo.'
+  }
+  if (error?.name === 'AuthRetryableFetchError' || error?.status === 0 || msg.includes('fetch')) {
+    return '❌ Sem conexão com o servidor. Verifique a internet e tente de novo.'
+  }
+  return '❌ Não foi possível entrar agora. Tente novamente.'
+}
 
 export default function Auth() {
   const navigate = useNavigate()
@@ -20,7 +40,6 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState('')
   // Código de convite da igreja (obrigatório no cadastro)
   const [codigoConvite, setCodigoConvite] = useState('')
-  const [igrejaValidada, setIgrejaValidada] = useState(null) // { igreja_id, igreja_nome }
   
   // Passo 2: Departamentos
   const [departamentosDB, setDepartamentosDB] = useState([])
@@ -73,30 +92,51 @@ export default function Auth() {
     setIsSignUp(paraCadastro)
     setStep(1)
     setMensagem('')
-    setConfirmPassword('') 
+    // ✅ Login e cadastro usam o mesmo estado de senha: limpa ao trocar de tela
+    // para a senha digitada num formulário não aparecer no outro
+    setPassword('')
+    setConfirmPassword('')
   }
 
   async function handleLogin(e) {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
     setMensagem('')
     
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
-    if (error) setMensagem('❌ Erro: Email ou senha incorretos.')
-    else navigate('/hub')
-    
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
+    if (error) {
+      setMensagem(mensagemErroLogin(error))
+      setLoading(false)
+      return
+    }
+
+    // ✅ Primeiro login após confirmar o e-mail: grava igreja, departamentos e instrumentos
+    const { ok, erros } = await concluirCadastroPendente(data.user)
     setLoading(false)
+    if (!ok) {
+      setMensagem(`⚠️ Login feito, mas não conseguimos concluir o cadastro (${erros.join(', ')}). Tentaremos de novo no próximo login.`)
+      setTimeout(() => navigate('/hub'), 4000)
+      return
+    }
+    navigate('/hub')
   }
 
   async function handleResetPassword() {
-    if (!email) {
+    if (loading) return
+    // ✅ Mesmo formato do login (sem espaços, minúsculo)
+    const emailLimpo = email.trim().toLowerCase()
+    if (!emailLimpo) {
       setMensagem('❌ Digite o seu e-mail acima para redefinir a senha.')
       return
     }
     setLoading(true)
     setMensagem('')
-    
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
+
+    // ✅ O link do e-mail entra logado e abre o Perfil, onde dá para trocar a senha
+    const { error } = await supabase.auth.resetPasswordForEmail(emailLimpo, {
+      redirectTo: `${window.location.origin}/perfil`,
+    })
     
     if (error) {
       console.error('Erro ao recuperar senha:', error)
@@ -109,8 +149,9 @@ export default function Auth() {
 
   async function handleNextStep(e) {
     e.preventDefault() 
-    if (!nome.trim() || !email.trim() || password.length < 6) {
-      setMensagem('❌ Preencha tudo corretamente (Senha mín. 6 caracteres).')
+    if (loading) return
+    if (!nome.trim() || !email.trim() || password.length < 8) {
+      setMensagem('❌ Preencha tudo corretamente (Senha mín. 8 caracteres).')
       return
     }
     if (password !== confirmPassword) {
@@ -133,7 +174,6 @@ export default function Auth() {
       return
     }
 
-    setIgrejaValidada(igrejas[0])
 
     // ✅ Busca os departamentos da igreja validada (via função que ignora RLS)
     const { data: depts } = await supabase
@@ -146,8 +186,17 @@ export default function Auth() {
 
   async function handleRegister(e) {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
     setMensagem('')
+
+    // Funções escolhidas no passo 2 (vão para o perfil)
+    const funcoes = {
+      voz, conducao, backing_vocal: backingVocal, sonoplastia,
+      midia_computador: midiaComputador, midia_fotografia: midiaFotografia, midia_redacao: midiaRedacao,
+      infantil_bercario: infBercario, infantil_sala3_8: infSala38, infantil_sala9_11: infSala911, infantil_acolhimento: infAcolhimento, infantil_auxiliar: infAuxiliar,
+      diaconia: diaconiaGeral // ✅ FORÇA O GATILHO DA DIACONIA
+    }
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -155,10 +204,17 @@ export default function Auth() {
         options: {
           data: { 
             nome: nome.trim(), 
-            voz, conducao, backing_vocal: backingVocal, sonoplastia, 
-            midia_computador: midiaComputador, midia_fotografia: midiaFotografia, midia_redacao: midiaRedacao,
-            infantil_bercario: infBercario, infantil_sala3_8: infSala38, infantil_sala9_11: infSala911, infantil_acolhimento: infAcolhimento, infantil_auxiliar: infAuxiliar,
-            diaconia: diaconiaGeral // ✅ SALVA A DIACONIA
+            ...funcoes, // ✅ inclui a DIACONIA
+            // ✅ Tudo que precisa de sessão para ser gravado fica aqui até o primeiro login.
+            // Sem isso, quando o Supabase exige confirmação de e-mail, o signUp volta
+            // sem sessão e o RLS bloqueia perfil/departamentos/instrumentos em silêncio.
+            cadastro_pendente: {
+              // ✅ O servidor valida o código e vincula à igreja (RPC entrar_na_igreja)
+              codigo_convite: codigoConvite.trim(),
+              funcoes,
+              departamentos: selectedDepts,
+              instrumentos: meusInstrumentos,
+            }
           }
         }
       })
@@ -166,40 +222,23 @@ export default function Auth() {
       if (authError) throw authError
 
       if (authData?.user) {
-
-        // ✅ PRIMEIRO: salva o igreja_id e funções no perfil.
-        // Isso precisa vir ANTES de inserir departamentos, porque o RLS
-        // usa o igreja_id do perfil para liberar a inserção dos vínculos.
-        const { error: erroPerfil } = await supabase.from('users_profile').update({
-          igreja_id: igrejaValidada?.igreja_id, // ✅ Vincula à igreja do código de convite
-          voz, conducao, backing_vocal: backingVocal, sonoplastia,
-          midia_computador: midiaComputador, midia_fotografia: midiaFotografia, midia_redacao: midiaRedacao,
-          infantil_bercario: infBercario, infantil_sala3_8: infSala38, infantil_sala9_11: infSala911, infantil_acolhimento: infAcolhimento, infantil_auxiliar: infAuxiliar,
-          diaconia: diaconiaGeral // ✅ FORÇA O GATILHO DA DIACONIA
-        }).eq('id', authData.user.id)
-        if (erroPerfil) console.warn('Erro ao salvar perfil:', erroPerfil.message)
-
-        // DEPOIS: insere os departamentos (agora o RLS já reconhece a igreja)
-        if (selectedDepts.length > 0) {
-          const deptsToInsert = selectedDepts.map(id => ({ user_id: authData.user.id, departamento_id: id, role: 'membro' }))
-          const { error: erroDepts } = await supabase.from('membros_departamentos').insert(deptsToInsert)
-          if (erroDepts) console.warn('Erro ao salvar departamentos:', erroDepts.message)
-        }
-
         // A igreja começa SEM admin. O super-admin (dono do sistema)
         // define quem é admin pelo Painel do Dono.
 
-        if (meusInstrumentos.length > 0) {
-          const instsToInsert = meusInstrumentos.map(inst => ({ user_id: authData.user.id, instrumento: inst }))
-          await supabase.from('user_instruments').insert(instsToInsert)
-        }
-
         if (authData.session) {
+          // Já logado: grava agora (perfil antes dos vínculos, por causa do RLS)
+          const { ok, erros } = await concluirCadastroPendente(authData.user)
+          if (!ok) {
+            setMensagem(`⚠️ Conta criada, mas não conseguimos salvar: ${erros.join(', ')}. Vamos tentar de novo no próximo login — confira seu perfil.`)
+            setTimeout(() => navigate('/hub'), 4000)
+            return
+          }
           setMensagem('✅ Sucesso! A redirecionar...')
           setTimeout(() => navigate('/hub'), 1500)
         } else {
-          setMensagem('✅ Conta criada! Faça login para entrar.')
-          setTimeout(() => resetTelas(false), 2500)
+          // Sem sessão (confirmação de e-mail): o cadastro é concluído no primeiro login
+          setMensagem('✅ Conta criada! Confirme o seu e-mail e faça login para concluir o cadastro.')
+          setTimeout(() => resetTelas(false), 4000)
         }
       }
     } catch (error) {
@@ -290,11 +329,11 @@ export default function Auth() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Lock className="h-4 w-4 text-gray-400" /></div>
-                    <input type="password" required placeholder="Senha (Mín. 6)" minLength="6" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-10 pr-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="password" required placeholder="Senha (Mín. 8)" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-10 pr-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Check className="h-4 w-4 text-gray-400" /></div>
-                    <input type="password" required placeholder="Confirmar Senha" minLength="6" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-10 pr-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="password" required placeholder="Confirmar Senha" minLength="8" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-10 pr-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
                 <div className="relative">
@@ -302,7 +341,7 @@ export default function Auth() {
                   <input type="text" required placeholder="Código de convite" value={codigoConvite} onChange={(e) => setCodigoConvite(e.target.value.toUpperCase())} maxLength={6} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none uppercase tracking-widest font-bold" />
                 </div>
                 {mensagem && isSignUp && <p className="text-sm font-bold text-center text-red-500 mt-2 bg-red-50 py-2 rounded-lg">{mensagem}</p>}
-                <button type="submit" className="w-full bg-blue-600 text-white font-bold rounded-xl py-3 mt-2 hover:bg-blue-700 transition active:scale-[0.97] shadow-md flex justify-center items-center gap-2">
+                <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold rounded-xl py-3 mt-2 hover:bg-blue-700 transition active:scale-[0.97] shadow-md flex justify-center items-center gap-2">
                   Continuar <ArrowRight className="w-5 h-5" />
                 </button>
               </form>
@@ -473,11 +512,11 @@ export default function Auth() {
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Lock className="h-5 w-5 text-gray-400" /></div>
-                <input type="password" required placeholder="Senha (mín. 6)" minLength="6" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input type="password" required placeholder="Senha (mín. 8)" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Check className="h-5 w-5 text-gray-400" /></div>
-                <input type="password" required placeholder="Confirme sua senha" minLength="6" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input type="password" required placeholder="Confirme sua senha" minLength="8" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Star className="h-5 w-5 text-gray-400" /></div>
@@ -486,7 +525,7 @@ export default function Auth() {
 
               {mensagem && <p className="text-sm font-bold text-center mt-2 text-red-500">{mensagem}</p>}
               
-              <button type="submit" className="w-full bg-blue-600 text-white font-bold rounded-xl py-4 mt-2 hover:bg-blue-700 transition active:scale-[0.97] flex justify-center items-center gap-2 shadow-md">
+              <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold rounded-xl py-4 mt-2 hover:bg-blue-700 transition active:scale-[0.97] flex justify-center items-center gap-2 shadow-md">
                 Continuar <ArrowRight className="w-5 h-5" />
               </button>
             </form>

@@ -211,7 +211,7 @@ export default function Profile() {
 
   async function alterarSenha() {
     if (!senhaNova)           { toast.warning('Digite a nova senha.'); return }
-    if (senhaNova.length < 6) { toast.warning('A senha deve ter pelo menos 6 caracteres.'); return }
+    if (senhaNova.length < 8) { toast.warning('A senha deve ter pelo menos 8 caracteres.'); return }
     if (!senhasConferem)      { toast.warning('As senhas não coincidem.'); return }
 
     setLoadingSenha(true)
@@ -430,7 +430,7 @@ export default function Profile() {
                   type={mostrarSenha ? 'text' : 'password'}
                   value={senhaNova}
                   onChange={e => setSenhaNova(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   className="w-full border border-gray-200 rounded-xl p-3 pr-10 text-sm outline-none focus:ring-2 focus:ring-gray-900 transition"
                 />
                 <button

@@ -5,6 +5,9 @@ import { CalendarDays, Palette, User, Clock, Send, ChevronDown, ArrowRight, Head
 import { useNavigate } from 'react-router-dom'
 import { getDeptTheme } from '../utils/departmentThemes'
 import { hojeLocal } from '../utils/datas'
+// Quando o quadro é da Cantina, mostramos o departamento responsável do dia
+// (rotação por domingo) em vez do turno (ex: "Louvor" em vez de "Culto da Noite").
+import { deptResponsavelCantina } from '../utils/cantinaRotacao'
 
 export default function ScheduleBoard({ departamentoId, userRole, departamentoNome, departamentoCor = null }) {
   const [escalas,    setEscalas]    = useState([])
@@ -15,6 +18,7 @@ export default function ScheduleBoard({ departamentoId, userRole, departamentoNo
   const navigate        = useNavigate()
   const isLiderOuAdmin  = userRole === 'admin' || userRole === 'líder'
   const isMidia         = departamentoNome === 'Mídia' || departamentoNome === 'Midia'
+  const isCantina        = departamentoNome === 'Cantina'
   const themeRaw        = getDeptTheme(departamentoNome, departamentoCor)
   const theme           = { ...themeRaw, btnHover: themeRaw.boardBtnHover }
   const pers            = themeRaw.personalizado
@@ -97,7 +101,7 @@ export default function ScheduleBoard({ departamentoId, userRole, departamentoNo
                   </div>
                   <div className="flex justify-between items-center text-white text-xs font-medium opacity-90">
                     <div className="uppercase tracking-wider font-bold bg-black/30 px-2.5 py-1 rounded-lg">
-                      {escala.turno === 'Integral' ? 'Culto Principal' : `Culto da ${escala.turno}`}
+                      {isCantina ? deptResponsavelCantina(escala.data) : (escala.turno === 'Integral' ? 'Culto Principal' : `Culto da ${escala.turno}`)}
                     </div>
                     {escala.cor_roupa && (
                       <div className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg">

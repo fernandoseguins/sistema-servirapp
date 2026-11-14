@@ -1,10 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2' // ✅ Corrigido aqui: supabase-js
+import { exigirServiceRole, escaparHtml } from '../_shared/seguranca.ts'
 
 // Puxa a chave do Resend que guardámos no servidor
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 
 serve(async (req) => {
+  // Só o cron (Service Role Key) pode disparar — senão qualquer um com a chave anon mandaria e-mails em massa.
+  const negado = exigirServiceRole(req)
+  if (negado) return negado
+
   // Conecta ao banco de dados com poder máximo (Service Role)
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -28,7 +33,10 @@ serve(async (req) => {
     .eq('data', dataFormatada)
     .eq('departamentos.nome', 'Louvor')
 
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+  if (error) {
+    console.error('Erro ao buscar escalas:', error.message)
+    return new Response(JSON.stringify({ error: 'Erro interno' }), { status: 500 })
+  }
 
   let cobrancasFeitas = 0
 
@@ -67,8 +75,8 @@ serve(async (req) => {
               to: emailCondutor,
               subject: `🚨 Lembrete URGENTE: Repertório do dia ${dataFormatada}`,
               html: `<div style="font-family: sans-serif; padding: 20px; background: #f9fafb; border-radius: 10px;">
-                      <h2 style="color: #dc2626;">Graça e Paz, ${nomeCondutor}!</h2>
-                      <p>Faltam apenas <strong>4 dias</strong> para o seu culto de condução (<strong>${esc.turno}</strong>) e o repertório ainda está em branco.</p>
+                      <h2 style="color: #dc2626;">Graça e Paz, ${escaparHtml(nomeCondutor)}!</h2>
+                      <p>Faltam apenas <strong>4 dias</strong> para o seu culto de condução (<strong>${escaparHtml(esc.turno)}</strong>) e o repertório ainda está em branco.</p>
                       <p>Por favor, aceda ao portal e adicione as músicas para que a banda possa estudar as cifras e os tons.</p>
                       <p><em>Equipa de Liderança 🦅</em></p>
                      </div>`

@@ -36,7 +36,10 @@ self.addEventListener('notificationclick', function(event) {
   event.notification.close()
 
   const link = event.notification.data?.link ?? '/'
-  const url  = new URL(link, self.location.origin).href
+  let url
+  try { url = new URL(link, self.location.origin) } catch (e) { url = null }
+  // Só abre páginas do próprio app — um link externo numa notificação seria phishing
+  url = url && url.origin === self.location.origin ? url.href : new URL('/hub', self.location.origin).href
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {

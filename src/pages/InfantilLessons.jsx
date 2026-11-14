@@ -1,6 +1,7 @@
 // src/pages/InfantilLessons.jsx
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import { urlSegura } from '../utils/url'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { BookOpen, Link as LinkIcon, Plus, Trash2, ExternalLink } from 'lucide-react'
 import { useUI } from '../context/UIContext'
@@ -127,7 +128,7 @@ export default function InfantilLessons() {
             <div className="space-y-3">
               {licoes.map(licao => (
                 <div key={licao.id} className="flex items-center justify-between p-3.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-pink-50 hover:border-pink-200 transition group">
-                  <a href={licao.link} target="_blank" rel="noopener noreferrer"
+                  <a href={urlSegura(licao.link)} target="_blank" rel="noopener noreferrer"
                     className="flex-1 flex items-center gap-3 min-w-0">
                     <div className="p-2.5 bg-pink-100 text-pink-600 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
                       <BookOpen className="w-5 h-5" />
