@@ -5,7 +5,6 @@ import { supabase } from '../supabase'
 import { urlSegura } from '../utils/url'
 import { ScheduleDetailsSkeleton } from '../components/Skeletons'
 import { useUI } from '../context/UIContext'
-import { getDeptTheme } from '../utils/departmentThemes'
 import { enviarNotificacao, enviarNotificacaoEmMassa } from '../utils/notificacoes'
 import { ArrowLeft, CalendarDays, Clock, Palette, UserPlus, CheckCircle2, XCircle, Trash2, Send, AlertCircle, ShieldAlert, Music, Plus, PlayCircle, Edit2, FileText, Tag, MessageCircle, Search, ChevronUp, ChevronDown, RefreshCw, Check, X, ListChecks, Upload, Download, MessageSquare, PenLine, Mic2 } from 'lucide-react'
 
@@ -110,9 +109,6 @@ export default function ScheduleDetails() {
     })
 
   // ✅ Tema centralizado via utils/departmentThemes.jsx
-  // Nota: ScheduleDetails usa theme.border — mapeado para theme.borderLight no utilitário
-  const themeRaw = getDeptTheme(departamentoNome)
-  const theme = { ...themeRaw, border: themeRaw.borderLight }
 
   const funcoesMidia = ['Computador', 'Fotografia', 'Redação']
   const funcoesInfantil = ['Berçário', 'Sala 03 - 08 anos', 'Sala 09 - 11 anos', 'Acolhimento', 'Auxiliar']
@@ -240,7 +236,6 @@ export default function ScheduleDetails() {
       if (esc) {
         esc.schedule_roles = esc.schedule_roles || []
         if (!esc.status_repertorio) esc.status_repertorio = 'rascunho'
-        if (esc.mapa_vocal_digital) setMapaVocalDigital(esc.mapa_vocal_digital)
         if (esc.obs_condutor) setObsCondutor(esc.obs_condutor)
         if (esc.obs_lideres) setObsLideres(esc.obs_lideres)
 
@@ -623,16 +618,16 @@ if (papelEncontrado) {
     return matchBusca && matchCategoria;
   });
 
-  if (loading && !escala) return <ScheduleDetailsSkeleton corHeader={theme.bgPrimary} />
+  if (loading && !escala) return <ScheduleDetailsSkeleton corHeader="bg-topo" />
   if (erroFatal) return (
     <div className="max-w-md mx-auto p-10 mt-20 text-center space-y-4">
-      <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
-      <h2 className="text-xl font-bold text-gray-800">Oops! Erro de Conexão</h2>
-      <p className="text-sm text-red-600 bg-red-50 p-4 rounded-xl font-mono break-words">{erroFatal}</p>
-      <button onClick={() => navigate(-1)} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl font-bold">Voltar</button>
+      <AlertCircle className="w-12 h-12 text-danger mx-auto" />
+      <h2 className="text-xl font-bold text-ink">Oops! Erro de Conexão</h2>
+      <p className="text-sm text-danger bg-danger-soft p-4 rounded-xl font-mono break-words">{erroFatal}</p>
+      <button onClick={() => navigate(-1)} className="bg-line text-ink-2 px-6 py-2 rounded-xl font-bold">Voltar</button>
     </div>
   )
-  if (!escala) return <div className="text-center p-10 mt-20 text-gray-500 font-bold">Escala não encontrada.</div>
+  if (!escala) return <div className="text-center p-10 mt-20 text-ink-2 font-bold">Escala não encontrada.</div>
 
   const isRascunho = escala.status === 'Rascunho'
 
@@ -733,45 +728,53 @@ if (papelEncontrado) {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-bg pb-6">
       
-      <div className={`${isRascunho ? 'bg-orange-500' : theme.bgPrimary} px-4 py-6 shadow-sm flex items-start gap-4 mb-6 rounded-b-3xl text-white transition-colors duration-500`}>
-        <button onClick={() => navigate(-1)} className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition mt-1"><ArrowLeft className="w-6 h-6" /></button>
-        <div className="flex-1 pr-40">
-          <div className="flex justify-between items-start">
-            <h1 className="text-xl font-bold flex items-center gap-2 capitalize">
-              <CalendarDays className="w-5 h-5 opacity-80 shrink-0" /> {escala.turno === 'Integral' ? 'Culto Principal' : `Culto da ${escala.turno}`}
-            </h1>
-            {isRascunho && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-400 border border-orange-300 text-orange-50 mt-12 sm:mt-0 shadow-sm">RASCUNHO</span>}
+      <header className="bg-topo text-white px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-5 mb-5">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between">
+            <button type="button" onClick={() => navigate(-1)} aria-label="Voltar"
+              className="p-2 -ml-2 rounded-full hover:bg-white/15 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
+            </button>
+            {isRascunho && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-warning-soft text-warning">Rascunho</span>}
           </div>
-          {escala.titulo && <p className="text-sm font-bold mt-1.5 flex items-center gap-1.5 text-white bg-white/20 px-2 py-0.5 rounded-md w-fit"><Tag className="w-3.5 h-3.5" /> {escala.titulo}</p>}
-          <p className={`text-sm mt-1 font-medium ${isRascunho ? 'text-orange-100' : theme.textLight}`}>{formatarDataLonga(escala.data)}</p>
-          <div className="flex flex-wrap gap-3 mt-4">
-            {escala.horario_ensaio && <div className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg text-xs font-medium"><Clock className="w-4 h-4" /> Ensaio: {escala.horario_ensaio}</div>}
+          <p className="text-[11px] font-semibold text-white/75 uppercase tracking-wide mt-2">
+            {departamentoNome} · {escala.turno === 'Integral' ? 'Culto principal' : `Culto da ${escala.turno.toLowerCase()}`}
+          </p>
+          <h1 className="text-xl font-bold first-letter:uppercase">{formatarDataLonga(escala.data)}</h1>
+          {escala.titulo && <p className="text-sm font-semibold mt-1 flex items-center gap-1.5 text-white/90"><Tag className="w-3.5 h-3.5" aria-hidden="true" /> {escala.titulo}</p>}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {escala.horario_ensaio && <span className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-full text-xs font-medium"><Clock className="w-3.5 h-3.5" aria-hidden="true" /> Ensaio: {escala.horario_ensaio}</span>}
             {departamentoNome === 'Louvor' && (escala.cor_roupa || isLiderOuAdmin) && (
-              <div onClick={() => { if(isLiderOuAdmin) { setCorEditando(escala.cor_roupa || ''); setModalRoupaAberto(true); } }} className={`flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg text-xs font-medium ${isLiderOuAdmin ? 'cursor-pointer hover:bg-black/30' : ''}`}>
-                <Palette className="w-4 h-4" /> Roupa: {escala.cor_roupa || 'Definir Paleta'} {isLiderOuAdmin && <Edit2 className="w-3 h-3 ml-1 opacity-70" />}
-              </div>
+              isLiderOuAdmin ? (
+                <button type="button" onClick={() => { setCorEditando(escala.cor_roupa || ''); setModalRoupaAberto(true) }}
+                  className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-full text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                  <Palette className="w-3.5 h-3.5" aria-hidden="true" /> Roupa: {escala.cor_roupa || 'definir paleta'} <Edit2 className="w-3 h-3 opacity-70" aria-hidden="true" />
+                </button>
+              ) : (
+                <span className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-full text-xs font-medium"><Palette className="w-3.5 h-3.5" aria-hidden="true" /> Roupa: {escala.cor_roupa}</span>
+              )
             )}
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="max-w-2xl mx-auto px-4 space-y-6">
 
         {/* ✅ PAINEL DO WORKFLOW DE APROVAÇÃO DE REPERTÓRIO */}
         {departamentoNome === 'Louvor' && (
           <div className={`p-5 rounded-2xl border flex flex-col gap-3 shadow-sm ${
-            escala.status_repertorio === 'aprovado' ? 'bg-green-50 border-green-200 text-green-800' :
-            escala.status_repertorio === 'pendente' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
-            escala.status_repertorio === 'rejeitado' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-white border-gray-200 text-gray-700'
+            escala.status_repertorio === 'aprovado' ? 'bg-success-soft border-success text-success' :
+            escala.status_repertorio === 'pendente' ? 'bg-warning-soft border-warning/40 text-warning' :
+            escala.status_repertorio === 'rejeitado' ? 'bg-danger-soft border-danger text-danger' : 'bg-surface border-line text-ink-2'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {escala.status_repertorio === 'aprovado' ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : 
-                 escala.status_repertorio === 'rejeitado' ? <XCircle className="w-6 h-6 text-red-500" /> : 
-                 escala.status_repertorio === 'pendente' ? <Clock className="w-6 h-6 text-yellow-500" /> : 
-                 <ListChecks className="w-6 h-6 text-blue-500" />}
+                {escala.status_repertorio === 'aprovado' ? <CheckCircle2 className="w-6 h-6 text-success" /> : 
+                 escala.status_repertorio === 'rejeitado' ? <XCircle className="w-6 h-6 text-danger" /> : 
+                 escala.status_repertorio === 'pendente' ? <Clock className="w-6 h-6 text-warning" /> : 
+                 <ListChecks className="w-6 h-6 text-brand" />}
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Aprovação do Repertório</p>
                   <p className="text-sm font-bold">
@@ -784,15 +787,15 @@ if (papelEncontrado) {
             </div>
 
             {souConducao && (escala.status_repertorio === 'rascunho' || escala.status_repertorio === 'rejeitado') && (
-              <button onClick={pedirAprovacaoRepertorio} disabled={musicasEscala.length === 0} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-white py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.97] shadow-sm flex items-center justify-center gap-2">
+              <button onClick={pedirAprovacaoRepertorio} disabled={musicasEscala.length === 0} className="w-full bg-brand hover:opacity-90 disabled:opacity-50 text-on-brand py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.97] shadow-sm flex items-center justify-center gap-2">
                 <Send className="w-4 h-4" /> Enviar para Aprovação do Líder
               </button>
             )}
 
             {isLiderOuAdmin && escala.status_repertorio === 'pendente' && (
               <div className="flex gap-2 mt-2">
-                <button onClick={() => avaliarRepertorio(true)} className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs transition"><Check className="w-4 h-4" /> Aprovar</button>
-                <button onClick={() => avaliarRepertorio(false)} className="flex-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs transition"><X className="w-4 h-4" /> Rejeitar</button>
+                <button onClick={() => avaliarRepertorio(true)} className="flex-1 bg-success hover:bg-success text-white font-bold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs transition"><Check className="w-4 h-4" /> Aprovar</button>
+                <button onClick={() => avaliarRepertorio(false)} className="flex-1 bg-surface border border-danger text-danger hover:bg-danger-soft font-bold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs transition"><X className="w-4 h-4" /> Rejeitar</button>
               </div>
             )}
           </div>
@@ -800,9 +803,9 @@ if (papelEncontrado) {
 
         {/* ── MAPA VOCAL (Louvor) ── */}
         {departamentoNome === 'Louvor' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-blue-50 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-blue-800 flex items-center gap-2">
+          <div className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden">
+            <div className="p-4 border-b border-line bg-brand/10 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-brand flex items-center gap-2">
                 <Mic2 className="w-4 h-4" /> Mapa Vocal do Culto
               </h3>
               <button
@@ -820,7 +823,7 @@ if (papelEncontrado) {
                     a.click()
                   }
                 }}
-                className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 bg-white border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition">
+                className="flex items-center gap-1.5 text-[11px] font-bold text-brand bg-surface border border-brand/30 px-3 py-1.5 rounded-lg hover:bg-brand/10 transition">
                 <Download className="w-3.5 h-3.5" /> Template
               </button>
             </div>
@@ -830,17 +833,17 @@ if (papelEncontrado) {
                 {mapasVocais.length > 0 && (
                   <div className="space-y-2">
                     {mapasVocais.map(mapa => (
-                      <div key={mapa.id} className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      <div key={mapa.id} className="bg-success-soft border border-success rounded-xl p-3 flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-green-800 truncate">{mapa.nome_arquivo || 'Mapa vocal'}</p>
+                          <p className="text-sm font-bold text-success truncate">{mapa.nome_arquivo || 'Mapa vocal'}</p>
                         </div>
                         <a href={urlSegura(mapa.url)} target="_blank" rel="noopener noreferrer"
-                          className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 flex items-center gap-1 flex-shrink-0">
+                          className="text-xs font-bold text-brand bg-brand/10 px-3 py-1.5 rounded-lg hover:bg-brand/10 flex items-center gap-1 flex-shrink-0">
                           <Download className="w-3 h-3" /> Baixar
                         </a>
                         {(souConducao || isLiderOuAdmin) && (
-                          <button onClick={() => removerMapaVocal(mapa)} className="p-1.5 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0" title="Remover arquivo">
+                          <button onClick={() => removerMapaVocal(mapa)} className="p-1.5 text-muted hover:text-danger hover:bg-danger-soft rounded-lg transition flex-shrink-0" title="Remover arquivo" aria-label="Remover arquivo">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
@@ -851,28 +854,28 @@ if (papelEncontrado) {
 
                 {(souConducao || isLiderOuAdmin) ? (
                   <>
-                    <label htmlFor="mapa-upload" className={`w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition ${uploadingMapa ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}`}>
+                    <label htmlFor="mapa-upload" className={`w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition ${uploadingMapa ? 'border-brand/30 bg-brand/10' : 'border-line hover:border-brand/30 hover:bg-brand/10'}`}>
                       {uploadingMapa ? (
-                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <>
-                          <Upload className="w-8 h-8 text-gray-300" />
-                          <p className="text-sm font-medium text-gray-500">{mapasVocais.length > 0 ? 'Enviar mais arquivos' : 'Enviar mapa vocal preenchido'}</p>
-                          <p className="text-xs text-gray-400">PDF, Word ou imagem — pode selecionar vários</p>
+                          <Upload className="w-8 h-8 text-muted" />
+                          <p className="text-sm font-medium text-ink-2">{mapasVocais.length > 0 ? 'Enviar mais arquivos' : 'Enviar mapa vocal preenchido'}</p>
+                          <p className="text-xs text-muted">PDF, Word ou imagem — pode selecionar vários</p>
                         </>
                       )}
                     </label>
                     <input id="mapa-upload" type="file" multiple className="hidden" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*" onChange={uploadMapaVocal} disabled={uploadingMapa} />
                   </>
                 ) : mapasVocais.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-6 font-medium">Mapa vocal ainda não enviado.</p>
+                  <p className="text-sm text-muted text-center py-6 font-medium">Mapa vocal ainda não enviado.</p>
                 ) : null}
               </div>
             </div>
 
             {/* ── Dica de app ── */}
             <div className="px-4 pb-4">
-              <p className="text-xs text-gray-400 italic">
+              <p className="text-xs text-muted italic">
                 💡 No iPhone o template abre no Google Docs automaticamente — preenche lá e envia o arquivo preenchido aqui.
               </p>
             </div>
@@ -881,56 +884,56 @@ if (papelEncontrado) {
 
         {/* ── OBSERVAÇÕES (Louvor) ── */}
         {departamentoNome === 'Louvor' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-bold text-gray-700">Observações</h3>
+          <div className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden">
+            <div className="p-4 border-b border-line bg-surface-2 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-ink-2" />
+              <h3 className="text-sm font-bold text-ink-2">Observações</h3>
             </div>
             <div className="divide-y divide-gray-100">
 
               {/* Observação do Condutor */}
               <div className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  <PenLine className="w-3.5 h-3.5 text-blue-500" />
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Do Condutor — para os líderes</p>
+                  <PenLine className="w-3.5 h-3.5 text-brand" />
+                  <p className="text-xs font-bold text-ink-2 uppercase tracking-wider">Do Condutor — para os líderes</p>
                 </div>
                 {souConducao && (escala.status_repertorio === 'rascunho' || escala.status_repertorio === 'rejeitado') ? (
                   <div className="space-y-2">
                     <textarea rows={3} placeholder="Escreva aqui observações, pedidos ou contexto sobre o repertório..."
                       value={obsCondutor} onChange={e => setObsCondutor(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl p-3 text-xs text-gray-700 outline-none focus:ring-2 focus:ring-blue-400 resize-none bg-gray-50" />
+                      className="w-full border border-line rounded-xl p-3 text-xs text-ink-2 outline-none focus:ring-2 focus:ring-blue-400 resize-none bg-surface-2" />
                     <button onClick={() => salvarObservacao('obs_condutor', obsCondutor)} disabled={salvandoObs}
-                      className="text-xs font-bold bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+                      className="text-xs font-bold bg-brand text-on-brand px-4 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50">
                       Salvar
                     </button>
                   </div>
                 ) : obsCondutor ? (
-                  <p className="text-xs text-gray-600 bg-blue-50 border border-blue-100 p-3 rounded-xl leading-relaxed italic">"{obsCondutor}"</p>
+                  <p className="text-xs text-ink-2 bg-brand/10 border border-brand/30 p-3 rounded-xl leading-relaxed italic">"{obsCondutor}"</p>
                 ) : (
-                  <p className="text-xs text-gray-400 italic">Nenhuma observação do condutor.</p>
+                  <p className="text-xs text-muted italic">Nenhuma observação do condutor.</p>
                 )}
               </div>
 
               {/* Observação dos Líderes */}
               <div className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Dos Líderes — para o condutor</p>
+                  <ShieldAlert className="w-3.5 h-3.5 text-warning" />
+                  <p className="text-xs font-bold text-ink-2 uppercase tracking-wider">Dos Líderes — para o condutor</p>
                 </div>
                 {isLiderOuAdmin && escala.status_repertorio === 'pendente' ? (
                   <div className="space-y-2">
                     <textarea rows={3} placeholder="Escreva aqui o motivo da rejeição ou instruções para o condutor..."
                       value={obsLideres} onChange={e => setObsLideres(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl p-3 text-xs text-gray-700 outline-none focus:ring-2 focus:ring-amber-400 resize-none bg-gray-50" />
+                      className="w-full border border-line rounded-xl p-3 text-xs text-ink-2 outline-none focus:ring-2 focus:ring-amber-400 resize-none bg-surface-2" />
                     <button onClick={() => salvarObservacao('obs_lideres', obsLideres)} disabled={salvandoObs}
-                      className="text-xs font-bold bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition disabled:opacity-50">
+                      className="text-xs font-bold bg-warning-soft text-warning px-4 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50">
                       Salvar
                     </button>
                   </div>
                 ) : obsLideres ? (
-                  <p className="text-xs text-gray-600 bg-amber-50 border border-amber-100 p-3 rounded-xl leading-relaxed italic">"{obsLideres}"</p>
+                  <p className="text-xs text-ink-2 bg-warning-soft border border-warning/40 p-3 rounded-xl leading-relaxed italic">"{obsLideres}"</p>
                 ) : (
-                  <p className="text-xs text-gray-400 italic">Nenhuma observação dos líderes.</p>
+                  <p className="text-xs text-muted italic">Nenhuma observação dos líderes.</p>
                 )}
               </div>
 
@@ -940,16 +943,16 @@ if (papelEncontrado) {
 
         {/* MÚSICAS DO CULTO */}
         {departamentoNome === 'Louvor' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h2 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2"><Music className="w-5 h-5 text-blue-600" /> Repertório</h2>
+          <div className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden">
+            <div className="p-5 border-b border-line flex justify-between items-center bg-surface-2">
+              <h2 className="text-sm font-bold text-ink uppercase flex items-center gap-2"><Music className="w-5 h-5 text-brand" /> Repertório</h2>
               <div className="flex gap-2">
                 {(isLiderOuAdmin || souConducao) && musicasEscala.length > 0 && (
-                  <button onClick={avisarEquipaWhatsApp} className={`px-3 py-1.5 rounded-lg transition active:scale-[0.97] flex items-center gap-1.5 text-xs font-bold shadow-sm ${escala.status_repertorio === 'aprovado' ? 'bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 cursor-pointer' : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60'}`}>
+                  <button onClick={avisarEquipaWhatsApp} className={`px-3 py-1.5 rounded-lg transition active:scale-[0.97] flex items-center gap-1.5 text-xs font-bold shadow-sm ${escala.status_repertorio === 'aprovado' ? 'bg-success-soft text-success border border-success hover:bg-success-soft cursor-pointer' : 'bg-surface-2 text-muted border border-line cursor-not-allowed opacity-60'}`}>
                     <MessageCircle className="w-4 h-4" /> WhatsApp
                   </button>
                 )}
-                {(isLiderOuAdmin || souConducao) && <button onClick={() => setModalMusicaAberto(true)} className="bg-blue-600 text-white p-1.5 rounded-lg hover:bg-blue-700 transition shadow-sm"><Plus className="w-5 h-5" /></button>}
+                {(isLiderOuAdmin || souConducao) && <button onClick={() => setModalMusicaAberto(true)} aria-label="Adicionar música" className="bg-brand text-on-brand p-1.5 rounded-lg hover:opacity-90 transition shadow-sm"><Plus className="w-5 h-5" /></button>}
               </div>
             </div>
             <div className="p-2">
@@ -957,37 +960,37 @@ if (papelEncontrado) {
                   Condutor e líderes/admins sempre veem, pois estão trabalhando nele. */}
               {!(isLiderOuAdmin || souConducao) && escala.status_repertorio !== 'aprovado' ? (
                 <div className="p-5 text-center">
-                  <Clock className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400 font-medium">Repertório em preparação</p>
-                  <p className="text-xs text-gray-300 mt-1">Assim que a liderança aprovar, as músicas aparecem aqui.</p>
+                  <Clock className="w-8 h-8 text-line mx-auto mb-2" />
+                  <p className="text-sm text-muted font-medium">Repertório em preparação</p>
+                  <p className="text-xs text-muted mt-1">Assim que a liderança aprovar, as músicas aparecem aqui.</p>
                 </div>
-              ) : musicasEscala.length === 0 ? <p className="text-sm text-gray-400 text-center py-6 font-medium">Nenhuma música definida.</p> : (
+              ) : musicasEscala.length === 0 ? <p className="text-sm text-muted text-center py-6 font-medium">Nenhuma música definida.</p> : (
                 <div className="divide-y divide-gray-50">
                   {musicasEscala.map((relacao, index) => {
                     const mus = relacao.songs; if (!mus) return null; const tomExibido = relacao.tom || mus.tom || '?';
                     return (
-                      <div key={relacao.id} className="p-3 flex items-center justify-between hover:bg-gray-50 rounded-xl transition">
+                      <div key={relacao.id} className="p-3 flex items-center justify-between hover:bg-surface-2 rounded-xl transition">
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col items-center shrink-0 w-8">
-                            {podeGerirMusicas && index > 0 && <button onClick={() => alterarOrdemMusica(index, 'up')} className="text-gray-300 hover:text-blue-600 transition p-1"><ChevronUp className="w-4 h-4" /></button>}
-                            <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-bold">{index + 1}</div>
-                            {podeGerirMusicas && index < musicasEscala.length - 1 && <button onClick={() => alterarOrdemMusica(index, 'down')} className="text-gray-300 hover:text-blue-600 transition p-1"><ChevronDown className="w-4 h-4" /></button>}
+                            {podeGerirMusicas && index > 0 && <button onClick={() => alterarOrdemMusica(index, 'up')} className="text-muted hover:text-brand transition p-1"><ChevronUp className="w-4 h-4" /></button>}
+                            <div className="w-6 h-6 rounded-full bg-brand/10 text-brand flex items-center justify-center text-[10px] font-bold">{index + 1}</div>
+                            {podeGerirMusicas && index < musicasEscala.length - 1 && <button onClick={() => alterarOrdemMusica(index, 'down')} className="text-muted hover:text-brand transition p-1"><ChevronDown className="w-4 h-4" /></button>}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-bold text-gray-900 text-sm">{mus.titulo}</p>
-                              {mus.categoria && <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${mus.categoria.toLowerCase() === 'celebração' ? 'bg-orange-100 text-orange-700' : mus.categoria.toLowerCase() === 'adoração' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>{mus.categoria}</span>}
+                              <p className="font-bold text-ink text-sm">{mus.titulo}</p>
+                              {mus.categoria && <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${mus.categoria.toLowerCase() === 'celebração' ? 'bg-warning-soft text-warning' : mus.categoria.toLowerCase() === 'adoração' ? 'bg-brand/10 text-brand' : 'bg-surface-2 text-ink-2'}`}>{mus.categoria}</span>}
                             </div>
                             <div className="flex gap-2 mt-1 items-center">
-                              <span onClick={() => podeGerirMusicas ? abrirModalTom(relacao.id) : null} className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase flex items-center gap-1 transition ${podeGerirMusicas ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 cursor-pointer' : 'bg-gray-100 text-gray-600'}`}>Tom: {tomExibido} {podeGerirMusicas && <Edit2 className="w-2.5 h-2.5 opacity-60" />}</span>
-                              {mus.artista && <span className="text-[10px] text-gray-500">{mus.artista}</span>}
+                              <span onClick={() => podeGerirMusicas ? abrirModalTom(relacao.id) : null} className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase flex items-center gap-1 transition ${podeGerirMusicas ? 'bg-brand/10 text-brand border border-brand/30 hover:bg-brand/10 cursor-pointer' : 'bg-surface-2 text-ink-2'}`}>Tom: {tomExibido} {podeGerirMusicas && <Edit2 className="w-2.5 h-2.5 opacity-60" />}</span>
+                              {mus.artista && <span className="text-[10px] text-ink-2">{mus.artista}</span>}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {mus.link_cifra && <a href={urlSegura(mus.link_cifra)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 bg-blue-50 p-1.5 rounded-md"><FileText className="w-4 h-4" /></a>}
-                          {mus.link_youtube && <a href={urlSegura(mus.link_youtube)} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-600 bg-red-50 p-1.5 rounded-md"><PlayCircle className="w-4 h-4" /></a>}
-                          {podeGerirMusicas && <button onClick={() => removerMusicaDaEscala(relacao.id)} className="text-gray-300 hover:text-red-500 p-1.5"><Trash2 className="w-4 h-4" /></button>}
+                          {mus.link_cifra && <a href={urlSegura(mus.link_cifra)} target="_blank" rel="noopener noreferrer" className="text-brand hover:text-brand bg-brand/10 p-1.5 rounded-md"><FileText className="w-4 h-4" /></a>}
+                          {mus.link_youtube && <a href={urlSegura(mus.link_youtube)} target="_blank" rel="noopener noreferrer" className="text-danger hover:text-danger bg-danger-soft p-1.5 rounded-md"><PlayCircle className="w-4 h-4" /></a>}
+                          {podeGerirMusicas && <button onClick={() => removerMusicaDaEscala(relacao.id)} aria-label={`Remover ${relacao.songs?.titulo || 'música'}`} className="text-muted hover:text-danger p-1.5"><Trash2 className="w-4 h-4" /></button>}
                         </div>
                       </div>
                     )
@@ -1000,16 +1003,16 @@ if (papelEncontrado) {
 
         {/* ── REPERTÓRIO DO LOUVOR (visível para Mídia) ── */}
         {(departamentoNome === 'Mídia' || departamentoNome === 'Midia') && (
-          <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
-            <div className="p-4 border-b border-purple-100 bg-purple-50 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-purple-800 flex items-center gap-2">
+          <div className="bg-surface rounded-2xl shadow-sm border border-brand/30 overflow-hidden">
+            <div className="p-4 border-b border-brand/30 bg-brand/10 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-brand flex items-center gap-2">
                 🎵 Repertório do Louvor
               </h3>
               {statusRepLouvor && (
                 <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                  statusRepLouvor === 'aprovado' ? 'bg-green-100 text-green-700' :
-                  statusRepLouvor === 'pendente' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-gray-100 text-gray-500'
+                  statusRepLouvor === 'aprovado' ? 'bg-success-soft text-success' :
+                  statusRepLouvor === 'pendente' ? 'bg-warning-soft text-warning' :
+                  'bg-surface-2 text-ink-2'
                 }`}>
                   {statusRepLouvor === 'aprovado' ? '✓ Aprovado' : statusRepLouvor === 'pendente' ? '⏳ Aguardando' : 'Rascunho'}
                 </span>
@@ -1017,24 +1020,24 @@ if (papelEncontrado) {
             </div>
             {statusRepLouvor !== 'aprovado' ? (
               <div className="p-5 text-center">
-                <p className="text-sm text-gray-400 font-medium">Repertório em preparação</p>
-                <p className="text-xs text-gray-300 mt-1">Assim que a liderança do Louvor aprovar, as músicas aparecem aqui.</p>
+                <p className="text-sm text-muted font-medium">Repertório em preparação</p>
+                <p className="text-xs text-muted mt-1">Assim que a liderança do Louvor aprovar, as músicas aparecem aqui.</p>
               </div>
             ) : repertorioLouvor.length === 0 ? (
               <div className="p-5 text-center">
-                <p className="text-sm text-gray-400 font-medium">Repertório ainda não definido.</p>
-                <p className="text-xs text-gray-300 mt-1">O Louvor ainda não adicionou músicas para este dia.</p>
+                <p className="text-sm text-muted font-medium">Repertório ainda não definido.</p>
+                <p className="text-xs text-muted mt-1">O Louvor ainda não adicionou músicas para este dia.</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
                 {repertorioLouvor.map((item, idx) => (
                   <div key={idx} className="px-4 py-3 flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                    <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                       {idx + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{item.songs?.titulo}</p>
-                      {item.songs?.artista && <p className="text-xs text-gray-400 truncate">{item.songs.artista}</p>}
+                      <p className="text-sm font-bold text-ink truncate">{item.songs?.titulo}</p>
+                      {item.songs?.artista && <p className="text-xs text-muted truncate">{item.songs.artista}</p>}
                     </div>
                   </div>
                 ))}
@@ -1045,52 +1048,52 @@ if (papelEncontrado) {
 
         {/* ── CHECKLIST DA CABINE (Mídia) ── */}
         {(departamentoNome === 'Mídia' || departamentoNome === 'Midia') && (
-          <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
-            <div className="p-4 border-b border-purple-100 bg-purple-50 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-purple-800 flex items-center gap-2">
+          <div className="bg-surface rounded-2xl shadow-sm border border-brand/30 overflow-hidden">
+            <div className="p-4 border-b border-brand/30 bg-brand/10 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-brand flex items-center gap-2">
                 <ListChecks className="w-4 h-4" /> Checklist da Cabine
               </h3>
               {checklistEscala ? (
-                <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span className="text-[10px] font-bold bg-success-soft text-success px-2.5 py-1 rounded-full flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" /> Preenchido
                 </span>
               ) : (
-                <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">Pendente</span>
+                <span className="text-[10px] font-bold bg-warning-soft text-warning px-2.5 py-1 rounded-full">Pendente</span>
               )}
             </div>
 
             {checklistEscala ? (
               /* ── Checklist já preenchido — leitura ── */
               <div className="p-4 space-y-3">
-                <div className="flex gap-4 text-xs text-gray-500">
-                  <span>Operador: <strong className="text-gray-800">{checklistEscala.nome_responsavel}</strong></span>
+                <div className="flex gap-4 text-xs text-ink-2">
+                  <span>Operador: <strong className="text-ink">{checklistEscala.nome_responsavel}</strong></span>
                   <span>{new Date(checklistEscala.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <div className="grid grid-cols-1 gap-1.5">
                   {ITENS_CHECKLIST.map(item => (
-                    <div key={item.key} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${checklistEscala[item.key] ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                    <div key={item.key} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${checklistEscala[item.key] ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger'}`}>
                       <span className="w-4 text-center">{checklistEscala[item.key] ? '✓' : '✗'}</span>
                       {item.label}
                     </div>
                   ))}
                 </div>
                 {checklistEscala.relato_problema && (
-                  <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">Relato de Problema</p>
-                    <p className="text-xs text-gray-700">{checklistEscala.relato_problema}</p>
+                  <div className="bg-warning-soft border border-warning/40 p-3 rounded-xl">
+                    <p className="text-[10px] font-bold text-warning uppercase tracking-wider mb-1">Relato de Problema</p>
+                    <p className="text-xs text-ink-2">{checklistEscala.relato_problema}</p>
                   </div>
                 )}
               </div>
             ) : (meuPapel || isLiderOuAdmin) ? (
               /* ── Formulário — disponível para quem está escalado, líderes e admins ── */
               <div className="p-4 space-y-3">
-                <p className="text-xs text-gray-500">Preencha após o culto. Ao finalizar, todos os escalados ficam cientes.</p>
+                <p className="text-xs text-ink-2">Preencha após o culto. Ao finalizar, todos os escalados ficam cientes.</p>
 
                 <div className="space-y-2">
                   {ITENS_CHECKLIST.map(item => (
-                    <label key={item.key} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${checklistForm[item.key] ? 'bg-green-50 border-green-400 text-green-800' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    <label key={item.key} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${checklistForm[item.key] ? 'bg-success-soft border-success text-success' : 'bg-surface-2 border-line text-ink-2 hover:border-line'}`}>
                       <input type="checkbox" className="hidden" checked={checklistForm[item.key]} onChange={() => setChecklistForm(prev => ({ ...prev, [item.key]: !prev[item.key] }))} />
-                      <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-white text-xs font-bold transition ${checklistForm[item.key] ? 'bg-green-500' : 'bg-gray-200'}`}>
+                      <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-white text-xs font-bold transition ${checklistForm[item.key] ? 'bg-success' : 'bg-line'}`}>
                         {checklistForm[item.key] ? '✓' : ''}
                       </div>
                       <span className="text-xs font-medium">{item.label}</span>
@@ -1099,23 +1102,23 @@ if (papelEncontrado) {
                 </div>
 
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Relato de Problemas (opcional)</p>
+                  <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">Relato de Problemas (opcional)</p>
                   <textarea rows={3}
                     placeholder="Som, vídeo, energia, internet..."
                     value={checklistForm.relato_problema}
                     onChange={e => setChecklistForm(prev => ({ ...prev, relato_problema: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-purple-400 resize-none bg-gray-50"
+                    className="w-full border border-line rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-purple-400 resize-none bg-surface-2"
                   />
                 </div>
 
                 <button onClick={salvarChecklistEscala} disabled={salvandoChecklist}
-                  className="w-full py-3.5 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 transition active:scale-[0.97] disabled:opacity-50">
+                  className="w-full py-3.5 rounded-xl font-bold text-on-brand bg-brand hover:opacity-90 transition active:scale-[0.97] disabled:opacity-50">
                   {salvandoChecklist ? 'Registrando...' : '✓ Finalizar Checklist'}
                 </button>
               </div>
             ) : (
               /* ── Não escalado — só vê o status ── */
-              <div className="p-4 text-center text-gray-400">
+              <div className="p-4 text-center text-muted">
                 <p className="text-sm font-medium">Checklist ainda não preenchido.</p>
                 <p className="text-xs mt-1">Disponível para membros escalados e liderança.</p>
               </div>
@@ -1125,14 +1128,14 @@ if (papelEncontrado) {
 
         {/* ── AVISO FIXO — INFANTIL ── */}
         {departamentoNome === 'Infantil' && (
-          <div className="rounded-2xl overflow-hidden border-2 border-pink-200 shadow-sm">
-            <div className="bg-pink-500 px-4 py-3 flex items-center gap-2">
+          <div className="rounded-2xl overflow-hidden border-2 border-accent/40 shadow-sm">
+            <div className="bg-accent px-4 py-3 flex items-center gap-2">
               <span className="text-lg">⚠️</span>
               <p className="text-sm font-bold text-white uppercase tracking-wide">
                 Atenção — Escalados do Infantil Hoje
               </p>
             </div>
-            <div className="bg-pink-50 px-4 py-4 space-y-3">
+            <div className="bg-accent/10 px-4 py-4 space-y-3">
               {[
                 { n: '1️⃣', t: 'Chegar com até 40 min de antecedência', d: 'Para preparar o ambiente com oração e organizar a sala antes de receber as crianças.' },
                 { n: '2️⃣', t: 'Oração em grupo', d: 'Realizar uma oração com todos os escalados antes do início das aulas.' },
@@ -1141,18 +1144,18 @@ if (papelEncontrado) {
                 <div key={item.n} className="flex gap-3">
                   <span className="text-base flex-shrink-0 mt-0.5">{item.n}</span>
                   <div>
-                    <p className="text-sm font-bold text-pink-900">{item.t}</p>
-                    <p className="text-xs text-pink-700 leading-relaxed mt-0.5">{item.d}</p>
+                    <p className="text-sm font-bold text-accent">{item.t}</p>
+                    <p className="text-xs text-accent leading-relaxed mt-0.5">{item.d}</p>
                   </div>
                 </div>
               ))}
-              <div className="border-t border-pink-200 pt-3 flex items-start gap-2">
+              <div className="border-t border-accent/40 pt-3 flex items-start gap-2">
                 <span className="text-sm flex-shrink-0">👉</span>
-                <p className="text-xs font-bold text-pink-800">
+                <p className="text-xs font-bold text-accent">
                   Todos os escalados devem se unir para a organização e limpeza do ambiente.
                 </p>
               </div>
-              <p className="text-xs text-pink-600 text-center font-medium pt-1">
+              <p className="text-xs text-accent text-center font-medium pt-1">
                 Ficamos felizes em ter vocês servindo ao Senhor com alegria! 🥳🙌
               </p>
             </div>
@@ -1160,12 +1163,12 @@ if (papelEncontrado) {
         )}
 
                         {/* EQUIPA ESCALADA */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-5 border-b border-gray-100 bg-gray-50">
-            <h2 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2"><UserPlus className={`w-5 h-5 ${theme.textPrimary}`} /> Equipe Escalada ({escala.schedule_roles.length})</h2>
+        <div className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden">
+          <div className="p-5 border-b border-line bg-surface-2">
+            <h2 className="text-sm font-bold text-ink uppercase flex items-center gap-2"><UserPlus className={`w-5 h-5 text-brand`} /> Equipe Escalada ({escala.schedule_roles.length})</h2>
           </div>
           <div className="p-2">
-            {escala.schedule_roles.length === 0 ? <p className="text-sm text-gray-400 text-center py-6 font-medium">Ninguém escalado ainda.</p> : (
+            {escala.schedule_roles.length === 0 ? <p className="text-sm text-muted text-center py-6 font-medium">Ninguém escalado ainda.</p> : (
               <div className="divide-y divide-gray-50">
                 {[...escala.schedule_roles].sort((a, b) => {
                   // ✅ Ordena pela posição em funcoesOrdenadas para manter sequência padrão
@@ -1185,15 +1188,15 @@ if (papelEncontrado) {
                 }).map((papel) => {
                   const temTrocaPendente = pedidosTroca.some(p => p.role_id === papel.id)
                   return (
-                    <div key={papel.id} className="p-3 flex items-center justify-between hover:bg-gray-50 rounded-xl transition">
+                    <div key={papel.id} className="p-3 flex items-center justify-between hover:bg-surface-2 rounded-xl transition">
                       <div className="flex flex-col">
-                        <span className="font-bold text-gray-900">{papel.users_profile?.nome || 'Membro Excluído'}</span>
-                        <span className={`text-[11px] font-bold uppercase tracking-wider ${theme.textPrimary}`}>{papel.funcao}</span>
+                        <span className="font-bold text-ink">{papel.users_profile?.nome || 'Membro Excluído'}</span>
+                        <span className={`text-[11px] font-bold uppercase tracking-wider text-brand`}>{papel.funcao}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        {papel.user_id === meuId && !temTrocaPendente && <button onClick={() => abrirModalSubstituicao(papel)} className="flex items-center gap-1 bg-yellow-50 text-yellow-700 border border-yellow-200 px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-yellow-100 transition shadow-sm"><RefreshCw className="w-3.5 h-3.5" /> Trocar</button>}
-                        {papel.user_id === meuId && temTrocaPendente && <span className="flex items-center gap-1 bg-gray-100 text-gray-500 border border-gray-200 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase"><Clock className="w-3 h-3" /> Em análise</span>}
-                        {isLiderOuAdmin && <button onClick={() => removerPessoa(papel.id, papel.users_profile?.nome, papel.user_id)} className="text-gray-300 hover:text-red-500 transition p-1"><Trash2 className="w-4 h-4" /></button>}
+                        {papel.user_id === meuId && !temTrocaPendente && <button onClick={() => abrirModalSubstituicao(papel)} className="flex items-center gap-1 bg-warning-soft text-warning border border-warning/40 px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-warning-soft transition shadow-sm"><RefreshCw className="w-3.5 h-3.5" /> Trocar</button>}
+                        {papel.user_id === meuId && temTrocaPendente && <span className="flex items-center gap-1 bg-surface-2 text-ink-2 border border-line px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase"><Clock className="w-3 h-3" /> Em análise</span>}
+                        {isLiderOuAdmin && <button onClick={() => removerPessoa(papel.id, papel.users_profile?.nome, papel.user_id)} aria-label={`Remover ${papel.users_profile?.nome || 'membro'} da escala`} className="text-muted hover:text-danger transition p-1"><Trash2 className="w-4 h-4" /></button>}
                       </div>
                     </div>
                   )
@@ -1205,16 +1208,16 @@ if (papelEncontrado) {
 
         {/* ÁREA EXCLUSIVA DO LÍDER: PEDIDOS DE TROCA PENDENTES */}
         {isLiderOuAdmin && pedidosTroca.length > 0 && (
-          <div className="bg-yellow-50 p-5 rounded-2xl shadow-sm border border-yellow-200 space-y-3">
-            <h2 className="text-sm font-bold text-yellow-800 uppercase flex items-center gap-2"><RefreshCw className="w-4 h-4 text-yellow-600" /> Aprovar Trocas ({pedidosTroca.length})</h2>
+          <div className="bg-warning-soft p-5 rounded-2xl shadow-sm border border-warning/40 space-y-3">
+            <h2 className="text-sm font-bold text-warning uppercase flex items-center gap-2"><RefreshCw className="w-4 h-4 text-warning" /> Aprovar Trocas ({pedidosTroca.length})</h2>
             <div className="space-y-2">
               {pedidosTroca.map(pedido => (
-                <div key={pedido.id} className="bg-white p-3 rounded-xl border border-yellow-100 shadow-sm">
-                  <p className="text-xs text-gray-600 mb-2"><strong className="text-gray-900">{pedido.requester_nome}</strong> quer repassar a função de <strong className="text-gray-900">{pedido.funcoes_alvo || "todas as suas funções"}</strong> para <strong className="text-gray-900">{pedido.substitute_nome}</strong>.</p>
-                  {pedido.motivo && <div className="mb-3 bg-gray-50 p-2.5 rounded-lg border border-gray-200"><p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Motivo:</p><p className="text-xs text-gray-800 italic">"{pedido.motivo}"</p></div>}
+                <div key={pedido.id} className="bg-surface p-3 rounded-xl border border-warning/40 shadow-sm">
+                  <p className="text-xs text-ink-2 mb-2"><strong className="text-ink">{pedido.requester_nome}</strong> quer repassar a função de <strong className="text-ink">{pedido.funcoes_alvo || "todas as suas funções"}</strong> para <strong className="text-ink">{pedido.substitute_nome}</strong>.</p>
+                  {pedido.motivo && <div className="mb-3 bg-surface-2 p-2.5 rounded-lg border border-line"><p className="text-[10px] text-ink-2 font-bold uppercase tracking-wider mb-0.5">Motivo:</p><p className="text-xs text-ink italic">"{pedido.motivo}"</p></div>}
                   <div className="flex gap-2">
-                    <button onClick={() => avaliarTroca(pedido, true)} className="flex-1 flex items-center justify-center gap-1.5 bg-green-500 text-white font-bold py-2 rounded-lg text-xs hover:bg-green-600 shadow-sm"><Check className="w-4 h-4" /> Aprovar</button>
-                    <button onClick={() => avaliarTroca(pedido, false)} className="flex-1 flex items-center justify-center gap-1.5 bg-red-50 text-red-600 font-bold py-2 rounded-lg text-xs border border-red-100 hover:bg-red-100 shadow-sm"><X className="w-4 h-4" /> Rejeitar</button>
+                    <button onClick={() => avaliarTroca(pedido, true)} className="flex-1 flex items-center justify-center gap-1.5 bg-success text-white font-bold py-2 rounded-lg text-xs hover:bg-success shadow-sm"><Check className="w-4 h-4" /> Aprovar</button>
+                    <button onClick={() => avaliarTroca(pedido, false)} className="flex-1 flex items-center justify-center gap-1.5 bg-danger-soft text-danger font-bold py-2 rounded-lg text-xs border border-danger hover:bg-danger-soft shadow-sm"><X className="w-4 h-4" /> Rejeitar</button>
                   </div>
                 </div>
               ))}
@@ -1224,23 +1227,23 @@ if (papelEncontrado) {
 
         {/* AÇÕES DO LÍDER */}
         {isLiderOuAdmin && (
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-            <h2 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2 mb-2"><ShieldAlert className="w-4 h-4 text-blue-600" /> Ações do Líder</h2>
-            <form onSubmit={adicionarPessoaManual} className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <label className="block text-xs font-bold text-gray-500 mb-2">Adicionar membro manualmente:</label>
+          <div className="bg-surface p-5 rounded-2xl shadow-sm border border-line space-y-4">
+            <h2 className="text-sm font-bold text-ink uppercase flex items-center gap-2 mb-2"><ShieldAlert className="w-4 h-4 text-brand" /> Ações do Líder</h2>
+            <form onSubmit={adicionarPessoaManual} className="bg-surface-2 p-4 rounded-xl border border-line">
+              <label className="block text-xs font-bold text-ink-2 mb-2">Adicionar membro manualmente:</label>
               <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                <select value={novoMembroId} onChange={(e) => setNovoMembroId(e.target.value)} required className="flex-1 text-sm border border-gray-300 rounded-lg p-2.5 outline-none bg-white font-medium">
+                <select value={novoMembroId} onChange={(e) => setNovoMembroId(e.target.value)} required className="flex-1 text-sm border border-line rounded-lg p-2.5 outline-none bg-surface font-medium">
                   <option value="">Selecione o membro...</option>
                   {membrosEquipa.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
                 </select>
-                <button type="submit" disabled={!novoMembroId || novasFuncoes.length === 0} className={`px-6 rounded-lg text-white font-bold transition active:scale-[0.97] flex items-center justify-center py-3 sm:py-0 shadow-sm disabled:opacity-50 ${theme.bgPrimary} ${theme.btnHover}`}><UserPlus className="w-5 h-5 mr-2" /> Adicionar</button>
+                <button type="submit" disabled={!novoMembroId || novasFuncoes.length === 0} className={`px-6 rounded-lg text-on-brand font-bold transition active:scale-[0.97] flex items-center justify-center py-3 sm:py-0 shadow-sm disabled:opacity-50 bg-brand hover:opacity-90`}><UserPlus className="w-5 h-5 mr-2" /> Adicionar</button>
               </div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Selecione as funções:</label>
+              <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Selecione as funções:</label>
               <div className="flex flex-wrap gap-2">
                 {opcoesFuncao.map(f => {
                   const isSelecionado = novasFuncoes.includes(f)
                   return (
-                    <label key={f} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold cursor-pointer transition select-none shadow-sm ${isSelecionado ? `${theme.bgLight} ${theme.border} ${theme.textPrimary}` : `bg-white border-gray-200 text-gray-500 hover:bg-gray-50`}`}>
+                    <label key={f} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold cursor-pointer transition select-none shadow-sm ${isSelecionado ? `bg-brand/10 border-brand text-brand` : `bg-surface border-line text-ink-2 hover:bg-surface-2`}`}>
                       <input type="checkbox" className="hidden" checked={isSelecionado} onChange={() => toggleNovaFuncao(f)} />
                       {isSelecionado && <CheckCircle2 className="w-3.5 h-3.5" />} {f}
                     </label>
@@ -1249,8 +1252,8 @@ if (papelEncontrado) {
               </div>
             </form>
             <div className="flex gap-2 pt-2">
-              {isRascunho && <button onClick={publicarEscala} className={`flex-1 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition active:scale-[0.97] ${theme.bgPrimary} ${theme.btnHover}`}><Send className="w-5 h-5" /> Publicar</button>}
-              <button onClick={apagarEscalaCompleta} className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 font-bold py-3 rounded-xl transition active:scale-[0.97] flex justify-center items-center gap-2 border border-red-100"><Trash2 className="w-5 h-5" /> Apagar</button>
+              {isRascunho && <button onClick={publicarEscala} className={`flex-1 text-on-brand font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition active:scale-[0.97] bg-brand hover:opacity-90`}><Send className="w-5 h-5" /> Publicar</button>}
+              <button onClick={apagarEscalaCompleta} className="flex-1 bg-danger-soft text-danger hover:bg-danger-soft hover:text-danger font-bold py-3 rounded-xl transition active:scale-[0.97] flex justify-center items-center gap-2 border border-danger"><Trash2 className="w-5 h-5" /> Apagar</button>
             </div>
           </div>
         )}
@@ -1260,40 +1263,40 @@ if (papelEncontrado) {
       {/* MODAL TROCA */}
       {modalTrocaAberto && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in zoom-in-95">
-            <div className="flex justify-between items-center mb-5 border-b border-gray-100 pb-3">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><RefreshCw className="w-5 h-5 text-yellow-600" /> Solicitar Troca</h2>
-              <button onClick={() => setModalTrocaAberto(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition"><XCircle className="w-6 h-6" /></button>
+          <div className="bg-surface w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center mb-5 border-b border-line pb-3">
+              <h2 className="text-lg font-bold text-ink flex items-center gap-2"><RefreshCw className="w-5 h-5 text-warning" /> Solicitar Troca</h2>
+              <button onClick={() => setModalTrocaAberto(false)} className="text-muted hover:bg-surface-2 p-2 rounded-full transition"><XCircle className="w-6 h-6" /></button>
             </div>
             <form onSubmit={enviarPedidoTroca} className="space-y-4">
               {papelParaTrocar && (papelParaTrocar.funcao.includes('+') || papelParaTrocar.funcao.includes('/')) && (
-                <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
-                  <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Quais funções deseja trocar?</label>
+                <div className="bg-surface-2 p-3 rounded-xl border border-line">
+                  <label className="block text-xs font-bold text-ink-2 mb-2 uppercase tracking-wider">Quais funções deseja trocar?</label>
                   <div className="flex flex-col gap-2">
                     {papelParaTrocar.funcao.split(/[+/]/).map(f => f.trim()).filter(Boolean).map(funcao => (
-                      <label key={funcao} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100 p-1.5 rounded-lg transition">
-                        <input type="checkbox" checked={funcoesSelecionadasTroca.includes(funcao)} onChange={() => toggleFuncaoTroca(funcao)} className="w-4 h-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500" /> {funcao}
+                      <label key={funcao} className="flex items-center gap-2 text-sm text-ink-2 cursor-pointer hover:bg-surface-2 p-1.5 rounded-lg transition">
+                        <input type="checkbox" checked={funcoesSelecionadasTroca.includes(funcao)} onChange={() => toggleFuncaoTroca(funcao)} className="w-4 h-4 rounded border-line text-warning focus:ring-yellow-500" /> {funcao}
                       </label>
                     ))}
                   </div>
                 </div>
               )}
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-2">Quem você conversou e aceitou ficar no seu lugar?</label>
-                <select required value={substitutoId} onChange={(e) => setSubstitutoId(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-yellow-500 outline-none bg-gray-50">
+                <label className="block text-xs font-bold text-ink-2 mb-2">Quem você conversou e aceitou ficar no seu lugar?</label>
+                <select required value={substitutoId} onChange={(e) => setSubstitutoId(e.target.value)} className="w-full border border-line rounded-xl p-3 text-sm focus:ring-2 focus:ring-yellow-500 outline-none bg-surface-2">
                   <option value="">Selecione o membro...</option>
                   {membrosEquipa.filter(m => m.id !== meuId).map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-2">Motivo da Substituição *</label>
-                <textarea required rows="2" placeholder="Explique o motivo (Ex: Viagem, saúde...)" value={motivoTroca} onChange={(e) => setMotivoTroca(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-yellow-500 resize-none" />
+                <label className="block text-xs font-bold text-ink-2 mb-2">Motivo da Substituição *</label>
+                <textarea required rows="2" placeholder="Explique o motivo (Ex: Viagem, saúde...)" value={motivoTroca} onChange={(e) => setMotivoTroca(e.target.value)} className="w-full border border-line rounded-xl p-3 text-sm outline-none bg-surface-2 focus:ring-2 focus:ring-yellow-500 resize-none" />
               </div>
-              <div className="bg-yellow-50 border border-yellow-100 p-3 rounded-xl flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-yellow-700 font-medium">O líder do departamento vai receber este pedido.</p>
+              <div className="bg-warning-soft border border-warning/40 p-3 rounded-xl flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <p className="text-[10px] text-warning font-medium">O líder do departamento vai receber este pedido.</p>
               </div>
-              <button type="submit" disabled={!substitutoId || loading || funcoesSelecionadasTroca.length === 0} className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3.5 rounded-xl transition active:scale-[0.97] shadow-md flex items-center justify-center gap-2 disabled:opacity-50">
+              <button type="submit" disabled={!substitutoId || loading || funcoesSelecionadasTroca.length === 0} className="w-full bg-brand hover:opacity-90 text-on-brand font-bold py-3.5 rounded-xl transition active:scale-[0.97] shadow-md flex items-center justify-center gap-2 disabled:opacity-50">
                 {loading ? 'Enviando...' : 'Enviar Solicitação de Troca'}
               </button>
             </form>
@@ -1304,35 +1307,35 @@ if (papelEncontrado) {
       {/* MODAL ADICIONAR MÚSICA */}
       {modalMusicaAberto && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-[8vh] overflow-hidden">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-xl animate-in zoom-in-95 flex flex-col" style={{ maxHeight: '70dvh' }}>
+          <div className="bg-surface w-full max-w-md rounded-3xl p-6 shadow-xl animate-in zoom-in-95 flex flex-col" style={{ maxHeight: '70dvh' }}>
             <div className="flex justify-between items-center mb-4 shrink-0">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Music className="w-5 h-5 text-blue-600" /> Adicionar Música</h2>
-              <button onClick={() => setModalMusicaAberto(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full"><XCircle className="w-6 h-6" /></button>
+              <h2 className="text-lg font-bold text-ink flex items-center gap-2"><Music className="w-5 h-5 text-brand" /> Adicionar Música</h2>
+              <button onClick={() => setModalMusicaAberto(false)} className="text-muted hover:bg-surface-2 p-2 rounded-full"><XCircle className="w-6 h-6" /></button>
             </div>
             <div className="mb-4 space-y-3 shrink-0">
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Buscar por título ou artista..." value={buscaMusica} onChange={(e) => setBuscaMusica(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition bg-gray-50" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input type="text" placeholder="Buscar por título ou artista..." value={buscaMusica} onChange={(e) => setBuscaMusica(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:border-brand transition bg-surface-2" />
               </div>
               <div className="flex gap-2">
                 {['Todas', 'Celebração', 'Adoração'].map(cat => (
-                  <button key={cat} onClick={() => setFiltroCategoria(cat)} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition border shadow-sm ${filtroCategoria === cat ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>{cat}</button>
+                  <button key={cat} onClick={() => setFiltroCategoria(cat)} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition border shadow-sm ${filtroCategoria === cat ? 'bg-brand text-on-brand border-brand' : 'bg-surface text-ink-2 border-line hover:bg-surface-2'}`}>{cat}</button>
                 ))}
               </div>
             </div>
-            {repertorio.length === 0 ? <p className="text-sm text-gray-500 text-center py-6">O repertório está vazio.</p> : repertorioFiltrado.length === 0 ? <p className="text-sm text-gray-500 text-center py-6">Nenhuma música encontrada.</p> : (
+            {repertorio.length === 0 ? <p className="text-sm text-ink-2 text-center py-6">O repertório está vazio.</p> : repertorioFiltrado.length === 0 ? <p className="text-sm text-ink-2 text-center py-6">Nenhuma música encontrada.</p> : (
               <div className="overflow-y-auto space-y-2 pr-2 flex-1 pb-2" style={{ minHeight: '120px', WebkitOverflowScrolling: 'touch' }}>
                 {repertorioFiltrado.map(mus => {
                   const jaAdicionada = musicasEscala.some(m => m.songs?.id === mus.id)
                   return (
-                    <div key={mus.id} className="flex justify-between items-center p-3 border border-gray-100 rounded-xl hover:bg-gray-50">
+                    <div key={mus.id} className="flex justify-between items-center p-3 border border-line rounded-xl hover:bg-surface-2">
                       <div>
-                        <p className="font-bold text-sm text-gray-800 flex items-center gap-2">
-                          {mus.titulo} {mus.categoria && <span className={`text-[8px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold ${mus.categoria.toLowerCase() === 'celebração' ? 'bg-orange-100 text-orange-700' : mus.categoria.toLowerCase() === 'adoração' ? 'bg-purple-100 text-purple-700' : 'hidden'}`}>{mus.categoria}</span>}
+                        <p className="font-bold text-sm text-ink flex items-center gap-2">
+                          {mus.titulo} {mus.categoria && <span className={`text-[8px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold ${mus.categoria.toLowerCase() === 'celebração' ? 'bg-warning-soft text-warning' : mus.categoria.toLowerCase() === 'adoração' ? 'bg-brand/10 text-brand' : 'hidden'}`}>{mus.categoria}</span>}
                         </p>
-                        <p className="text-[10px] text-gray-500">{mus.artista || 'Sem artista'} • Tom Base: {mus.tom || '?'}</p>
+                        <p className="text-[10px] text-ink-2">{mus.artista || 'Sem artista'} • Tom Base: {mus.tom || '?'}</p>
                       </div>
-                      <button onClick={() => adicionarMusicaAEscala(mus.id, mus.tom)} disabled={jaAdicionada} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ml-2 ${jaAdicionada ? 'bg-gray-100 text-gray-400' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'}`}>
+                      <button onClick={() => adicionarMusicaAEscala(mus.id, mus.tom)} disabled={jaAdicionada} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ml-2 ${jaAdicionada ? 'bg-surface-2 text-muted' : 'bg-brand text-on-brand hover:opacity-90 shadow-sm'}`}>
                         {jaAdicionada ? 'Adicionada' : 'Adicionar'}
                       </button>
                     </div>
@@ -1347,22 +1350,22 @@ if (papelEncontrado) {
       {/* MODAL TOM */}
       {modalTomAberto && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-xl animate-in slide-in-from-bottom-10 sm:zoom-in-95">
+          <div className="bg-surface w-full max-w-md rounded-3xl p-6 shadow-xl animate-in slide-in-from-bottom-10 sm:zoom-in-95">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Music className="w-5 h-5 text-blue-600" /> Escolha o Tom</h2>
-              <button onClick={() => setModalTomAberto(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full"><XCircle className="w-6 h-6" /></button>
+              <h2 className="text-lg font-bold text-ink flex items-center gap-2"><Music className="w-5 h-5 text-brand" /> Escolha o Tom</h2>
+              <button onClick={() => setModalTomAberto(false)} className="text-muted hover:bg-surface-2 p-2 rounded-full"><XCircle className="w-6 h-6" /></button>
             </div>
             <div className="space-y-6">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider">Tons Maiores</p>
+                <p className="text-xs font-bold text-muted uppercase mb-3 tracking-wider">Tons Maiores</p>
                 <div className="grid grid-cols-4 gap-2">
-                  {tonsMaiores.map(t => <button key={t} onClick={() => salvarNovoTom(t)} className="bg-gray-50 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border border-gray-100 text-gray-700 font-black py-2.5 rounded-xl transition shadow-sm text-sm">{t}</button>)}
+                  {tonsMaiores.map(t => <button key={t} onClick={() => salvarNovoTom(t)} className="bg-surface-2 hover:bg-brand/10 hover:text-brand hover:border-brand/30 border border-line text-ink-2 font-black py-2.5 rounded-xl transition shadow-sm text-sm">{t}</button>)}
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider">Tons Menores</p>
+                <p className="text-xs font-bold text-muted uppercase mb-3 tracking-wider">Tons Menores</p>
                 <div className="grid grid-cols-4 gap-2">
-                  {tonsMenores.map(t => <button key={t} onClick={() => salvarNovoTom(t)} className="bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 border border-gray-100 text-gray-700 font-black py-2.5 rounded-xl transition shadow-sm text-sm">{t}</button>)}
+                  {tonsMenores.map(t => <button key={t} onClick={() => salvarNovoTom(t)} className="bg-surface-2 hover:bg-brand/10 hover:text-brand hover:border-brand/30 border border-line text-ink-2 font-black py-2.5 rounded-xl transition shadow-sm text-sm">{t}</button>)}
                 </div>
               </div>
             </div>
@@ -1373,17 +1376,17 @@ if (papelEncontrado) {
       {/* MODAL ROUPA */}
       {modalRoupaAberto && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-xl animate-in zoom-in-95">
-            <div className="flex justify-between items-center mb-5 border-b border-gray-100 pb-3">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Palette className="w-5 h-5 text-blue-600" /> Cor da Roupa</h2>
-              <button onClick={() => setModalRoupaAberto(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition"><XCircle className="w-6 h-6" /></button>
+          <div className="bg-surface w-full max-w-sm rounded-3xl p-6 shadow-xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center mb-5 border-b border-line pb-3">
+              <h2 className="text-lg font-bold text-ink flex items-center gap-2"><Palette className="w-5 h-5 text-brand" /> Cor da Roupa</h2>
+              <button onClick={() => setModalRoupaAberto(false)} className="text-muted hover:bg-surface-2 p-2 rounded-full transition"><XCircle className="w-6 h-6" /></button>
             </div>
             <form onSubmit={salvarCorRoupa} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-2">Qual a paleta para este culto?</label>
-                <input type="text" autoFocus value={corEditando} onChange={(e) => setCorEditando(e.target.value)} placeholder="Ex: Preto, Branco, Jeans..." className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50" />
+                <label className="block text-xs font-bold text-ink-2 mb-2">Qual a paleta para este culto?</label>
+                <input type="text" autoFocus value={corEditando} onChange={(e) => setCorEditando(e.target.value)} placeholder="Ex: Preto, Branco, Jeans..." className="w-full border border-line rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-brand bg-surface-2" />
               </div>
-              <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition active:scale-[0.97] shadow-md disabled:opacity-50">
+              <button type="submit" disabled={loading} className="w-full bg-brand hover:opacity-90 text-on-brand font-bold py-3.5 rounded-xl transition active:scale-[0.97] shadow-md disabled:opacity-50">
                 {loading ? 'Salvando...' : 'Salvar Paleta'}
               </button>
             </form>

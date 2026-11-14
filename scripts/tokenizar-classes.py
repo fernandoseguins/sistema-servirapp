@@ -36,6 +36,28 @@ MAPA = [
     (r'\btext-(amber|yellow)-(700|600)\b', 'text-warning'),
     # foco
     (r'\bfocus:ring-(blue|gray)-(500|900)\b', 'focus:ring-brand'),
+    # azul / roxo / índigo de ação → cor da marca
+    (r'\bhover:bg-(blue|indigo|purple)-(700|800)\b', 'hover:opacity-90'),
+    (r'\bbg-(blue|indigo|purple)-(500|600|700)\b', 'bg-brand'),
+    (r'\bbg-(blue|indigo|purple)-(50|100)\b', 'bg-brand/10'),
+    (r'\bhover:bg-(blue|indigo|purple)-(50|100)\b', 'hover:bg-brand/10'),
+    (r'\btext-(blue|indigo|purple)-(500|600|700|800|900)\b', 'text-brand'),
+    (r'\bhover:text-(blue|indigo|purple)-(600|700|800)\b', 'hover:text-brand'),
+    (r'\bborder-(blue|indigo|purple)-(100|200|300)\b', 'border-brand/30'),
+    (r'\bborder-(blue|indigo|purple)-(400|500|600)\b', 'border-brand'),
+    # estados (tons restantes)
+    (r'\bbg-red-100\b', 'bg-danger-soft'),
+    (r'\btext-red-(800|900)\b', 'text-danger'),
+    (r'\bbg-red-(500|600)\b', 'bg-danger'),
+    (r'\bbg-(green|emerald)-(100)\b', 'bg-success-soft'),
+    (r'\bbg-(green|emerald)-(500|600)\b', 'bg-success'),
+    (r'\bhover:bg-(green|emerald)-(600|700)\b', 'hover:opacity-90'),
+    (r'\btext-(green|emerald)-(500|800|900)\b', 'text-success'),
+    (r'\bborder-(green|emerald)-(300|400|500)\b', 'border-success'),
+    (r'\bbg-(yellow|amber|orange)-(100)\b', 'bg-warning-soft'),
+    (r'\btext-(yellow|amber|orange)-(500|800|900)\b', 'text-warning'),
+    (r'\btext-orange-(600|700)\b', 'text-warning'),
+    (r'\bborder-(yellow|amber|orange)-(100|200|300)\b', 'border-warning/40'),
 ]
 
 
