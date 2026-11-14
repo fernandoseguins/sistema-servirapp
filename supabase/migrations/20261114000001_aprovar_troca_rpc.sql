@@ -139,7 +139,11 @@ begin
       update schedule_roles set funcao = v_nova_funcao where id = v_sub.id;
       delete from schedule_roles where id = v_original.id;
     else
-      update schedule_roles set user_id = v_pedido.substitute_id where id = v_original.id;
+      -- O substituto aceitou a troca: o papel passa para ele já confirmado
+      -- (não herda 'Pendente'/'Recusado' de quem pediu a troca)
+      update schedule_roles
+         set user_id = v_pedido.substitute_id, status_confirmacao = 'Confirmado'
+       where id = v_original.id;
     end if;
   else
     -- Troca parcial
