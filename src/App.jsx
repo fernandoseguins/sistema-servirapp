@@ -49,8 +49,8 @@ const DevUI            = import.meta.env.DEV ? lazy(() => import('./pages/DevUI'
 // ✅ Spinner reutilizável para o Suspense (mesmo visual do loading de sessão)
 function PageSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
+    <div className="min-h-screen flex items-center justify-center bg-bg">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand" />
     </div>
   )
 }
