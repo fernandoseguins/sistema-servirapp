@@ -1,26 +1,26 @@
 // src/pages/Profile.jsx
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
-import { ArrowLeft, User, CalendarHeart, Music, Shield, Save, Plus, Trash2,
+import { User, CalendarHeart, Music, Shield, Save, Plus, Trash2,
          Mic, Mic2, Settings2, Monitor, Camera, PenTool, Baby, Smile,
-         HeartHandshake, Star, Lock, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react'
+         HeartHandshake, Star, Lock, CheckCircle2, Eye, EyeOff,
+         Sun, Moon, SunMoon, Crown, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useUI } from '../context/UIContext'
+import { useAparencia } from '../hooks/useAparencia'
+import { Button, Card, Pill, ListRow, Input, Select, TopBar } from '../components/ui'
 
 // ── Skeleton de carregamento ──────────────────────────────────────────────────
 function ProfileSkeleton() {
-  const P = ({ className }) => <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />
+  const P = ({ className }) => <div className={`bg-surface-2 rounded-ctl animate-pulse ${className}`} />
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-gray-900 px-4 py-6 rounded-b-3xl mb-6">
-        <div className="max-w-md mx-auto flex items-center gap-4">
-          <P className="w-10 h-10 rounded-full" />
-          <div><P className="h-5 w-32 mb-1" /><P className="h-3 w-20" /></div>
-        </div>
+    <div className="min-h-screen bg-bg">
+      <div className="bg-topo px-4 py-6 mb-4">
+        <div className="max-w-[720px] mx-auto"><div className="h-3 w-20 bg-white/20 rounded mb-2" /><div className="h-5 w-40 bg-white/30 rounded" /></div>
       </div>
-      <div className="max-w-md mx-auto px-4 space-y-4">
+      <div className="max-w-[720px] mx-auto px-4 space-y-4">
         {[1,2,3].map(i => (
-          <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 animate-pulse space-y-3">
+          <div key={i} className="bg-surface p-5 rounded-card border border-line space-y-3">
             <P className="h-4 w-32" />
             <P className="h-11 w-full" />
             <P className="h-11 w-full" />
@@ -67,9 +67,44 @@ function PasswordStrength({ password }) {
   )
 }
 
+// ── Cartão de função (checkbox acessível por teclado) ─────────────────────────
+// Fora do componente Profile: definido dentro do render, seria recriado a cada
+// digitação e os campos perderiam o foco.
+function ToggleCard({ checked, onChange, icon, label, className = '' }) {
+  const Icon = icon
+  return (
+    <label className={`flex flex-col items-center justify-center gap-1 p-3 rounded-ctl border cursor-pointer transition select-none text-center
+      has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand
+      ${checked ? 'bg-brand/10 border-brand text-brand' : 'bg-surface border-line text-ink-2 hover:bg-surface-2'} ${className}`}>
+      <input type="checkbox" className="sr-only" checked={checked} onChange={onChange} />
+      <Icon className="w-5 h-5" aria-hidden="true" />
+      <span className="text-[11px] font-semibold whitespace-pre-line">{label}</span>
+    </label>
+  )
+}
+
+function Secao({ icon, titulo, children }) {
+  const Icon = icon
+  return (
+    <Card as="section" className="space-y-4">
+      <h2 className="text-sm font-bold text-ink flex items-center gap-2">
+        <Icon className="w-4 h-4 text-brand" aria-hidden="true" /> {titulo}
+      </h2>
+      {children}
+    </Card>
+  )
+}
+
 export default function Profile() {
   const navigate   = useNavigate()
   const { toast }  = useUI()
+  const { preferencia, setPreferencia } = useAparencia()
+  const [ehSuperAdmin, setEhSuperAdmin] = useState(false)
+
+  async function sair() {
+    await supabase.auth.signOut()
+    navigate('/')
+  }
 
   const [loading,  setLoading]  = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -131,11 +166,13 @@ export default function Profile() {
       setMeuId(user.id)
 
       // ✅ Três queries em paralelo
-      const [perfilRes, deptsRes, instsRes] = await Promise.all([
+      const [perfilRes, deptsRes, instsRes, superRes] = await Promise.all([
         supabase.from('users_profile').select('*').eq('id', user.id).single(),
         supabase.from('membros_departamentos').select('role, departamentos(nome, tipo)').eq('user_id', user.id),
         supabase.from('user_instruments').select('id, instrumento').eq('user_id', user.id),
+        supabase.rpc('sou_super_admin_flag'),
       ])
+      setEhSuperAdmin(superRes.data === true)
 
       if (perfilRes.data) {
         const p = perfilRes.data
@@ -227,266 +264,178 @@ export default function Profile() {
 
   if (loading) return <ProfileSkeleton />
 
-  // ── Helper: toggle card com checkbox ────────────────────────────────────────
-  const ToggleCard = ({ checked, onChange, icon: Icon, label, activeClass }) => (
-    <label className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition select-none
-      ${checked ? activeClass : 'border-gray-100 hover:bg-gray-50 text-gray-400'}`}>
-      <input type="checkbox" className="hidden" checked={checked} onChange={onChange} />
-      <Icon className="w-5 h-5 mb-1" />
-      <span className="text-[10px] font-bold uppercase tracking-wider text-center">{label}</span>
-    </label>
-  )
+  const OPCOES_APARENCIA = [
+    { valor: 'auto',   rotulo: 'Automático', Icone: SunMoon },
+    { valor: 'claro',  rotulo: 'Claro',      Icone: Sun },
+    { valor: 'escuro', rotulo: 'Escuro',     Icone: Moon },
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-bg">
+      <TopBar variante="destaque" titulo={nome || 'Meu perfil'} subtitulo="Meu perfil" />
 
-      {/* HEADER */}
-      <div className="bg-gray-900 px-4 py-6 rounded-b-3xl mb-6 text-white">
-        <div className="max-w-md mx-auto flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="Voltar"
-            className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-lg font-bold flex items-center gap-2">
-              <User className="w-4 h-4 text-gray-400" /> Meu Perfil
-            </h1>
-            <p className="text-xs text-gray-400">Gerencie suas informações</p>
-          </div>
-        </div>
-      </div>
+      <main className="max-w-[720px] mx-auto px-4 py-4 space-y-4">
 
-      <div className="max-w-md mx-auto px-4 space-y-5">
-
-        {/* CRACHÁS */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Shield className="w-3.5 h-3.5 text-blue-600" /> Meus Departamentos
-          </h2>
+        {/* DEPARTAMENTOS */}
+        <Secao icon={Shield} titulo="Meus departamentos">
           {meusDepts.length === 0 ? (
-            <p className="text-xs text-gray-400 italic">Nenhum departamento ainda.</p>
+            <p className="text-xs text-ink-2">Você ainda não participa de nenhum departamento.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {meusDepts.map((v, i) => (
-                <div key={i} className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl">
-                  <span className="font-bold text-gray-700 text-sm">{v.departamentos?.nome}</span>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider
-                    ${v.role === 'admin' || v.role === 'líder' ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-500'}`}>
-                    {v.role}
-                  </span>
-                </div>
+                <Pill key={i} tom="dept" dept={v.departamentos?.nome} className="!text-xs !py-1">
+                  {v.departamentos?.nome}
+                  <span className="opacity-70 font-medium">· {v.role}</span>
+                </Pill>
               ))}
             </div>
           )}
-        </div>
+        </Secao>
 
         {/* DADOS PESSOAIS */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-            <User className="w-3.5 h-3.5 text-green-600" /> Informações Pessoais
-          </h2>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Nome Completo</label>
-            <input
-              type="text" value={nome} onChange={e => setNome(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-gray-900 outline-none transition"
-              placeholder="Seu nome completo"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
-              <CalendarHeart className="w-3.5 h-3.5" /> Data de Nascimento
-            </label>
-            <input
-              type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-700 focus:ring-2 focus:ring-gray-900 outline-none transition"
-            />
-          </div>
-        </div>
+        <Secao icon={User} titulo="Informações pessoais">
+          <Input label="Nome completo" value={nome} onChange={e => setNome(e.target.value)} placeholder="Seu nome completo" />
+          <Input label="Data de nascimento" type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)}
+            icon={<CalendarHeart className="w-4 h-4" aria-hidden="true" />} />
+        </Secao>
 
         {/* PERFIL LOUVOR */}
         {isLouvor && (
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Music className="w-3.5 h-3.5 text-blue-600" /> Perfil — Louvor
-            </h2>
-
-            <div className="grid grid-cols-2 gap-2 mb-5">
-              <ToggleCard checked={conducao}    onChange={e => setConducao(e.target.checked)}    icon={Star}     label="Condução"     activeClass="bg-yellow-50 border-yellow-500 text-yellow-700" />
-              <ToggleCard checked={voz}         onChange={e => setVoz(e.target.checked)}         icon={Mic}      label="Voz Principal" activeClass="bg-blue-50 border-blue-500 text-blue-700" />
-              <ToggleCard checked={backing}     onChange={e => setBacking(e.target.checked)}     icon={Mic2}     label="Backing Vocal" activeClass="bg-purple-50 border-purple-500 text-purple-700" />
-              <ToggleCard checked={sonoplastia} onChange={e => setSonoplastia(e.target.checked)} icon={Settings2} label="Mesa de Som"  activeClass="bg-gray-900 border-gray-900 text-white" />
+          <Secao icon={Music} titulo="Louvor">
+            <div className="grid grid-cols-2 gap-2">
+              <ToggleCard checked={conducao}    onChange={e => setConducao(e.target.checked)}    icon={Star}      label="Condução" />
+              <ToggleCard checked={voz}         onChange={e => setVoz(e.target.checked)}         icon={Mic}       label="Voz principal" />
+              <ToggleCard checked={backing}     onChange={e => setBacking(e.target.checked)}     icon={Mic2}      label="Backing vocal" />
+              <ToggleCard checked={sonoplastia} onChange={e => setSonoplastia(e.target.checked)} icon={Settings2} label="Mesa de som" />
             </div>
 
-            <div className="border-t border-gray-100 pt-4">
-              <label className="block text-xs font-semibold text-gray-500 mb-2">Instrumentos</label>
+            <div className="border-t border-line pt-4">
+              <p className="text-xs font-semibold text-ink-2 mb-2">Instrumentos</p>
               <div className="flex flex-wrap gap-2 mb-3 min-h-[28px]">
                 {instrumentos.map(inst => (
-                  <span key={inst.id} className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-indigo-200 flex items-center gap-1.5">
+                  <Pill key={inst.id} tom="brand" className="!text-xs !py-1">
                     {inst.instrumento}
-                    <button type="button" onClick={() => removerInstrumento(inst.id, inst.instrumento)} aria-label={`Remover ${inst.instrumento}`} className="text-indigo-300 hover:text-red-500 transition">
-                      <Trash2 className="w-3 h-3" />
+                    <button type="button" onClick={() => removerInstrumento(inst.id, inst.instrumento)} aria-label={`Remover ${inst.instrumento}`}
+                      className="ml-0.5 opacity-60 hover:opacity-100 hover:text-danger transition">
+                      <Trash2 className="w-3 h-3" aria-hidden="true" />
                     </button>
-                  </span>
+                  </Pill>
                 ))}
-                {instrumentos.length === 0 && <span className="text-xs text-gray-400 italic">Nenhum instrumento.</span>}
+                {instrumentos.length === 0 && <span className="text-xs text-ink-2">Nenhum instrumento.</span>}
               </div>
-              <div className="flex gap-2">
-                <select value={novoInstrumento} onChange={e => setNovoInstrumento(e.target.value)} className="flex-1 border border-gray-200 rounded-xl p-2.5 text-sm outline-none bg-gray-50">
-                  <option value="">Adicionar instrumento...</option>
-                  {INSTRUMENTOS.filter(i => !instrumentos.some(mi => mi.instrumento === i)).map(inst => (
-                    <option key={inst} value={inst}>{inst}</option>
-                  ))}
-                </select>
-                <button type="button" onClick={adicionarInstrumento} disabled={!novoInstrumento} aria-label="Adicionar instrumento" className="bg-indigo-600 text-white px-3 rounded-xl hover:bg-indigo-700 transition active:scale-[0.97] disabled:opacity-40">
-                  <Plus className="w-5 h-5" />
-                </button>
+              <div className="flex gap-2 items-end">
+                <Select
+                  className="flex-1"
+                  aria-label="Adicionar instrumento"
+                  value={novoInstrumento}
+                  onChange={e => setNovoInstrumento(e.target.value)}
+                  options={[{ value: '', label: 'Adicionar instrumento…' },
+                    ...INSTRUMENTOS.filter(i => !instrumentos.some(mi => mi.instrumento === i)).map(i => ({ value: i, label: i }))]}
+                />
+                <Button onClick={adicionarInstrumento} disabled={!novoInstrumento} aria-label="Adicionar instrumento"
+                  icon={<Plus className="w-5 h-5" aria-hidden="true" />} />
               </div>
             </div>
-          </div>
+          </Secao>
         )}
 
         {/* PERFIL MÍDIA */}
         {isMidia && (
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Camera className="w-3.5 h-3.5 text-purple-600" /> Perfil — Mídia
-            </h2>
+          <Secao icon={Camera} titulo="Mídia">
             <div className="grid grid-cols-3 gap-2">
-              <ToggleCard checked={midiaPC}    onChange={e => setMidiaPC(e.target.checked)}    icon={Monitor} label={"PC /\nProjeção"} activeClass="bg-indigo-50 border-indigo-500 text-indigo-700" />
-              <ToggleCard checked={midiaFoto}  onChange={e => setMidiaFoto(e.target.checked)}  icon={Camera}  label={"Fotos &\nVídeos"}   activeClass="bg-pink-50 border-pink-500 text-pink-700" />
-              <ToggleCard checked={midiaRedes} onChange={e => setMidiaRedes(e.target.checked)} icon={PenTool} label={"Redes\nSociais"}   activeClass="bg-orange-50 border-orange-500 text-orange-700" />
+              <ToggleCard checked={midiaPC}    onChange={e => setMidiaPC(e.target.checked)}    icon={Monitor} label={"PC /\nProjeção"} />
+              <ToggleCard checked={midiaFoto}  onChange={e => setMidiaFoto(e.target.checked)}  icon={Camera}  label={"Fotos e\nvídeos"} />
+              <ToggleCard checked={midiaRedes} onChange={e => setMidiaRedes(e.target.checked)} icon={PenTool} label={"Redes\nsociais"} />
             </div>
-          </div>
+          </Secao>
         )}
 
         {/* PERFIL INFANTIL */}
         {isInfantil && (
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Baby className="w-3.5 h-3.5 text-pink-500" /> Perfil — Infantil
-            </h2>
+          <Secao icon={Baby} titulo="Infantil">
             <div className="grid grid-cols-2 gap-2">
               {[
-                { state: infBercario,    set: setInfBercario,    icon: Baby,         label: 'Berçário',      active: 'bg-pink-50 border-pink-500 text-pink-700' },
-                { state: infSala38,      set: setInfSala38,      icon: Smile,        label: 'Sala 03 a 08',  active: 'bg-yellow-50 border-yellow-500 text-yellow-700' },
-                { state: infSala911,     set: setInfSala911,     icon: Smile,        label: 'Sala 09 a 11',  active: 'bg-green-50 border-green-500 text-green-700' },
-                { state: infAcolhimento, set: setInfAcolhimento, icon: HeartHandshake,label: 'Acolhimento',  active: 'bg-red-50 border-red-400 text-red-700' },
-              ].map(({ state, set, icon, label, active }) => (
-                <ToggleCard key={label} checked={state} onChange={e => set(e.target.checked)} icon={icon} label={label} activeClass={active} />
+                { state: infBercario,    set: setInfBercario,    icon: Baby,           label: 'Berçário' },
+                { state: infSala38,      set: setInfSala38,      icon: Smile,          label: 'Sala 03 a 08' },
+                { state: infSala911,     set: setInfSala911,     icon: Smile,          label: 'Sala 09 a 11' },
+                { state: infAcolhimento, set: setInfAcolhimento, icon: HeartHandshake, label: 'Acolhimento' },
+              ].map(({ state, set, icon, label }) => (
+                <ToggleCard key={label} checked={state} onChange={e => set(e.target.checked)} icon={icon} label={label} />
               ))}
-              <label className={`col-span-2 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition
-                ${infAuxiliar ? 'bg-blue-50 border-blue-400 text-blue-700' : 'border-gray-100 hover:bg-gray-50 text-gray-400'}`}>
-                <input type="checkbox" className="hidden" checked={infAuxiliar} onChange={e => setInfAuxiliar(e.target.checked)} />
-                <Smile className="w-5 h-5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Auxiliar</span>
-              </label>
+              <ToggleCard checked={infAuxiliar} onChange={e => setInfAuxiliar(e.target.checked)} icon={Smile} label="Auxiliar" className="col-span-2" />
             </div>
-          </div>
+          </Secao>
         )}
 
         {/* PERFIL DIACONIA */}
         {isDiaconia && (
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Shield className="w-3.5 h-3.5 text-gray-900" /> Perfil — Diaconia
-            </h2>
-            <label className={`w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition
-              ${diaconia ? 'bg-gray-900 border-gray-900 text-white shadow-md' : 'border-gray-200 hover:bg-gray-100 text-gray-500'}`}>
-              <input type="checkbox" className="hidden" checked={diaconia} onChange={e => setDiaconia(e.target.checked)} />
-              <Shield className="w-5 h-5" />
-              <span className="text-xs font-bold uppercase tracking-wider">Atuar na Diaconia</span>
-            </label>
-          </div>
+          <Secao icon={Shield} titulo="Diaconia">
+            <ToggleCard checked={diaconia} onChange={e => setDiaconia(e.target.checked)} icon={Shield} label="Atuar na Diaconia" />
+          </Secao>
         )}
 
-        {/* BOTÃO SALVAR */}
-        <button
-          onClick={salvarPerfil}
-          disabled={salvando}
-          className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl hover:bg-black active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
-        >
-          <Save className="w-5 h-5" />
-          {salvando ? 'Guardando...' : 'Salvar Alterações'}
-        </button>
+        <Button full onClick={salvarPerfil} loading={salvando} icon={<Save className="w-5 h-5" aria-hidden="true" />}>
+          {salvando ? 'Salvando…' : 'Salvar alterações'}
+        </Button>
+
+        {/* APARÊNCIA */}
+        <Secao icon={SunMoon} titulo="Aparência">
+          <div role="radiogroup" aria-label="Aparência" className="grid grid-cols-3 gap-2">
+            {OPCOES_APARENCIA.map((opcao) => {
+              const { valor, rotulo } = opcao
+              const Icone = opcao.Icone
+              const on = preferencia === valor
+              return (
+                <button key={valor} type="button" role="radio" aria-checked={on} onClick={() => setPreferencia(valor)}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-ctl border text-xs font-semibold transition
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand
+                    ${on ? 'bg-brand/10 border-brand text-brand' : 'bg-surface border-line text-ink-2 hover:bg-surface-2'}`}>
+                  <Icone className="w-5 h-5" aria-hidden="true" /> {rotulo}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs text-ink-2">Automático segue o modo claro ou escuro do seu celular.</p>
+        </Secao>
 
         {/* SEGURANÇA — ALTERAR SENHA */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-gray-500" /> Segurança
-          </h2>
-
-          <div className="space-y-4">
-            {/* Nova senha */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Nova Senha</label>
-              <div className="relative">
-                <input
-                  type={mostrarSenha ? 'text' : 'password'}
-                  value={senhaNova}
-                  onChange={e => setSenhaNova(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
-                  className="w-full border border-gray-200 rounded-xl p-3 pr-10 text-sm outline-none focus:ring-2 focus:ring-gray-900 transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setMostrarSenha(!mostrarSenha)}
-                  aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                >
-                  {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {/* Indicador de força */}
-              <PasswordStrength password={senhaNova} />
+        <Secao icon={Lock} titulo="Segurança">
+          <div>
+            <div className="relative">
+              <Input label="Nova senha" type={mostrarSenha ? 'text' : 'password'} value={senhaNova}
+                onChange={e => setSenhaNova(e.target.value)} placeholder="Mínimo 8 caracteres" />
+              <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)}
+                aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                className="absolute right-3 bottom-3 text-muted hover:text-ink-2 transition">
+                {mostrarSenha ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
+              </button>
             </div>
-
-            {/* Confirmar senha */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Confirmar Nova Senha</label>
-              <div className="relative">
-                <input
-                  type={mostrarSenha ? 'text' : 'password'}
-                  value={confirmarSenha}
-                  onChange={e => setConfirmarSenha(e.target.value)}
-                  placeholder="Repita a nova senha"
-                  className={`w-full border rounded-xl p-3 pr-10 text-sm outline-none focus:ring-2 transition
-                    ${senhasErradas  ? 'border-red-300 focus:ring-red-400 bg-red-50'
-                    : senhasConferem ? 'border-green-300 focus:ring-green-400 bg-green-50'
-                    : 'border-gray-200 focus:ring-gray-900'}`}
-                />
-                {/* Ícone de validação */}
-                {confirmarSenha && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {senhasConferem
-                      ? <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      : <XCircle      className="w-4 h-4 text-red-400" />}
-                  </div>
-                )}
-              </div>
-              {senhasErradas && (
-                <p className="text-[11px] text-red-500 font-medium mt-1">As senhas não coincidem.</p>
-              )}
-            </div>
-
-            <button
-              onClick={alterarSenha}
-              disabled={loadingSenha || !senhaNova || !confirmarSenha}
-              className="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-black active:scale-[0.98] transition-all disabled:opacity-40 text-sm flex items-center justify-center gap-2"
-            >
-              <Lock className="w-4 h-4" />
-              {loadingSenha ? 'Atualizando...' : 'Atualizar Senha'}
-            </button>
+            <PasswordStrength password={senhaNova} />
           </div>
-        </div>
 
-        <div className="h-2" />
-      </div>
+          <div className="relative">
+            <Input label="Confirmar nova senha" type={mostrarSenha ? 'text' : 'password'} value={confirmarSenha}
+              onChange={e => setConfirmarSenha(e.target.value)} placeholder="Repita a nova senha"
+              erro={senhasErradas ? 'As senhas não coincidem.' : undefined} />
+            {senhasConferem && <CheckCircle2 className="w-4 h-4 text-success absolute right-3 top-[38px]" aria-label="Senhas conferem" />}
+          </div>
+
+          <Button full variant="secundario" onClick={alterarSenha} loading={loadingSenha}
+            disabled={!senhaNova || !confirmarSenha} icon={<Lock className="w-4 h-4" aria-hidden="true" />}>
+            Atualizar senha
+          </Button>
+        </Secao>
+
+        {/* CONTA */}
+        <Card padded={false} className="px-4">
+          {ehSuperAdmin && (
+            <ListRow titulo="Painel do Dono" subtitulo="Igrejas do sistema" onClick={() => navigate('/painel-dono')}
+              icon={<Crown className="w-5 h-5 text-warning" aria-hidden="true" />} />
+          )}
+          <ListRow titulo="Sair da conta" onClick={sair}
+            icon={<LogOut className="w-5 h-5 text-danger" aria-hidden="true" />} />
+        </Card>
+      </main>
     </div>
   )
 }
