@@ -5,6 +5,7 @@ import { supabase } from '../supabase'
 import { rotuloTurno } from '../utils/escalas'
 import { urlSegura } from '../utils/url'
 import { ScheduleDetailsSkeleton } from '../components/Skeletons'
+import AdicionarAgenda from '../components/AdicionarAgenda'
 import { useUI } from '../context/UIContext'
 import { enviarNotificacao, enviarNotificacaoEmMassa } from '../utils/notificacoes'
 import { ArrowLeft, CalendarDays, Clock, Palette, UserPlus, CheckCircle2, XCircle, Trash2, Send, AlertCircle, ShieldAlert, Music, Plus, PlayCircle, Edit2, FileText, Tag, MessageCircle, Search, ChevronUp, ChevronDown, RefreshCw, Check, X, ListChecks, Upload, Download, MessageSquare, PenLine, Mic2 } from 'lucide-react'
@@ -757,6 +758,7 @@ if (papelEncontrado) {
                 <span className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-full text-xs font-medium"><Palette className="w-3.5 h-3.5" aria-hidden="true" /> Roupa: {escala.cor_roupa}</span>
               )
             )}
+            {meuPapel && !isRascunho && <AdicionarAgenda escala={escala} departamento={departamentoNome} funcoes={meuPapel.funcao} />}
           </div>
         </div>
       </header>
