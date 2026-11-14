@@ -150,32 +150,32 @@ export default function NoticeBoard({ departamentoId }) {
 
   if (loading) {
     return (
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-32 mb-3" />
-        <div className="h-16 bg-gray-100 rounded-xl" />
+      <div className="bg-surface p-5 rounded-card border border-line animate-pulse">
+        <div className="h-4 bg-line rounded w-32 mb-3" />
+        <div className="h-16 bg-surface-2 rounded-xl" />
       </div>
     )
   }
 
   if (avisos.length === 0) {
     return (
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between gap-4">
+      <div className="bg-surface p-5 rounded-card border border-line flex items-center justify-between gap-4">
         <div>
-          <h3 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2 mb-1">
-            <BellRing className="w-4 h-4 text-gray-400" /> Mural de Avisos
+          <h3 className="text-sm font-bold text-ink uppercase flex items-center gap-2 mb-1">
+            <BellRing className="w-4 h-4 text-muted" /> Mural de Avisos
           </h3>
-          <p className="text-xs text-gray-500 font-medium">Nenhum recado novo no momento.</p>
+          <p className="text-xs text-ink-2 font-medium">Nenhum recado novo no momento.</p>
         </div>
-        <BellRing className="w-8 h-8 text-gray-200 flex-shrink-0" />
+        <BellRing className="w-8 h-8 text-line flex-shrink-0" />
       </div>
     )
   }
 
   return (
     <>
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2 mb-4">
-          <BellRing className="w-4 h-4 text-yellow-500" /> Mural de Avisos
+      <div className="bg-surface p-5 rounded-card border border-line">
+        <h3 className="text-sm font-bold text-ink uppercase flex items-center gap-2 mb-4">
+          <BellRing className="w-4 h-4 text-warning" /> Mural de Avisos
         </h3>
 
         <div className="space-y-3 max-h-[350px] overflow-y-auto customized-scrollbar pr-1">
@@ -183,38 +183,38 @@ export default function NoticeBoard({ departamentoId }) {
             <div key={aviso.id}
               className={`p-4 rounded-xl border-l-4 group transition-all
                 ${aviso.urgente
-                  ? 'bg-red-50 border-red-500 border border-red-100'
-                  : 'bg-gray-50 border-blue-400 border border-gray-200'
+                  ? 'bg-danger-soft border-danger border border-danger'
+                  : 'bg-surface-2 border-brand border border-line'
                 }`}>
               <div className="flex justify-between items-start mb-1.5">
                 <div className="flex items-center gap-2 pr-2 min-w-0">
-                  {aviso.urgente && <AlertTriangle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />}
-                  <h4 className={`text-sm font-bold truncate ${aviso.urgente ? 'text-red-700' : 'text-gray-900'}`}>
+                  {aviso.urgente && <AlertTriangle className="w-3.5 h-3.5 text-danger flex-shrink-0" />}
+                  <h4 className={`text-sm font-bold truncate ${aviso.urgente ? 'text-danger' : 'text-ink'}`}>
                     {aviso.titulo}
                   </h4>
                   {aviso.da_gestao && (
-                    <span className="flex items-center gap-1 text-[9px] font-bold bg-gray-900 text-white px-2 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wider">
+                    <span className="flex items-center gap-1 text-[9px] font-bold bg-ink text-bg px-2 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wider">
                       <Building2 className="w-2.5 h-2.5" /> Gestão
                     </span>
                   )}
                 </div>
                 {isLider && (
-                  <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
                     <button onClick={() => abrirModalEdicao(aviso)} aria-label="Editar aviso"
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                      className="p-1.5 text-muted hover:text-brand hover:bg-brand/10 rounded-lg transition">
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => excluirAviso(aviso.id)} aria-label="Apagar aviso"
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                      className="p-1.5 text-muted hover:text-danger hover:bg-danger-soft rounded-lg transition">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
               </div>
 
-              <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{aviso.conteudo}</p>
+              <p className="text-xs text-ink-2 whitespace-pre-wrap leading-relaxed">{aviso.conteudo}</p>
 
-              <div className="mt-2.5 flex items-center gap-1.5 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+              <div className="mt-2.5 flex items-center gap-1.5 text-[10px] text-muted font-bold uppercase tracking-wider">
                 <CalendarDays className="w-3 h-3" />
                 {new Date(aviso.data_criacao).toLocaleDateString('pt-BR')} às {new Date(aviso.data_criacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -226,43 +226,43 @@ export default function NoticeBoard({ departamentoId }) {
       {/* Modal de edição */}
       {modalAberto && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-5 border-b border-gray-100 pb-3">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Edit2 className="w-4 h-4 text-blue-500" /> Editar Aviso
+          <div className="bg-surface w-full max-w-sm rounded-card p-6 shadow-2xl border border-line">
+            <div className="flex justify-between items-center mb-5 border-b border-line pb-3">
+              <h2 className="text-base font-bold text-ink flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-brand" /> Editar Aviso
               </h2>
               <button onClick={() => setModalAberto(false)} aria-label="Fechar modal"
-                className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition">
+                className="text-muted hover:bg-surface-2 p-2 rounded-full transition">
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={salvarEdicao} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">Título</label>
+                <label className="block text-xs font-bold text-ink-2 mb-1">Título</label>
                 <input type="text" required value={titulo} onChange={e => setTitulo(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:ring-2 focus:ring-brand outline-none bg-surface-2" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">Mensagem</label>
+                <label className="block text-xs font-bold text-ink-2 mb-1">Mensagem</label>
                 <textarea required value={conteudo} onChange={e => setConteudo(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 h-32 resize-none" />
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:ring-2 focus:ring-brand outline-none bg-surface-2 h-32 resize-none" />
               </div>
 
               <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition
-                ${urgente ? 'bg-red-50 border-red-400' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'}`}>
+                ${urgente ? 'bg-danger-soft border-danger' : 'border-line bg-surface-2 hover:bg-surface-2'}`}>
                 <input type="checkbox" className="hidden" checked={urgente} onChange={e => setUrgente(e.target.checked)} />
                 <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0
-                  ${urgente ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-300'}`}>
+                  ${urgente ? 'bg-danger border-danger text-white' : 'bg-surface border-line'}`}>
                   {urgente && <CheckSquare className="w-3.5 h-3.5" />}
                 </div>
-                <span className={`text-xs font-bold uppercase tracking-wider ${urgente ? 'text-red-700' : 'text-gray-500'}`}>
+                <span className={`text-xs font-bold uppercase tracking-wider ${urgente ? 'text-danger' : 'text-ink-2'}`}>
                   Marcar como Urgente
                 </span>
               </label>
 
               <button type="submit" disabled={salvando}
-                className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl hover:bg-black transition active:scale-[0.97] flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
+                className="w-full bg-brand text-on-brand font-bold py-3.5 rounded-ctl hover:opacity-90 transition active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-50">
                 <Save className="w-5 h-5" />
                 {salvando ? 'Salvando...' : 'Salvar Alterações'}
               </button>
