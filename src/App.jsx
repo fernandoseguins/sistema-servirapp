@@ -11,6 +11,8 @@ import { IgrejaProvider } from './context/IgrejaContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import ScrollToTop from './components/ScrollToTop'
 import GlobalUserMenu from './components/GlobalUserMenu'
+import { AparenciaProvider } from './hooks/useAparencia'
+import { NotificacoesProvider } from './hooks/useNotificacoes'
 // import ChatBot from './components/ChatBot'  // reativar quando adicionar o botão de Dúvidas no Hub
 
 // ✅ Todas as páginas agora são lazy — só carregam quando o usuário navega até elas
@@ -119,8 +121,10 @@ function App() {
 
   return (
     <ErrorBoundary>
+    <AparenciaProvider>
     <UIProvider>
     <IgrejaProvider>
+    <NotificacoesProvider userId={session?.user?.id ?? null}>
     <BrowserRouter>
       {session && (
         <>
@@ -167,8 +171,10 @@ function App() {
 
       <InstallPrompt />
     </BrowserRouter>
+    </NotificacoesProvider>
     </IgrejaProvider>
     </UIProvider>
+    </AparenciaProvider>
     </ErrorBoundary>
   )
 }

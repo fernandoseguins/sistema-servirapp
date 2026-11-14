@@ -1,25 +1,21 @@
 // src/components/GlobalUserMenu.jsx
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../supabase'
-import { caminhoInterno } from '../utils/url'
+import { useNotificacoes } from '../hooks/useNotificacoes'
 import { Bell, XCircle, Trash2, User, LogOut, ChevronDown, Crown } from 'lucide-react'
 
 export default function GlobalUserMenu() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [userId,        setUserId]        = useState(null)
   const [nomeUsuario,   setNomeUsuario]   = useState('')
-  const [notificacoes,  setNotificacoes]  = useState([])
   const [modalAberto,   setModalAberto]   = useState(false)
   const [menuAberto,    setMenuAberto]    = useState(false)
   const [ehSuperAdmin,  setEhSuperAdmin]  = useState(false)
-  const [qtdNaoLidas,   setQtdNaoLidas]   = useState(0)
-  const [belAnimando,   setBelAnimando]   = useState(false)
+  const belAnimando = false // animação do sino removida (menu antigo sai na reforma visual)
 
-  const canalRef  = useRef(null)
   const menuRef   = useRef(null)
 
   // Iniciais do nome para o avatar
@@ -42,93 +38,36 @@ export default function GlobalUserMenu() {
     }
   }, [])
 
-  const buscarNotificacoes = useCallback(async (uid) => {
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', uid)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    if (data) {
-      setNotificacoes(data)
-      setQtdNaoLidas(data.filter(n => !n.lida).length)
-    }
-  }, [])
-
+  const { notificacoes, naoLidas: qtdNaoLidas, abrir, apagar, marcarTodasLidas } = useNotificacoes()
   useEffect(() => {
     if (location.pathname === '/') return
-
     const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-
-      setUserId(user.id)
-      // Super admin (dono do sistema) — só estes emails veem o Painel do Dono
+      // Super admin (dono do sistema) — vê o Painel do Dono
       const { data: ehSuper } = await supabase.rpc('sou_super_admin_flag')
       setEhSuperAdmin(ehSuper === true)
-      await buscarNotificacoes(user.id)
-
-      // Busca nome do utilizador
       const { data: perfil } = await supabase
         .from('users_profile')
         .select('nome')
         .eq('id', user.id)
         .single()
       if (perfil?.nome) setNomeUsuario(perfil.nome)
-
-      if (canalRef.current) supabase.removeChannel(canalRef.current)
-
-      canalRef.current = supabase
-        .channel(`notifications:${user.id}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-          (payload) => {
-            setNotificacoes(prev => [payload.new, ...prev].slice(0, 20))
-            setQtdNaoLidas(prev => prev + 1)
-            setBelAnimando(true)
-            setTimeout(() => setBelAnimando(false), 1200)
-          }
-        )
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-          (payload) => {
-            setNotificacoes(prev => prev.map(n => n.id === payload.new.id ? payload.new : n))
-            setQtdNaoLidas(prev => Math.max(0, prev + (payload.new.lida && !payload.old.lida ? -1 : 0)))
-          }
-        )
-        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-          (payload) => {
-            setNotificacoes(prev => prev.filter(n => n.id !== payload.old.id))
-            if (!payload.old.lida) setQtdNaoLidas(prev => Math.max(0, prev - 1))
-          }
-        )
-        .subscribe()
     }
-
     setup()
-    return () => {
-      if (canalRef.current) { supabase.removeChannel(canalRef.current); canalRef.current = null }
-    }
-  }, [location.pathname, buscarNotificacoes])
+  }, [location.pathname])
 
   async function clicarNaNotificacao(notif) {
-    if (!notif.lida) await supabase.from('notifications').update({ lida: true }).eq('id', notif.id)
-    const destino = caminhoInterno(notif.link_redirecionamento)
+    const destino = await abrir(notif)
     if (destino) { setModalAberto(false); navigate(destino) }
   }
 
   async function apagarNotificacao(e, id) {
     e.stopPropagation()
-    // ✅ Remove da lista imediatamente
-    setNotificacoes(prev => prev.filter(n => n.id !== id))
-    await supabase.from('notifications').delete().eq('id', id)
-  }
-
-  async function marcarTodasLidas() {
-    if (!userId || qtdNaoLidas === 0) return
-    await supabase.from('notifications').update({ lida: true }).eq('user_id', userId).eq('lida', false)
+    await apagar(id)
   }
 
   async function handleLogout() {
-    if (canalRef.current) supabase.removeChannel(canalRef.current)
     setMenuAberto(false)
     await supabase.auth.signOut()
     navigate('/')
@@ -165,11 +104,7 @@ export default function GlobalUserMenu() {
           onClick={async () => {
             setModalAberto(true)
             // ✅ Marca todas como lidas ao abrir o painel
-            if (userId && qtdNaoLidas > 0) {
-              setNotificacoes(prev => prev.map(n => ({ ...n, lida: true })))
-              setQtdNaoLidas(0)
-              await supabase.from('notifications').update({ lida: true }).eq('user_id', userId).eq('lida', false)
-            }
+            if (qtdNaoLidas > 0) await marcarTodasLidas()
           }}
           aria-label="Notificações"
           className="relative p-2.5 bg-gray-900/90 backdrop-blur-md hover:bg-gray-800 border border-white/10 rounded-full transition shadow-xl"
