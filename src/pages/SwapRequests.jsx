@@ -95,46 +95,21 @@ export default function SwapRequests() {
 
     setAvaliando(pedido.id)
     try {
-      if (aprovado) {
-        const [papelOriginalRes, papeisSubRes] = await Promise.all([
-          supabase.from('schedule_roles').select('*').eq('id', pedido.role_id).single(),
-          supabase.from('schedule_roles').select('*').eq('user_id', pedido.substitute_id).eq('schedule_id', pedido.schedule_id),
-        ])
-        const papelOriginal   = papelOriginalRes.data
-        const papelSubstituto = papeisSubRes.data?.[0]
-        const funcoesTrocadasStr  = pedido.funcoes_alvo || papelOriginal?.funcao || ''
-        const funcoesTrocadasArr  = funcoesTrocadasStr.split(/[+/]/).map(f => f.trim()).filter(Boolean)
-        const funcoesOriginaisArr = papelOriginal?.funcao.split(/[+/]/).map(f => f.trim()).filter(Boolean) || []
-        const funcoesRestantesArr = funcoesOriginaisArr.filter(f => !funcoesTrocadasArr.includes(f))
+      // Aprovação/rejeição atômica no banco (uma única transação)
+      const { data: funcoesTrocadas, error: erroTroca } = await supabase.rpc('responder_troca', { p_pedido_id: pedido.id, p_aprovar: aprovado })
+      if (erroTroca) throw erroTroca
 
-        if (funcoesRestantesArr.length === 0) {
-          if (papelSubstituto) {
-            const novaFuncao = Array.from(new Set([...papelSubstituto.funcao.split(/[+/]/).map(f=>f.trim()).filter(Boolean), ...funcoesTrocadasArr])).join(' + ')
-            { const { error: e1 } = await supabase.from('schedule_roles').update({ funcao: novaFuncao }).eq('id', papelSubstituto.id); if (e1) throw e1 }
-            { const { error: e2 } = await supabase.from('schedule_roles').delete().eq('id', papelOriginal.id); if (e2) throw e2 }
-          } else {
-            { const { error: e3 } = await supabase.from('schedule_roles').update({ user_id: pedido.substitute_id }).eq('id', pedido.role_id); if (e3) throw e3 }
-          }
-        } else {
-          { const { error: e4 } = await supabase.from('schedule_roles').update({ funcao: funcoesRestantesArr.join(' + ') }).eq('id', pedido.role_id); if (e4) throw e4 }
-          if (papelSubstituto) {
-            const novaFuncao = Array.from(new Set([...papelSubstituto.funcao.split(/[+/]/).map(f=>f.trim()).filter(Boolean), ...funcoesTrocadasArr])).join(' + ')
-            { const { error: e5 } = await supabase.from('schedule_roles').update({ funcao: novaFuncao }).eq('id', papelSubstituto.id); if (e5) throw e5 }
-          } else {
-            { const { error: e6 } = await supabase.from('schedule_roles').insert([{ schedule_id: pedido.schedule_id, user_id: pedido.substitute_id, funcao: funcoesTrocadasStr, status_confirmacao: 'Confirmado' }]); if (e6) throw e6 }
-          }
-        }
+      if (aprovado) {
+        const funcoesTrocadasStr = funcoesTrocadas || pedido.funcoes_alvo || ''
         await notificar(pedido.requester_id, 'Troca Aprovada!', `A sua troca com ${pedido.substitute_nome} (${funcoesTrocadasStr}) foi aprovada.`, 'escala', `/escala/${pedido.schedule_id}`)
         await notificar(pedido.substitute_id, 'Nova Convocação!', `Você assumiu a(s) função(ões) de ${funcoesTrocadasStr} no lugar de ${pedido.requester_nome}.`, 'escala', `/escala/${pedido.schedule_id}`)
       } else {
         await notificar(pedido.requester_id, 'Troca Rejeitada', `A sua solicitação de troca com ${pedido.substitute_nome} não foi aprovada.`, 'escala', `/escala/${pedido.schedule_id}`)
       }
-
-      { const { error: e7 } = await supabase.from('swap_requests').update({ status: aprovado ? 'aprovada' : 'rejeitada' }).eq('id', pedido.id); if (e7) throw e7 }
       setPedidos(prev => prev.filter(p => p.id !== pedido.id))
       toast.success(`Troca ${aprovado ? 'aprovada' : 'rejeitada'} com sucesso!`)
     } catch (err) {
-      (() => { console.error('Erro ao processar troca:', err); toast.error('Não foi possível processar a troca. Tente novamente.') })()
+      (() => { console.error('Erro ao processar troca:', err); toast.error(err?.code === 'P0001' ? err.message : 'Não foi possível processar a troca. Tente novamente.') })()
     } finally {
       setAvaliando(null)
     }

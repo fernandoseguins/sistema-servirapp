@@ -419,31 +419,10 @@ if (papelEncontrado) {
 
   async function avaliarTroca(pedido, aprovado) {
     if (!await confirm({ title: `${aprovado ? 'Aprovar' : 'Rejeitar'} troca?`, message: `${pedido.requester_nome} → ${pedido.substitute_nome}`, danger: !aprovado, labelOk: aprovado ? 'Aprovar' : 'Rejeitar', labelCancel: 'Cancelar' })) return
+    // Aprovação/rejeição atômica no banco (uma única transação)
+    const { error: erroTroca } = await supabase.rpc('responder_troca', { p_pedido_id: pedido.id, p_aprovar: aprovado })
+    if (erroTroca) { console.error('Erro ao processar troca:', erroTroca); return toast.error(erroTroca.code === 'P0001' ? erroTroca.message : 'Não foi possível processar a troca. Tente novamente.') }
     if (aprovado) {
-      const papelOriginal = escala.schedule_roles.find(r => r.id === pedido.role_id)
-      const papelSubstituto = escala.schedule_roles.find(r => r.user_id === pedido.substitute_id)
-      const funcoesTrocadasStr = pedido.funcoes_alvo || papelOriginal?.funcao || ""
-      const funcoesTrocadasArr = funcoesTrocadasStr.split(/[+/]/).map(f => f.trim()).filter(Boolean)
-      const funcoesOriginaisArr = papelOriginal?.funcao.split(/[+/]/).map(f => f.trim()).filter(Boolean) || []
-      const funcoesRestantesArr = funcoesOriginaisArr.filter(f => !funcoesTrocadasArr.includes(f))
-
-      if (funcoesRestantesArr.length === 0) {
-        if (papelSubstituto) {
-          const novaFuncao = Array.from(new Set([...papelSubstituto.funcao.split(/[+/]/).map(f=>f.trim()).filter(Boolean), ...funcoesTrocadasArr])).join(' + ')
-          await supabase.from('schedule_roles').update({ funcao: novaFuncao }).eq('id', papelSubstituto.id)
-          await supabase.from('schedule_roles').delete().eq('id', papelOriginal.id)
-        } else {
-          await supabase.from('schedule_roles').update({ user_id: pedido.substitute_id }).eq('id', pedido.role_id)
-        }
-      } else {
-        await supabase.from('schedule_roles').update({ funcao: funcoesRestantesArr.join(' + ') }).eq('id', pedido.role_id)
-        if (papelSubstituto) {
-           const novaFuncao = Array.from(new Set([...papelSubstituto.funcao.split(/[+/]/).map(f=>f.trim()).filter(Boolean), ...funcoesTrocadasArr])).join(' + ')
-           await supabase.from('schedule_roles').update({ funcao: novaFuncao }).eq('id', papelSubstituto.id)
-        } else {
-           await supabase.from('schedule_roles').insert([{ schedule_id: idDaEscala, user_id: pedido.substitute_id, funcao: funcoesTrocadasStr, status_confirmacao: 'Confirmado' }])
-        }
-      }
       if (escala.status === 'Publicada') {
         // ✅ Sem await — notificações não bloqueiam a UI
         notificar(pedido.requester_id, "✅ Troca Aprovada!", `Sua troca foi aprovada.`, "escala", `/escala/${idDaEscala}`)
@@ -452,7 +431,6 @@ if (papelEncontrado) {
     } else {
       if (escala.status === 'Publicada') notificar(pedido.requester_id, "❌ Troca Rejeitada", `A sua solicitação de troca não foi aprovada.`, "escala", `/escala/${idDaEscala}`)
     }
-    await supabase.from('swap_requests').update({ status: aprovado ? 'aprovada' : 'rejeitada' }).eq('id', pedido.id)
     // ✅ Remove troca da lista + atualiza roles no estado
     setPedidosTroca(prev => prev.filter(t => t.id !== pedido.id))
     if (aprovado) {
