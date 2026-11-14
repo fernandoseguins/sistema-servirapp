@@ -41,6 +41,20 @@ describe('salvarPreferencia', () => {
   })
 })
 
+describe('localStorage inacessível (dados do site bloqueados)', () => {
+  it('lerPreferencia retorna auto quando o próprio acesso a localStorage lança erro', () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('SecurityError') } })
+    try {
+      expect(lerPreferencia()).toBe('auto')
+      expect(() => salvarPreferencia('escuro')).not.toThrow()
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'localStorage', original)
+      else delete globalThis.localStorage
+    }
+  })
+})
+
 describe('resolverTema', () => {
   it('auto segue o sistema escuro', () => expect(resolverTema('auto', true)).toBe('escuro'))
   it('auto segue o sistema claro', () => expect(resolverTema('auto', false)).toBe('claro'))

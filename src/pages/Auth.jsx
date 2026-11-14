@@ -411,7 +411,7 @@ export default function Auth() {
         <p className="text-center text-sm text-ink-2 py-6">
           {isSignUp ? 'Já tem conta?' : 'Tem um código de convite?'}{' '}
           <button type="button" onClick={() => resetTelas(!isSignUp)}
-            className="font-semibold text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
+            className="font-semibold text-accent-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
             {isSignUp ? 'Entrar' : 'Criar minha conta'}
           </button>
         </p>

@@ -253,7 +253,7 @@ export default function NoticeBoard({ departamentoId }) {
                 ${urgente ? 'bg-danger-soft border-danger' : 'border-line bg-surface-2 hover:bg-surface-2'}`}>
                 <input type="checkbox" className="hidden" checked={urgente} onChange={e => setUrgente(e.target.checked)} />
                 <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0
-                  ${urgente ? 'bg-danger border-danger text-white' : 'bg-surface border-line'}`}>
+                  ${urgente ? 'bg-danger border-danger text-on-danger' : 'bg-surface border-line'}`}>
                   {urgente && <CheckSquare className="w-3.5 h-3.5" />}
                 </div>
                 <span className={`text-xs font-bold uppercase tracking-wider ${urgente ? 'text-danger' : 'text-ink-2'}`}>

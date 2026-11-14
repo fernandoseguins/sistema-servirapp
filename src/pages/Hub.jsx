@@ -139,7 +139,7 @@ export default function Hub() {
               className="relative p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
               <Bell className="w-5 h-5" aria-hidden="true" />
               {naoLidas > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-[10px] font-bold flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-on-accent text-[10px] font-bold flex items-center justify-center">
                   {naoLidas > 9 ? '9+' : naoLidas}
                 </span>
               )}
@@ -152,7 +152,7 @@ export default function Hub() {
           {/* PRÓXIMA ESCALA */}
           {proxima ? (
             <Card className="!p-5">
-              <p className="text-[11px] font-bold text-accent tracking-wide">PRÓXIMA ESCALA</p>
+              <p className="text-[11px] font-bold text-accent-ink tracking-wide">PRÓXIMA ESCALA</p>
               <p className="text-lg font-bold text-ink mt-1">{dataComDia(proxima.data)} · {proxima.turno}</p>
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Pill tom="dept" dept={proxima.departamentos?.nome}>

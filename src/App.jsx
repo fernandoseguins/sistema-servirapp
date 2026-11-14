@@ -126,7 +126,8 @@ function App() {
     <AparenciaProvider>
     <UIProvider>
     <IgrejaProvider>
-    <NotificacoesProvider userId={session?.user?.id ?? null}>
+    {/* key: troca de conta recria o provider (sem notificações da conta anterior) */}
+    <NotificacoesProvider key={session?.user?.id ?? 'anon'} userId={session?.user?.id ?? null}>
     <BrowserRouter>
 
       <ScrollToTop />

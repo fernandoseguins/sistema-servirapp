@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { CalendarDays, User, Clock, Send, ChevronDown, ArrowRight, Headphones } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { agruparPorMes, dataComDia } from '../utils/escalas'
+import { agruparPorMes, dataComDia, rotuloTurno } from '../utils/escalas'
 import { Card, Pill, Button, EmptyState } from './ui'
 import { hojeLocal } from '../utils/datas'
 // Quando o quadro é da Cantina, mostramos o departamento responsável do dia
@@ -89,7 +89,7 @@ export default function ScheduleBoard({ departamentoId, userRole, departamentoNo
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-semibold text-ink truncate">{dataComDia(escala.data)}</span>
                       <span className="block text-xs text-ink-2 truncate">
-                        {isCantina ? deptResponsavelCantina(escala.data) : (escala.turno === 'Integral' ? 'Culto principal' : `Culto da ${escala.turno.toLowerCase()}`)}
+                        {isCantina ? deptResponsavelCantina(escala.data) : rotuloTurno(escala.turno)}
                         {escala.cor_roupa ? ` · Roupa: ${escala.cor_roupa}` : ''}
                       </span>
                     </span>

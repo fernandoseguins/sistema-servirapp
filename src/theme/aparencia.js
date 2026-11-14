@@ -7,18 +7,20 @@ export const CHAVE_APARENCIA = 'servir.aparencia'
 const VALIDAS = ['auto', 'claro', 'escuro']
 const COR_BARRA = { claro: '#5B3FD9', escuro: '#0F1115' }
 
-export function lerPreferencia(storage = globalThis.localStorage) {
+// O próprio acesso a window.localStorage pode lançar (dados do site bloqueados),
+// por isso ele fica dentro do try e não no parâmetro padrão.
+export function lerPreferencia(storage) {
   try {
-    const v = storage?.getItem(CHAVE_APARENCIA)
+    const v = (storage ?? globalThis.localStorage)?.getItem(CHAVE_APARENCIA)
     return VALIDAS.includes(v) ? v : 'auto'
   } catch {
     return 'auto'
   }
 }
 
-export function salvarPreferencia(pref, storage = globalThis.localStorage) {
+export function salvarPreferencia(pref, storage) {
   try {
-    storage?.setItem(CHAVE_APARENCIA, pref)
+    (storage ?? globalThis.localStorage)?.setItem(CHAVE_APARENCIA, pref)
   } catch {
     // storage bloqueado (aba anônima, iOS): a preferência vale só nesta sessão
   }

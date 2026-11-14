@@ -18,7 +18,11 @@
     --muted: 163 160 184;       /* #A3A0B8 */
     --brand: 91 63 217;         /* #5B3FD9 */
     --on-brand: 255 255 255;
-    --accent: 255 107 87;       /* #FF6B57 */
+    --accent: 255 107 87;       /* #FF6B57 — fundos e destaques */
+    --accent-ink: 185 58 38;    /* #B93A26 — coral para TEXTO (contraste AA) */
+    --on-accent: 30 27 75;      /* texto sobre fundo coral */
+    --on-success: 255 255 255;  /* texto sobre fundo verde */
+    --on-danger: 255 255 255;   /* texto sobre fundo vermelho */
     --topo: 91 63 217;          /* #5B3FD9 */
     --danger: 180 35 24;        /* #B42318 */
     --danger-soft: 254 228 226; /* #FEE4E2 */
@@ -49,6 +53,10 @@
     --brand: 139 123 255;       /* #8B7BFF */
     --on-brand: 15 17 21;
     --accent: 255 138 120;      /* #FF8A78 */
+    --accent-ink: 255 138 120;  /* #FF8A78 */
+    --on-accent: 15 17 21;
+    --on-success: 15 17 21;
+    --on-danger: 15 17 21;
     --topo: 42 31 107;          /* #2A1F6B */
     --danger: 253 162 155;      /* #FDA29B */
     --danger-soft: 58 30 30;    /* #3A1E1E */

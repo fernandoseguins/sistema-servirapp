@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { agruparPorMes, dataComDia } from './escalas'
+import { agruparPorMes, dataComDia, rotuloTurno } from './escalas'
+
+describe('rotuloTurno', () => {
+  it('Integral vira culto principal', () => expect(rotuloTurno('Integral')).toBe('Culto principal'))
+  it('Noite vira culto da noite', () => expect(rotuloTurno('Noite')).toBe('Culto da noite'))
+  it('Manhã vira culto da manhã', () => expect(rotuloTurno('Manhã')).toBe('Culto da manhã'))
+  it('Extra (Cantina) vira culto extra', () => expect(rotuloTurno('Extra')).toBe('Culto extra'))
+  it('turno vazio não quebra', () => {
+    expect(rotuloTurno(null)).toBe('Culto')
+    expect(rotuloTurno(undefined)).toBe('Culto')
+  })
+})
 
 describe('dataComDia', () => {
   it('formata com dia da semana em maiúscula e dd/mm', () => {

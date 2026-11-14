@@ -259,9 +259,9 @@ export default function Dashboard() {
         {proximoCulto && (
           <Card as="button" onClick={() => navigate(`/escala/${proximoCulto.id}`, mochila)}
             className="w-full text-left flex items-center gap-3 hover:bg-surface-2/60 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-            <CalendarCheck className="w-5 h-5 text-accent flex-shrink-0" aria-hidden="true" />
+            <CalendarCheck className="w-5 h-5 text-accent-ink flex-shrink-0" aria-hidden="true" />
             <span className="flex-1 min-w-0">
-              <span className="block text-[11px] font-bold text-accent">SUA PRÓXIMA ESCALA</span>
+              <span className="block text-[11px] font-bold text-accent-ink">SUA PRÓXIMA ESCALA</span>
               <span className="block text-sm font-semibold text-ink truncate">{dataComDia(proximoCulto.data)} · {proximoCulto.turno}</span>
               <span className="block text-xs text-ink-2 truncate">{proximoCulto.schedule_roles?.map(r => r.funcao).join(' + ')}</span>
             </span>

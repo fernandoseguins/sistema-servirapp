@@ -13,6 +13,14 @@ export function dataComDia(iso) {
   return `${DIAS[d.getDay()]}, ${iso.slice(8, 10)}/${iso.slice(5, 7)}`
 }
 
+// "Noite" → "Culto da noite"; tolera turno vazio (coluna aceita nulo)
+export function rotuloTurno(turno) {
+  if (!turno) return 'Culto'
+  if (turno === 'Integral') return 'Culto principal'
+  if (turno === 'Extra') return 'Culto extra'
+  return `Culto da ${turno.toLowerCase()}`
+}
+
 export function agruparPorMes(escalas) {
   const ordenadas = [...escalas].sort((a, b) => a.data.localeCompare(b.data))
   const grupos = []

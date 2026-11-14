@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { rotuloTurno } from '../utils/escalas'
 import { urlSegura } from '../utils/url'
 import { ScheduleDetailsSkeleton } from '../components/Skeletons'
 import { useUI } from '../context/UIContext'
@@ -740,7 +741,7 @@ if (papelEncontrado) {
             {isRascunho && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-warning-soft text-warning">Rascunho</span>}
           </div>
           <p className="text-[11px] font-semibold text-white/75 uppercase tracking-wide mt-2">
-            {departamentoNome} · {escala.turno === 'Integral' ? 'Culto principal' : `Culto da ${escala.turno.toLowerCase()}`}
+            {departamentoNome} · {rotuloTurno(escala.turno)}
           </p>
           <h1 className="text-xl font-bold first-letter:uppercase">{formatarDataLonga(escala.data)}</h1>
           {escala.titulo && <p className="text-sm font-semibold mt-1 flex items-center gap-1.5 text-white/90"><Tag className="w-3.5 h-3.5" aria-hidden="true" /> {escala.titulo}</p>}
@@ -794,7 +795,7 @@ if (papelEncontrado) {
 
             {isLiderOuAdmin && escala.status_repertorio === 'pendente' && (
               <div className="flex gap-2 mt-2">
-                <button onClick={() => avaliarRepertorio(true)} className="flex-1 bg-success hover:bg-success text-white font-bold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs transition"><Check className="w-4 h-4" /> Aprovar</button>
+                <button onClick={() => avaliarRepertorio(true)} className="flex-1 bg-success hover:bg-success text-on-success font-bold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs transition"><Check className="w-4 h-4" /> Aprovar</button>
                 <button onClick={() => avaliarRepertorio(false)} className="flex-1 bg-surface border border-danger text-danger hover:bg-danger-soft font-bold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs transition"><X className="w-4 h-4" /> Rejeitar</button>
               </div>
             )}
@@ -1093,7 +1094,7 @@ if (papelEncontrado) {
                   {ITENS_CHECKLIST.map(item => (
                     <label key={item.key} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${checklistForm[item.key] ? 'bg-success-soft border-success text-success' : 'bg-surface-2 border-line text-ink-2 hover:border-line'}`}>
                       <input type="checkbox" className="hidden" checked={checklistForm[item.key]} onChange={() => setChecklistForm(prev => ({ ...prev, [item.key]: !prev[item.key] }))} />
-                      <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-white text-xs font-bold transition ${checklistForm[item.key] ? 'bg-success' : 'bg-line'}`}>
+                      <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-on-success text-xs font-bold transition ${checklistForm[item.key] ? 'bg-success' : 'bg-line'}`}>
                         {checklistForm[item.key] ? '✓' : ''}
                       </div>
                       <span className="text-xs font-medium">{item.label}</span>
@@ -1144,18 +1145,18 @@ if (papelEncontrado) {
                 <div key={item.n} className="flex gap-3">
                   <span className="text-base flex-shrink-0 mt-0.5">{item.n}</span>
                   <div>
-                    <p className="text-sm font-bold text-accent">{item.t}</p>
-                    <p className="text-xs text-accent leading-relaxed mt-0.5">{item.d}</p>
+                    <p className="text-sm font-bold text-accent-ink">{item.t}</p>
+                    <p className="text-xs text-accent-ink leading-relaxed mt-0.5">{item.d}</p>
                   </div>
                 </div>
               ))}
               <div className="border-t border-accent/40 pt-3 flex items-start gap-2">
                 <span className="text-sm flex-shrink-0">👉</span>
-                <p className="text-xs font-bold text-accent">
+                <p className="text-xs font-bold text-accent-ink">
                   Todos os escalados devem se unir para a organização e limpeza do ambiente.
                 </p>
               </div>
-              <p className="text-xs text-accent text-center font-medium pt-1">
+              <p className="text-xs text-accent-ink text-center font-medium pt-1">
                 Ficamos felizes em ter vocês servindo ao Senhor com alegria! 🥳🙌
               </p>
             </div>
@@ -1216,7 +1217,7 @@ if (papelEncontrado) {
                   <p className="text-xs text-ink-2 mb-2"><strong className="text-ink">{pedido.requester_nome}</strong> quer repassar a função de <strong className="text-ink">{pedido.funcoes_alvo || "todas as suas funções"}</strong> para <strong className="text-ink">{pedido.substitute_nome}</strong>.</p>
                   {pedido.motivo && <div className="mb-3 bg-surface-2 p-2.5 rounded-lg border border-line"><p className="text-[10px] text-ink-2 font-bold uppercase tracking-wider mb-0.5">Motivo:</p><p className="text-xs text-ink italic">"{pedido.motivo}"</p></div>}
                   <div className="flex gap-2">
-                    <button onClick={() => avaliarTroca(pedido, true)} className="flex-1 flex items-center justify-center gap-1.5 bg-success text-white font-bold py-2 rounded-lg text-xs hover:bg-success shadow-sm"><Check className="w-4 h-4" /> Aprovar</button>
+                    <button onClick={() => avaliarTroca(pedido, true)} className="flex-1 flex items-center justify-center gap-1.5 bg-success text-on-success font-bold py-2 rounded-lg text-xs hover:bg-success shadow-sm"><Check className="w-4 h-4" /> Aprovar</button>
                     <button onClick={() => avaliarTroca(pedido, false)} className="flex-1 flex items-center justify-center gap-1.5 bg-danger-soft text-danger font-bold py-2 rounded-lg text-xs border border-danger hover:bg-danger-soft shadow-sm"><X className="w-4 h-4" /> Rejeitar</button>
                   </div>
                 </div>
