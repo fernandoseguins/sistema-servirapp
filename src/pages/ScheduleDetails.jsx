@@ -7,6 +7,9 @@ import { urlSegura } from '../utils/url'
 import { ScheduleDetailsSkeleton } from '../components/Skeletons'
 import { useUI } from '../context/UIContext'
 import { enviarNotificacao, enviarNotificacaoEmMassa } from '../utils/notificacoes'
+import { hojeLocal } from '../utils/datas'
+import { CONFIRMADO, RECUSADO, PENDENTE, statusPresenca, tomPresenca, rotuloPresenca, resumoPresenca, responderEscala } from '../utils/presenca'
+import { Button, Pill } from '../components/ui'
 import { ArrowLeft, CalendarDays, Clock, Palette, UserPlus, CheckCircle2, XCircle, Trash2, Send, AlertCircle, ShieldAlert, Music, Plus, PlayCircle, Edit2, FileText, Tag, MessageCircle, Search, ChevronUp, ChevronDown, RefreshCw, Check, X, ListChecks, Upload, Download, MessageSquare, PenLine, Mic2 } from 'lucide-react'
 
 // Upload do mapa vocal: tipos aceitos e tamanho máximo
@@ -66,6 +69,8 @@ export default function ScheduleDetails() {
   const [funcoesSelecionadasTroca, setFuncoesSelecionadasTroca] = useState([])
   
   const [motivoTroca, setMotivoTroca] = useState('')
+  // ── Confirmação de presença: id do papel sendo respondido ──
+  const [respondendoId, setRespondendoId] = useState(null)
   
   const [loading, setLoading] = useState(true)
   const { toast, confirm } = useUI()
@@ -359,7 +364,7 @@ if (papelEncontrado) {
     } else {
       const { data: novoRole, error } = await supabase
         .from('schedule_roles')
-        .insert([{ schedule_id: idDaEscala, user_id: novoMembroId, funcao: stringDasNovasFuncoes, status_confirmacao: 'Confirmado' }])
+        .insert([{ schedule_id: idDaEscala, user_id: novoMembroId, funcao: stringDasNovasFuncoes, status_confirmacao: 'Pendente' }])
         .select('id, funcao, status_confirmacao, user_id, users_profile(nome)')
         .single()
       if (!error && novoRole) {
@@ -381,6 +386,21 @@ if (papelEncontrado) {
       toast.success(`${nomePessoa} removido(a).`)
       if (escala.status === 'Publicada') notificar(userId, "❌ Escala Cancelada", `A sua escala foi removida pelo líder.`, "escala", `/escala/${idDaEscala}`)
     } else toast.error('Erro ao remover.')
+  }
+
+  // ── Confirmação de presença (membro responde o próprio papel) ──
+  async function responderPresenca(papel, status) {
+    setRespondendoId(papel.id)
+    const { ok } = await responderEscala(papel.id, status)
+    setRespondendoId(null)
+    if (!ok) { toast.error('Não foi possível registrar sua resposta. Tente novamente.'); return }
+    setEscala(prev => ({ ...prev, schedule_roles: prev.schedule_roles.map(r => r.id === papel.id ? { ...r, status_confirmacao: status } : r) }))
+    if (status === CONFIRMADO) { toast.success('Presença confirmada!'); return }
+    toast.success('Resposta enviada. O líder foi avisado.')
+    const jaPediuTroca = pedidosTroca.some(p => p.role_id === papel.id)
+    if (!jaPediuTroca && await confirm({ title: 'Quer pedir uma troca?', message: 'Indique alguém para assumir sua função e ajude o líder a não deixar a vaga em aberto.', labelOk: 'Pedir troca', labelCancel: 'Agora não' })) {
+      abrirModalSubstituicao(papel)
+    }
   }
 
   function abrirModalSubstituicao(papel) {
@@ -1167,6 +1187,7 @@ if (papelEncontrado) {
         <div className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden">
           <div className="p-5 border-b border-line bg-surface-2">
             <h2 className="text-sm font-bold text-ink uppercase flex items-center gap-2"><UserPlus className={`w-5 h-5 text-brand`} /> Equipe Escalada ({escala.schedule_roles.length})</h2>
+            {isLiderOuAdmin && escala.schedule_roles.length > 0 && <p className="text-xs text-ink-2 mt-1">{resumoPresenca(escala.schedule_roles)}</p>}
           </div>
           <div className="p-2">
             {escala.schedule_roles.length === 0 ? <p className="text-sm text-muted text-center py-6 font-medium">Ninguém escalado ainda.</p> : (
@@ -1188,8 +1209,11 @@ if (papelEncontrado) {
                   return (a.users_profile?.nome || '').localeCompare(b.users_profile?.nome || '')
                 }).map((papel) => {
                   const temTrocaPendente = pedidosTroca.some(p => p.role_id === papel.id)
+                  const ehMeuPapel = papel.user_id === meuId
+                  const presenca = statusPresenca(papel.status_confirmacao)
+                  const escalaPassou = escala.data < hojeLocal()
                   return (
-                    <div key={papel.id} className="p-3 flex items-center justify-between hover:bg-surface-2 rounded-xl transition">
+                    <div key={papel.id} className="p-3 flex flex-wrap items-center justify-between gap-y-2 hover:bg-surface-2 rounded-xl transition">
                       <div className="flex flex-col">
                         <span className="font-bold text-ink">{papel.users_profile?.nome || 'Membro Excluído'}</span>
                         <span className={`text-[11px] font-bold uppercase tracking-wider text-brand`}>{papel.funcao}</span>
@@ -1197,8 +1221,33 @@ if (papelEncontrado) {
                       <div className="flex items-center gap-3">
                         {papel.user_id === meuId && !temTrocaPendente && <button onClick={() => abrirModalSubstituicao(papel)} className="flex items-center gap-1 bg-warning-soft text-warning border border-warning/40 px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-warning-soft transition shadow-sm"><RefreshCw className="w-3.5 h-3.5" /> Trocar</button>}
                         {papel.user_id === meuId && temTrocaPendente && <span className="flex items-center gap-1 bg-surface-2 text-ink-2 border border-line px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase"><Clock className="w-3 h-3" /> Em análise</span>}
+                        {isLiderOuAdmin && !ehMeuPapel && <Pill tom={tomPresenca(presenca)}>{rotuloPresenca(presenca)}</Pill>}
                         {isLiderOuAdmin && <button onClick={() => removerPessoa(papel.id, papel.users_profile?.nome, papel.user_id)} aria-label={`Remover ${papel.users_profile?.nome || 'membro'} da escala`} className="text-muted hover:text-danger transition p-1"><Trash2 className="w-4 h-4" /></button>}
                       </div>
+                      {ehMeuPapel && (
+                        <div className="w-full flex flex-wrap items-center gap-2">
+                          {escalaPassou ? (
+                            <Pill tom={tomPresenca(presenca)}>{rotuloPresenca(presenca)}</Pill>
+                          ) : presenca === PENDENTE ? (
+                            <>
+                              <span className="text-xs text-ink-2 font-medium mr-auto">Você confirma sua presença?</span>
+                              <Button size="sm" icon={<Check className="w-4 h-4" />} loading={respondendoId === papel.id} onClick={() => responderPresenca(papel, CONFIRMADO)}>Confirmar</Button>
+                              <Button size="sm" variant="perigo" icon={<X className="w-4 h-4" />} disabled={respondendoId === papel.id} onClick={() => responderPresenca(papel, RECUSADO)}>Não posso</Button>
+                            </>
+                          ) : presenca === CONFIRMADO ? (
+                            <>
+                              <Pill tom="sucesso" className="mr-auto"><CheckCircle2 className="w-3 h-3" /> Presença confirmada</Pill>
+                              <Button size="sm" variant="fantasma" loading={respondendoId === papel.id} onClick={() => responderPresenca(papel, RECUSADO)}>Não posso mais</Button>
+                            </>
+                          ) : (
+                            <>
+                              <Pill tom="perigo"><XCircle className="w-3 h-3" /> Você não vai</Pill>
+                              <span className="text-xs text-ink-2 flex-1 min-w-[10rem]">{temTrocaPendente ? 'Sua troca está em análise.' : 'Peça uma troca para não deixar a vaga em aberto.'}</span>
+                              <Button size="sm" variant="fantasma" loading={respondendoId === papel.id} onClick={() => responderPresenca(papel, CONFIRMADO)}>Posso ir</Button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
