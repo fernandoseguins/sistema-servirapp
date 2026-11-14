@@ -1,9 +1,11 @@
 // src/pages/Auth.jsx
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../supabase'
 import { concluirCadastroPendente } from '../utils/concluirCadastro'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, ArrowRight, ArrowLeft, Mic, Mic2, Settings2, Music, Check, Monitor, Camera, PenTool, Baby, Smile, HeartHandshake, Star, Shield } from 'lucide-react'
+import { Button, Card, Input, Logo } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
 
 // ✅ Mensagem de login conforme o erro real do Supabase (antes era sempre "senha incorreta")
 function mensagemErroLogin(error) {
@@ -253,378 +255,193 @@ export default function Auth() {
     }
   }
 
-  const OptionCheckbox = ({ icon, label, checked, onChange, colorClass }) => (
-    <label className="flex items-center gap-2 cursor-pointer bg-gray-50 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition flex-1">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className={`w-4 h-4 rounded focus:ring-opacity-50 ${colorClass}`} />
-      <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">{icon} {label}</span>
-    </label>
-  )
+  const erro = mensagem && !mensagem.includes('✅')
+  const Mensagem = () => mensagem ? (
+    <p role={erro ? 'alert' : 'status'}
+      className={`text-sm font-semibold text-center rounded-ctl px-3 py-2 ${erro ? 'bg-danger-soft text-danger' : 'bg-success-soft text-success'}`}>
+      {mensagem.replace(/^(❌|✅|⚠️)\s*/u, '')}
+    </p>
+  ) : null
+
+  const titulo = !isSignUp ? 'Entrar' : step === 1 ? 'Criar conta' : 'Onde você serve?'
+  const subtitulo = !isSignUp ? 'Acesse suas escalas e avisos.' : step === 1 ? 'Passo 1 de 2 · seus dados' : 'Passo 2 de 2 · departamentos e funções'
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 pt-12 overflow-hidden relative">
-      
-      <div className="absolute inset-0 z-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-        <picture>
-          <source srcSet="/logo.webp" type="image/webp" />
-          <img src="/logo.png" alt="" className="w-[800px] h-[800px] object-contain" />
-        </picture>
+    <div className="min-h-screen bg-bg flex flex-col">
+      {/* Topo roxo com o logo */}
+      <div className="bg-topo text-white text-center px-6 pt-[calc(2.5rem+env(safe-area-inset-top))] pb-14">
+        <Logo variante="branco" className="h-12 mx-auto" />
+        <p className="text-xs text-white/80 mt-2">Ser chamado · Vir para cumprir</p>
       </div>
 
-      <div className="hidden md:block relative w-full max-w-4xl h-[650px] bg-white rounded-3xl shadow-2xl overflow-hidden z-10">
-        
-        {/* LOGIN */}
-        <div className={`absolute top-0 left-0 w-1/2 h-full flex flex-col justify-center px-14 transition-all duration-700 ease-in-out ${isSignUp ? 'translate-x-[100%] opacity-0 z-10' : 'translate-x-0 opacity-100 z-20'}`}>
-          <picture>
-            <source srcSet="/logo.webp" type="image/webp" />
-            <img src="/logo.png" alt="Logo" className="w-40 h-40 object-contain mb-6 drop-shadow-md" />
-          </picture>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo de volta!</h1>
-          <p className="text-sm text-gray-500 mb-8">Faça login para acessar o sistema</p>
-          
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Mail className="h-5 w-5 text-gray-400" /></div>
-              <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-            </div>
-            <div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Lock className="h-5 w-5 text-gray-400" /></div>
-                <input type="password" required placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              <div className="flex justify-end mt-2">
-                <button type="button" onClick={handleResetPassword} disabled={loading} className="text-xs font-bold text-blue-600 hover:text-blue-800 transition active:scale-[0.97] hover:underline">
-                  Esqueceu a senha?
-                </button>
-              </div>
-            </div>
-
-            {mensagem && !isSignUp && <p className={`text-sm font-bold text-center mt-2 py-2 rounded-lg ${mensagem.includes('✅') ? 'text-green-700 bg-green-50' : 'text-red-500 bg-red-50'}`}>{mensagem}</p>}
-            
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold rounded-xl py-3.5 mt-2 hover:bg-blue-700 transition active:scale-[0.97] shadow-md">
-              {loading ? 'Aguarde...' : 'Entrar no Sistema'}
-            </button>
-          </form>
-        </div>
-
-        {/* REGISTO */}
-        <div className={`absolute top-0 left-0 w-1/2 h-full flex flex-col justify-center px-12 transition-all duration-700 ease-in-out ${isSignUp ? 'translate-x-[100%] opacity-100 z-20' : 'translate-x-0 opacity-0 z-10'}`}>
-          
-          {step === 1 && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-              <picture>
-              <source srcSet="/logo.webp" type="image/webp" />
-              <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain mb-4 drop-shadow-md" />
-            </picture>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Conta</h1>
-              <p className="text-sm text-gray-500 mb-6">Passo 1: Insira os seus dados pessoais.</p>
-              <form onSubmit={handleNextStep} className="space-y-4">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><User className="h-5 w-5 text-gray-400" /></div>
-                  <input type="text" required placeholder="Nome Completo" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Mail className="h-5 w-5 text-gray-400" /></div>
-                  <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Lock className="h-4 w-4 text-gray-400" /></div>
-                    <input type="password" required placeholder="Senha (Mín. 8)" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-10 pr-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Check className="h-4 w-4 text-gray-400" /></div>
-                    <input type="password" required placeholder="Confirmar Senha" minLength="8" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-10 pr-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  </div>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Star className="h-5 w-5 text-gray-400" /></div>
-                  <input type="text" required placeholder="Código de convite" value={codigoConvite} onChange={(e) => setCodigoConvite(e.target.value.toUpperCase())} maxLength={6} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none uppercase tracking-widest font-bold" />
-                </div>
-                {mensagem && isSignUp && <p className="text-sm font-bold text-center text-red-500 mt-2 bg-red-50 py-2 rounded-lg">{mensagem}</p>}
-                <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold rounded-xl py-3 mt-2 hover:bg-blue-700 transition active:scale-[0.97] shadow-md flex justify-center items-center gap-2">
-                  Continuar <ArrowRight className="w-5 h-5" />
-                </button>
-              </form>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="flex flex-col h-full py-8 animate-in fade-in slide-in-from-right-4 duration-500">
-              <button onClick={() => setStep(1)} className="flex items-center gap-1 text-sm font-bold text-gray-500 hover:text-blue-600 transition mb-3 w-fit">
-                <ArrowLeft className="w-4 h-4" /> Voltar
-              </button>
-              
-              <div className="flex-1 overflow-y-auto pr-3 space-y-5 customized-scrollbar">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900 mb-3">Onde você serve?</h2>
-                  <div className="grid grid-cols-2 gap-2">
-                    {departamentosDB.map(dept => (
-                      <label key={dept.id} className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition ${selectedDepts.includes(dept.id) ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}>
-                        <input type="checkbox" className="hidden" checked={selectedDepts.includes(dept.id)} onChange={() => toggleDept(dept.id)} />
-                        <div className={`w-4 h-4 rounded flex items-center justify-center border ${selectedDepts.includes(dept.id) ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white border-gray-300'}`}>
-                          {selectedDepts.includes(dept.id) && <Check className="w-3 h-3" />}
-                        </div>
-                        <span className="text-xs font-bold">{dept.nome}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {isLouvorSelected && (
-                  <div className="pt-4 border-t border-gray-100 animate-in fade-in duration-300">
-                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Music className="w-4 h-4 text-blue-500"/> Louvor</h2>
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      <OptionCheckbox icon={<Star className="w-3.5 h-3.5 text-yellow-500"/>} label="Condução" checked={conducao} onChange={setConducao} colorClass="text-yellow-600" />
-                      <OptionCheckbox icon={<Mic className="w-3.5 h-3.5 text-blue-500"/>} label="Voz Principal" checked={voz} onChange={setVoz} colorClass="text-blue-600" />
-                      <OptionCheckbox icon={<Mic2 className="w-3.5 h-3.5 text-purple-500"/>} label="Backing" checked={backingVocal} onChange={setBackingVocal} colorClass="text-purple-600" />
-                      <OptionCheckbox icon={<Settings2 className="w-3.5 h-3.5 text-gray-500"/>} label="Sonoplastia" checked={sonoplastia} onChange={setSonoplastia} colorClass="text-gray-600" />
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {listaInstrumentos.map(inst => (
-                        <button key={inst} type="button" onClick={() => toggleInstrumento(inst)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition ${meusInstrumentos.includes(inst) ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300' : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>{inst}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {isMidiaSelected && (
-                  <div className="pt-4 border-t border-gray-100 animate-in fade-in duration-300">
-                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Camera className="w-4 h-4 text-purple-500"/> Mídia</h2>
-                    <div className="grid grid-cols-2 gap-2">
-                      <OptionCheckbox icon={<Monitor className="w-3.5 h-3.5 text-indigo-500"/>} label="Computador" checked={midiaComputador} onChange={setMidiaComputador} colorClass="text-indigo-600" />
-                      <OptionCheckbox icon={<Camera className="w-3.5 h-3.5 text-pink-500"/>} label="Fotografia" checked={midiaFotografia} onChange={setMidiaFotografia} colorClass="text-pink-600" />
-                      <OptionCheckbox icon={<PenTool className="w-3.5 h-3.5 text-orange-500"/>} label="Redação" checked={midiaRedacao} onChange={setMidiaRedacao} colorClass="text-orange-600" />
-                    </div>
-                  </div>
-                )}
-
-                {isInfantilSelected && (
-                  <div className="pt-4 border-t border-gray-100 animate-in fade-in duration-300">
-                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Baby className="w-4 h-4 text-pink-500"/> Infantil</h2>
-                    <div className="grid grid-cols-2 gap-2">
-                      <OptionCheckbox icon={<Baby className="w-3.5 h-3.5 text-pink-400"/>} label="Berçário" checked={infBercario} onChange={setInfBercario} colorClass="text-pink-500" />
-                      <OptionCheckbox icon={<Smile className="w-3.5 h-3.5 text-yellow-500"/>} label="Sala 03 - 08" checked={infSala38} onChange={setInfSala38} colorClass="text-yellow-500" />
-                      <OptionCheckbox icon={<Smile className="w-3.5 h-3.5 text-green-500"/>} label="Sala 09 - 11" checked={infSala911} onChange={setInfSala911} colorClass="text-green-500" />
-                      <OptionCheckbox icon={<HeartHandshake className="w-3.5 h-3.5 text-red-400"/>} label="Acolhimento" checked={infAcolhimento} onChange={setInfAcolhimento} colorClass="text-red-500" />
-                      <OptionCheckbox icon={<HeartHandshake className="w-3.5 h-3.5 text-blue-400"/>} label="Auxiliar" checked={infAuxiliar} onChange={setInfAuxiliar} colorClass="text-blue-500" />
-                    </div>
-                  </div>
-                )}
-
-                {/* ✅ NOVO: MÓDULO DA DIACONIA */}
-                {isDiaconiaSelected && (
-                  <div className="pt-4 border-t border-gray-100 animate-in fade-in duration-300">
-                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Shield className="w-4 h-4 text-gray-800"/> Diaconia</h2>
-                    <div className="flex gap-2">
-                      <OptionCheckbox icon={<Shield className="w-3.5 h-3.5 text-gray-700"/>} label="Atuar na Diaconia" checked={diaconiaGeral} onChange={setDiaconiaGeral} colorClass="text-gray-900" />
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="pt-4 mt-auto">
-                {mensagem && isSignUp && <p className={`text-sm font-bold text-center mb-2 py-2 rounded-lg ${mensagem.includes('❌') ? 'text-red-600 bg-red-50' : 'text-green-700 bg-green-50'}`}>{mensagem}</p>}
-                <button type="button" onClick={handleRegister} disabled={loading} className="w-full bg-blue-600 text-white font-bold rounded-xl py-3.5 hover:bg-blue-700 transition active:scale-[0.97] shadow-md disabled:opacity-50">
-                  {loading ? 'Aguarde...' : 'Finalizar Cadastro'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* PAINEL DESLIZANTE */}
-        <div className={`absolute top-0 left-1/2 w-1/2 h-full overflow-hidden transition-transform duration-700 ease-in-out z-50 ${isSignUp ? '-translate-x-[100%]' : 'translate-x-0'} pointer-events-none`}>
-          <div className={`bg-gradient-to-br from-blue-600 to-indigo-700 relative -left-[100%] h-full w-[200%] transition-transform duration-700 ease-in-out pointer-events-auto ${isSignUp ? 'translate-x-1/2' : 'translate-x-0'}`}>
-            <div className={`absolute top-0 right-0 w-1/2 h-full flex flex-col items-center justify-center p-14 text-center text-white transition-transform duration-700 ease-in-out ${isSignUp ? 'translate-x-[20%]' : 'translate-x-0'}`}>
-              <h2 className="text-4xl font-bold mb-4">Novo aqui?</h2>
-              <p className="text-base font-medium text-blue-100 mb-8 leading-relaxed">Crie a sua conta agora para acompanhar as suas escalas e compromissos na igreja.</p>
-              <button onClick={() => resetTelas(true)} className="border-2 border-white text-white font-bold rounded-xl py-3 px-12 hover:bg-white hover:text-blue-600 transition">
-                CRIAR CONTA
-              </button>
-            </div>
-            <div className={`absolute top-0 left-0 w-1/2 h-full flex flex-col items-center justify-center p-14 text-center text-white transition-transform duration-700 ease-in-out ${isSignUp ? 'translate-x-0' : '-translate-x-[20%]'}`}>
-              <h2 className="text-4xl font-bold mb-4">Já é Membro?</h2>
-              <p className="text-base font-medium text-blue-100 mb-8 leading-relaxed">Se já possui uma conta registada, faça login para entrar no seu portal.</p>
-              <button onClick={() => resetTelas(false)} className="border-2 border-white text-white font-bold rounded-xl py-3 px-12 hover:bg-white hover:text-blue-600 transition">
-                FAZER LOGIN
-              </button>
-            </div>
+      <main className="w-full max-w-sm mx-auto px-4 -mt-8 flex-1">
+        <Card className="space-y-4 !p-5">
+          <div>
+            <h1 className="text-xl font-bold text-ink">{titulo}</h1>
+            <p className="text-xs text-ink-2 mt-0.5">{subtitulo}</p>
           </div>
-        </div>
-      </div>
 
-      {/* =======================================================
-        📱 VERSÃO MOBILE
-        ======================================================= */}
-      <div className="md:hidden w-full max-w-md bg-white rounded-3xl shadow-xl z-10 relative mt-16">
-        
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white p-2 rounded-full shadow-md z-20">
-          <picture>
-          <source srcSet="/logo.webp" type="image/webp" />
-          <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain rounded-full bg-gray-50" />
-        </picture>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 pt-14 text-white text-center rounded-t-3xl rounded-b-[40px] shadow-sm">
-          <h1 className="text-2xl font-bold mb-2">{!isSignUp ? 'Bem-vindo!' : step === 1 ? 'Criar Conta' : 'Quase lá...'}</h1>
-          <p className="text-blue-100 text-sm">{!isSignUp ? 'Faça login na sua conta.' : step === 1 ? 'Passo 1: Dados Pessoais' : 'Passo 2: Seus Departamentos'}</p>
-        </div>
-
-        <div className="p-6 pt-6">
-          
-          {/* LOGIN MOBILE */}
+          {/* LOGIN */}
           {!isSignUp && (
-            <form onSubmit={handleLogin} className="space-y-4 animate-in fade-in duration-300">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Mail className="h-5 w-5 text-gray-400" /></div>
-                <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
+            <form onSubmit={handleLogin} className="space-y-3">
+              <Input label="E-mail" type="email" required autoComplete="email" placeholder="seu@email.com"
+                value={email} onChange={(e) => setEmail(e.target.value)} icon={<Mail className="w-4 h-4" aria-hidden="true" />} />
               <div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Lock className="h-5 w-5 text-gray-400" /></div>
-                  <input type="password" required placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div className="flex justify-end mt-2">
-                  <button type="button" onClick={handleResetPassword} disabled={loading} className="text-xs font-bold text-blue-600 hover:text-blue-800 transition active:scale-[0.97] hover:underline">
-                    Esqueceu a senha?
+                <Input label="Senha" type="password" required autoComplete="current-password" placeholder="Sua senha"
+                  value={password} onChange={(e) => setPassword(e.target.value)} icon={<Lock className="w-4 h-4" aria-hidden="true" />} />
+                <div className="flex justify-end mt-1.5">
+                  <button type="button" onClick={handleResetPassword} disabled={loading}
+                    className="text-xs font-semibold text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
+                    Esqueci a senha
                   </button>
                 </div>
               </div>
-
-              {mensagem && <p className={`text-sm font-bold text-center mt-2 ${mensagem.includes('✅') ? 'text-green-700' : 'text-red-500'}`}>{mensagem}</p>}
-              
-              <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold rounded-xl py-4 mt-2 hover:bg-blue-700 transition active:scale-[0.97] flex justify-center items-center gap-2 shadow-md">
-                {loading ? 'Aguarde...' : 'Entrar'} <ArrowRight className="w-5 h-5" />
-              </button>
+              <Mensagem />
+              <Button type="submit" full loading={loading} icon={!loading && <ArrowRight className="w-4 h-4" aria-hidden="true" />}>
+                Entrar
+              </Button>
             </form>
           )}
 
-          {/* CADASTRO MOBILE (PASSO 1) */}
+          {/* CADASTRO — PASSO 1 */}
           {isSignUp && step === 1 && (
-            <form onSubmit={handleNextStep} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><User className="h-5 w-5 text-gray-400" /></div>
-                <input type="text" required placeholder="Nome Completo" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <form onSubmit={handleNextStep} className="space-y-3">
+              <Input label="Nome completo" required autoComplete="name" placeholder="Maria da Silva"
+                value={nome} onChange={(e) => setNome(e.target.value)} icon={<User className="w-4 h-4" aria-hidden="true" />} />
+              <Input label="E-mail" type="email" required autoComplete="email" placeholder="seu@email.com"
+                value={email} onChange={(e) => setEmail(e.target.value)} icon={<Mail className="w-4 h-4" aria-hidden="true" />} />
+              <div className="grid grid-cols-2 gap-2">
+                <Input label="Senha" type="password" required minLength={8} autoComplete="new-password" placeholder="Mín. 8"
+                  value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Input label="Confirmar" type="password" required minLength={8} autoComplete="new-password" placeholder="Repita"
+                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Mail className="h-5 w-5 text-gray-400" /></div>
-                <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Lock className="h-5 w-5 text-gray-400" /></div>
-                <input type="password" required placeholder="Senha (mín. 8)" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Check className="h-5 w-5 text-gray-400" /></div>
-                <input type="password" required placeholder="Confirme sua senha" minLength="8" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Star className="h-5 w-5 text-gray-400" /></div>
-                <input type="text" required placeholder="Código de convite" value={codigoConvite} onChange={(e) => setCodigoConvite(e.target.value.toUpperCase())} maxLength={6} className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none uppercase tracking-widest font-bold" />
-              </div>
-
-              {mensagem && <p className="text-sm font-bold text-center mt-2 text-red-500">{mensagem}</p>}
-              
-              <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold rounded-xl py-4 mt-2 hover:bg-blue-700 transition active:scale-[0.97] flex justify-center items-center gap-2 shadow-md">
-                Continuar <ArrowRight className="w-5 h-5" />
-              </button>
+              <Input label="Código de convite" required maxLength={6} placeholder="ABC123"
+                className="[&_input]:uppercase [&_input]:tracking-widest [&_input]:font-bold"
+                value={codigoConvite} onChange={(e) => setCodigoConvite(e.target.value.toUpperCase())}
+                icon={<Star className="w-4 h-4" aria-hidden="true" />} />
+              <Mensagem />
+              <Button type="submit" full loading={loading} icon={!loading && <ArrowRight className="w-4 h-4" aria-hidden="true" />}>
+                Continuar
+              </Button>
             </form>
           )}
 
-          {/* CADASTRO MOBILE (PASSO 2) */}
+          {/* CADASTRO — PASSO 2 */}
           {isSignUp && step === 2 && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="max-h-[350px] overflow-y-auto pr-2 space-y-5 customized-scrollbar">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Departamentos:</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {departamentosDB.map(dept => (
-                      <label key={dept.id} className={`flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition ${selectedDepts.includes(dept.id) ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
-                        <input type="checkbox" className="hidden" checked={selectedDepts.includes(dept.id)} onChange={() => toggleDept(dept.id)} />
-                        <div className={`w-4 h-4 rounded flex items-center justify-center border ${selectedDepts.includes(dept.id) ? 'bg-blue-500 border-blue-500' : 'bg-white border-gray-300'}`}>
-                          {selectedDepts.includes(dept.id) && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                        <span className="text-xs font-bold">{dept.nome}</span>
+            <div className="space-y-4">
+              <fieldset>
+                <legend className="text-xs font-semibold text-ink-2 mb-2">Departamentos</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {departamentosDB.map(dept => {
+                    const on = selectedDepts.includes(dept.id)
+                    return (
+                      <label key={dept.id}
+                        className={`flex items-center gap-2 p-2.5 rounded-ctl border cursor-pointer transition text-xs font-semibold
+                          has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand
+                          ${on ? 'bg-brand/10 border-brand text-brand' : 'bg-surface border-line text-ink-2 hover:bg-surface-2'}`}>
+                        <input type="checkbox" className="sr-only" checked={on} onChange={() => toggleDept(dept.id)} />
+                        <span className={`w-4 h-4 rounded flex items-center justify-center border flex-shrink-0 ${on ? 'bg-brand border-brand' : 'border-line'}`}>
+                          {on && <Check className="w-3 h-3 text-on-brand" aria-hidden="true" />}
+                        </span>
+                        <IconeDept nome={dept.nome} className="w-4 h-4" />
+                        <span className="truncate">{dept.nome}</span>
                       </label>
-                    ))}
-                  </div>
+                    )
+                  })}
                 </div>
+              </fieldset>
 
-                {isLouvorSelected && (
-                  <div className="pt-4 border-t border-gray-100">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Music className="w-3.5 h-3.5 text-blue-500"/> Louvor</label>
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      <OptionCheckbox icon={<Star className="w-3.5 h-3.5 text-yellow-500"/>} label="Condução" checked={conducao} onChange={setConducao} colorClass="text-yellow-600" />
-                      <OptionCheckbox icon={<Mic className="w-3.5 h-3.5 text-blue-500"/>} label="Voz Principal" checked={voz} onChange={setVoz} colorClass="text-blue-600" />
-                      <OptionCheckbox icon={<Mic2 className="w-3.5 h-3.5 text-purple-500"/>} label="Backing" checked={backingVocal} onChange={setBackingVocal} colorClass="text-purple-600" />
-                      <OptionCheckbox icon={<Settings2 className="w-3.5 h-3.5 text-gray-500"/>} label="Sonoplastia" checked={sonoplastia} onChange={setSonoplastia} colorClass="text-gray-600" />
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {listaInstrumentos.map(inst => (
-                        <button key={inst} type="button" onClick={() => toggleInstrumento(inst)} className={`px-2 py-1.5 rounded-lg text-[10px] font-bold ${meusInstrumentos.includes(inst) ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>{inst}</button>
-                      ))}
-                    </div>
+              {isLouvorSelected && (
+                <GrupoFuncoes icon={Music} titulo="Louvor">
+                  <OptionCheckbox icon={Star} label="Condução" checked={conducao} onChange={setConducao} />
+                  <OptionCheckbox icon={Mic} label="Voz principal" checked={voz} onChange={setVoz} />
+                  <OptionCheckbox icon={Mic2} label="Backing" checked={backingVocal} onChange={setBackingVocal} />
+                  <OptionCheckbox icon={Settings2} label="Sonoplastia" checked={sonoplastia} onChange={setSonoplastia} />
+                  <div className="col-span-2 flex flex-wrap gap-1.5 pt-1" role="group" aria-label="Instrumentos">
+                    {listaInstrumentos.map(inst => {
+                      const on = meusInstrumentos.includes(inst)
+                      return (
+                        <button key={inst} type="button" aria-pressed={on} onClick={() => toggleInstrumento(inst)}
+                          className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition
+                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand
+                            ${on ? 'bg-brand/10 border-brand text-brand' : 'bg-surface border-line text-ink-2'}`}>
+                          {inst}
+                        </button>
+                      )
+                    })}
                   </div>
-                )}
+                </GrupoFuncoes>
+              )}
 
-                {isMidiaSelected && (
-                  <div className="pt-4 border-t border-gray-100">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Camera className="w-3.5 h-3.5 text-purple-500"/> Mídia</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <OptionCheckbox icon={<Monitor className="w-3.5 h-3.5 text-indigo-500"/>} label="Computador" checked={midiaComputador} onChange={setMidiaComputador} colorClass="text-indigo-600" />
-                      <OptionCheckbox icon={<Camera className="w-3.5 h-3.5 text-pink-500"/>} label="Fotografia" checked={midiaFotografia} onChange={setMidiaFotografia} colorClass="text-pink-600" />
-                      <OptionCheckbox icon={<PenTool className="w-3.5 h-3.5 text-orange-500"/>} label="Redação" checked={midiaRedacao} onChange={setMidiaRedacao} colorClass="text-orange-600" />
-                    </div>
-                  </div>
-                )}
+              {isMidiaSelected && (
+                <GrupoFuncoes icon={Camera} titulo="Mídia">
+                  <OptionCheckbox icon={Monitor} label="Computador" checked={midiaComputador} onChange={setMidiaComputador} />
+                  <OptionCheckbox icon={Camera} label="Fotografia" checked={midiaFotografia} onChange={setMidiaFotografia} />
+                  <OptionCheckbox icon={PenTool} label="Redação" checked={midiaRedacao} onChange={setMidiaRedacao} />
+                </GrupoFuncoes>
+              )}
 
-                {isInfantilSelected && (
-                  <div className="pt-4 border-t border-gray-100">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Baby className="w-3.5 h-3.5 text-pink-500"/> Infantil</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <OptionCheckbox icon={<Baby className="w-3.5 h-3.5 text-pink-400"/>} label="Berçário" checked={infBercario} onChange={setInfBercario} colorClass="text-pink-500" />
-                      <OptionCheckbox icon={<Smile className="w-3.5 h-3.5 text-yellow-500"/>} label="Sala 03-08" checked={infSala38} onChange={setInfSala38} colorClass="text-yellow-500" />
-                      <OptionCheckbox icon={<Smile className="w-3.5 h-3.5 text-green-500"/>} label="Sala 09-11" checked={infSala911} onChange={setInfSala911} colorClass="text-green-500" />
-                      <OptionCheckbox icon={<HeartHandshake className="w-3.5 h-3.5 text-red-400"/>} label="Acolher" checked={infAcolhimento} onChange={setInfAcolhimento} colorClass="text-red-500" />
-                      <OptionCheckbox icon={<HeartHandshake className="w-3.5 h-3.5 text-blue-400"/>} label="Auxiliar" checked={infAuxiliar} onChange={setInfAuxiliar} colorClass="text-blue-500" />
-                    </div>
-                  </div>
-                )}
+              {isInfantilSelected && (
+                <GrupoFuncoes icon={Baby} titulo="Infantil">
+                  <OptionCheckbox icon={Baby} label="Berçário" checked={infBercario} onChange={setInfBercario} />
+                  <OptionCheckbox icon={Smile} label="Sala 03-08" checked={infSala38} onChange={setInfSala38} />
+                  <OptionCheckbox icon={Smile} label="Sala 09-11" checked={infSala911} onChange={setInfSala911} />
+                  <OptionCheckbox icon={HeartHandshake} label="Acolhimento" checked={infAcolhimento} onChange={setInfAcolhimento} />
+                  <OptionCheckbox icon={HeartHandshake} label="Auxiliar" checked={infAuxiliar} onChange={setInfAuxiliar} />
+                </GrupoFuncoes>
+              )}
 
-                {/* ✅ NOVO: MÓDULO DA DIACONIA NO MOBILE */}
-                {isDiaconiaSelected && (
-                  <div className="pt-4 border-t border-gray-100">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Shield className="w-3.5 h-3.5 text-gray-800"/> Diaconia</label>
-                    <div className="flex gap-2">
-                      <OptionCheckbox icon={<Shield className="w-3.5 h-3.5 text-gray-700"/>} label="Atuar na Diaconia" checked={diaconiaGeral} onChange={setDiaconiaGeral} colorClass="text-gray-900" />
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {mensagem && isSignUp && <p className={`text-sm font-bold text-center mt-3 py-1 rounded ${mensagem.includes('❌') ? 'text-red-600' : 'text-green-700'}`}>{mensagem}</p>}
-              
-              <div className="flex gap-2 mt-4">
-                <button type="button" onClick={() => setStep(1)} className="p-3.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200"><ArrowLeft className="w-5 h-5" /></button>
-                <button type="button" onClick={handleRegister} disabled={loading} className="flex-1 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 shadow-md disabled:opacity-50">
-                  {loading ? 'Aguarde...' : 'Finalizar Cadastro'}
-                </button>
+              {isDiaconiaSelected && (
+                <GrupoFuncoes icon={Shield} titulo="Diaconia">
+                  <OptionCheckbox icon={Shield} label="Atuar na Diaconia" checked={diaconiaGeral} onChange={setDiaconiaGeral} />
+                </GrupoFuncoes>
+              )}
+
+              <Mensagem />
+              <div className="flex gap-2">
+                <Button variant="secundario" onClick={() => setStep(1)} aria-label="Voltar ao passo 1"
+                  icon={<ArrowLeft className="w-4 h-4" aria-hidden="true" />} />
+                <Button className="flex-1" onClick={handleRegister} loading={loading}>Finalizar cadastro</Button>
               </div>
             </div>
           )}
+        </Card>
 
-          <div className="mt-8 text-center border-t border-gray-100 pt-6">
-            <button onClick={() => resetTelas(!isSignUp)} className="text-sm text-gray-500 hover:text-blue-600 font-medium transition">
-              {isSignUp ? 'Já tem conta? ' : 'Ainda não tem conta? '}
-              <span className="font-bold underline">{isSignUp ? 'Faça login aqui.' : 'Crie uma aqui.'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Scrollbar Customizada Global */}
-      {/* ✅ Scrollbar movida para src/index.css */}
-
+        <p className="text-center text-sm text-ink-2 py-6">
+          {isSignUp ? 'Já tem conta?' : 'Tem um código de convite?'}{' '}
+          <button type="button" onClick={() => resetTelas(!isSignUp)}
+            className="font-semibold text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
+            {isSignUp ? 'Entrar' : 'Criar minha conta'}
+          </button>
+        </p>
+      </main>
     </div>
+  )
+}
+
+// ── Peças do passo 2 (fora do componente para não recriar a cada render) ─────
+function GrupoFuncoes({ icon, titulo, children }) {
+  const Icon = icon
+  return (
+    <fieldset className="border-t border-line pt-3">
+      <legend className="text-xs font-semibold text-ink-2 flex items-center gap-1.5 pr-2">
+        <Icon className="w-3.5 h-3.5 text-brand" aria-hidden="true" /> {titulo}
+      </legend>
+      <div className="grid grid-cols-2 gap-2 mt-2">{children}</div>
+    </fieldset>
+  )
+}
+
+function OptionCheckbox({ icon, label, checked, onChange }) {
+  const Icon = icon
+  return (
+    <label className={`flex items-center gap-2 p-2.5 rounded-ctl border cursor-pointer transition text-xs font-semibold
+      has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand
+      ${checked ? 'bg-brand/10 border-brand text-brand' : 'bg-surface border-line text-ink-2 hover:bg-surface-2'}`}>
+      <input type="checkbox" className="sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <Icon className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+      <span>{label}</span>
+    </label>
   )
 }
