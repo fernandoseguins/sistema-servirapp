@@ -10,7 +10,7 @@ import { UIProvider } from './context/UIContext'
 import { IgrejaProvider } from './context/IgrejaContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import ScrollToTop from './components/ScrollToTop'
-import GlobalUserMenu from './components/GlobalUserMenu'
+import AppShell from './components/shell/AppShell'
 import { AparenciaProvider } from './hooks/useAparencia'
 import { NotificacoesProvider } from './hooks/useNotificacoes'
 // import ChatBot from './components/ChatBot'  // reativar quando adicionar o botão de Dúvidas no Hub
@@ -41,6 +41,8 @@ const MinistrosSchedule= lazy(() => import('./pages/MinistrosSchedule'))
 const CriarIgreja      = lazy(() => import('./pages/CriarIgreja'))
 const PainelDono       = lazy(() => import('./pages/PainelDono'))
 const IgrejaDetalhes   = lazy(() => import('./pages/IgrejaDetalhes'))
+const MinhasEscalas    = lazy(() => import('./pages/MinhasEscalas'))
+const Avisos           = lazy(() => import('./pages/Avisos'))
 // Vitrine das peças de UI — só existe em desenvolvimento (fica fora do build de produção)
 const DevUI            = import.meta.env.DEV ? lazy(() => import('./pages/DevUI')) : null
 
@@ -126,16 +128,11 @@ function App() {
     <IgrejaProvider>
     <NotificacoesProvider userId={session?.user?.id ?? null}>
     <BrowserRouter>
-      {session && (
-        <>
-          <GlobalUserMenu />
-          {/* ChatBot flutuante removido — será acessível por um botão dedicado no Hub */}
-        </>
-      )}
 
       <ScrollToTop />
 
       {/* ✅ Suspense envolve todas as rotas — exibe o spinner enquanto o chunk carrega */}
+      <AppShell logado={!!session}>
       <Suspense fallback={<PageSpinner />}>
         <Routes>
           <Route path="/"                element={!session ? <Auth />             : <Navigate to="/hub" replace />} />
@@ -148,6 +145,8 @@ function App() {
           <Route path="/louvores"        element={session  ? <Songs />            : <Navigate to="/" replace />} />
           <Route path="/gerar-escala"    element={session  ? <GenerateSchedule /> : <Navigate to="/" replace />} />
           <Route path="/escala/:id"      element={session  ? <ScheduleDetails />  : <Navigate to="/" replace />} />
+          <Route path="/escalas"         element={session  ? <MinhasEscalas />    : <Navigate to="/" replace />} />
+          <Route path="/avisos"          element={session  ? <Avisos />           : <Navigate to="/" replace />} />
           <Route path="/perfil"          element={session  ? <Profile />          : <Navigate to="/" replace />} />
           <Route path="/informativo"     element={session  ? <GlobalNotice />     : <Navigate to="/" replace />} />
           <Route path="/licoes"          element={session  ? <InfantilLessons />  : <Navigate to="/" replace />} />
@@ -168,6 +167,7 @@ function App() {
           <Route path="*"                   element={<Navigate to={session ? '/hub' : '/'} replace />} />
         </Routes>
       </Suspense>
+      </AppShell>
 
       <InstallPrompt />
     </BrowserRouter>
