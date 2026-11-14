@@ -9,6 +9,7 @@ import { agruparPorMes, dataComDia } from '../utils/escalas'
 import { TopBar, Card, Pill, ListRow, EmptyState } from '../components/ui'
 import IconeDept from '../theme/IconeDept'
 import { classesDept } from '../theme/deptCores'
+import AdicionarAgenda from '../components/AdicionarAgenda'
 
 const ABAS = [
   { id: 'minhas', rotulo: 'Minhas' },
@@ -34,7 +35,7 @@ export default function MinhasEscalas() {
         supabase.from('users_profile').select('role, super_admin, igreja_id').eq('id', user.id).single(),
         supabase.from('membros_departamentos').select('role, departamento_id').eq('user_id', user.id),
         supabase.from('schedules')
-          .select('id, data, turno, status, departamento_id, departamentos(nome, tipo), schedule_roles!inner(funcao, user_id)')
+          .select('id, data, turno, titulo, horario_ensaio, status, departamento_id, departamentos(nome, tipo), schedule_roles!inner(funcao, user_id)')
           .eq('schedule_roles.user_id', user.id)
           .neq('status', 'Rascunho')
           .gte('data', hoje)
@@ -106,8 +107,10 @@ export default function MinhasEscalas() {
             <section key={g.chave} aria-label={g.titulo}>
               <h2 className="text-xs font-bold text-ink-2 uppercase tracking-wide mb-2">{g.titulo}</h2>
               <Card padded={false} className="px-4">
-                {g.itens.map(e => (
+                {g.itens.map(e => {
+                  const linha = (
                   <ListRow key={e.id} href={`/escala/${e.id}`} state={estado(e)}
+                    className={aba === 'minhas' ? 'flex-1 min-w-0 !border-b-0' : ''}
                     titulo={`${dataComDia(e.data)} · ${e.turno}`}
                     subtitulo={aba === 'minhas'
                       ? `${e.departamentos?.nome} · ${e.schedule_roles?.map(r => r.funcao).join(' + ')}`
@@ -116,7 +119,17 @@ export default function MinhasEscalas() {
                       <IconeDept nome={e.departamentos?.nome} className="w-4 h-4" />
                     </span>}
                     direita={aba === 'lidero' && <Pill tom={e.status === 'Publicada' ? 'sucesso' : 'aviso'}>{e.status}</Pill>} />
-                ))}
+                  )
+                  // "Minhas": ação rápida de agenda ao lado da linha (fora do link, para não aninhar botão em <a>)
+                  if (aba !== 'minhas') return linha
+                  return (
+                    <div key={e.id} className="flex items-center gap-1 border-b border-line last:border-b-0">
+                      {linha}
+                      <AdicionarAgenda variante="icone" escala={e} departamento={e.departamentos?.nome}
+                        funcoes={e.schedule_roles?.map(r => r.funcao)} />
+                    </div>
+                  )
+                })}
               </Card>
             </section>
           ))
