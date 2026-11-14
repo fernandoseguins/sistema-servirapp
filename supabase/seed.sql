@@ -6,7 +6,8 @@
 --   e-mail: admin@teste.local
 --   senha:  Teste@12345
 --   convite: TESTE1
--- Membros extras de teste (criados pela API admin do Auth local): membro1..membro4@teste.local, mesma senha.
+-- Membros extras de teste (criados pela API admin do Auth local): membro1..membro4@teste.local,
+-- semdept@teste.local (sem departamento) e visual@teste.local (cadastro pela tela), mesma senha.
 -- Depois do cadastro ele é promovido a admin/super_admin (ver supabase/promover_admin_local.sql).
 
 -- Igreja de teste (código de convite: TESTE1)
