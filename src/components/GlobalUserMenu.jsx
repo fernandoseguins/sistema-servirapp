@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { removerTokenPushDoAparelho } from '../utils/pushTokens'
 import { useNotificacoes } from '../hooks/useNotificacoes'
 import { Bell, XCircle, Trash2, User, LogOut, ChevronDown, Crown } from 'lucide-react'
 
@@ -69,6 +70,7 @@ export default function GlobalUserMenu() {
 
   async function handleLogout() {
     setMenuAberto(false)
+    await removerTokenPushDoAparelho()
     await supabase.auth.signOut()
     navigate('/')
   }

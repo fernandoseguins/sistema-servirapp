@@ -1,6 +1,6 @@
 # lembrete-hoje
 
-Envia um push (via `enviar-notificacao`) para todos que estão escalados **para o dia de hoje**
+Envia um push (via `_shared/push.ts`, para todos os aparelhos de cada pessoa) para todos que estão escalados **para o dia de hoje**
 em escalas com status `Publicada`. Complementa o `lembrete-amanha` (que roda 1 dia antes).
 
 ## Deploy
