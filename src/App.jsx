@@ -39,6 +39,8 @@ const MinistrosSchedule= lazy(() => import('./pages/MinistrosSchedule'))
 const CriarIgreja      = lazy(() => import('./pages/CriarIgreja'))
 const PainelDono       = lazy(() => import('./pages/PainelDono'))
 const IgrejaDetalhes   = lazy(() => import('./pages/IgrejaDetalhes'))
+// Vitrine das peças de UI — só existe em desenvolvimento (fica fora do build de produção)
+const DevUI            = import.meta.env.DEV ? lazy(() => import('./pages/DevUI')) : null
 
 // ✅ Spinner reutilizável para o Suspense (mesmo visual do loading de sessão)
 function PageSpinner() {
@@ -158,6 +160,7 @@ function App() {
           <Route path="/painel-dono"        element={session  ? <PainelDono />        : <Navigate to="/" replace />} />
           <Route path="/igreja/:id"         element={session  ? <IgrejaDetalhes />    : <Navigate to="/" replace />} />
           {/* ✅ Rota desconhecida: em vez de página em branco, manda para o início */}
+          {DevUI && <Route path="/dev/ui" element={<DevUI />} />}
           <Route path="*"                   element={<Navigate to={session ? '/hub' : '/'} replace />} />
         </Routes>
       </Suspense>
