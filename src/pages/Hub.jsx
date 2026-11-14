@@ -6,16 +6,10 @@ import { supabase } from '../supabase'
 import { usePullToRefresh, PullIndicator } from '../hooks/usePullToRefresh'
 import { useNotificacoes } from '../hooks/useNotificacoes'
 import { dataLocalISO } from '../utils/datas'
+import { dataComDia } from '../utils/escalas'
 import { Card, Pill, ListRow, EmptyState } from '../components/ui'
 import IconeDept from '../theme/IconeDept'
 import { classesDept } from '../theme/deptCores'
-
-// "2026-12-06" → "Domingo, 06/12"
-function dataComDia(iso) {
-  const d = new Date(iso + 'T12:00:00')
-  const dia = d.toLocaleDateString('pt-BR', { weekday: 'long' })
-  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)}, ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
-}
 
 function InicioSkeleton() {
   return (
