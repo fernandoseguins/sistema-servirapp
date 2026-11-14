@@ -3,6 +3,61 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   Tokens de cor (tema Vibrante). Valores em "R G B" para o Tailwind aplicar opacidade.
+   Claro em :root, escuro em .dark (classe no <html>, ver src/theme/aparencia.js).
+───────────────────────────────────────────────────────────────────────────── */
+@layer base {
+  :root,
+  .tema-claro-forcado {
+    --bg: 247 246 251;          /* #F7F6FB */
+    --surface: 255 255 255;     /* #FFFFFF */
+    --surface-2: 244 242 253;   /* #F4F2FD */
+    --line: 236 233 251;        /* #ECE9FB */
+    --ink: 30 27 75;            /* #1E1B4B */
+    --ink-2: 107 104 128;       /* #6B6880 */
+    --muted: 163 160 184;       /* #A3A0B8 */
+    --brand: 91 63 217;         /* #5B3FD9 */
+    --on-brand: 255 255 255;
+    --accent: 255 107 87;       /* #FF6B57 */
+    --topo: 91 63 217;          /* #5B3FD9 */
+    --danger: 180 35 24;        /* #B42318 */
+    --danger-soft: 254 228 226; /* #FEE4E2 */
+    --success: 31 122 90;       /* #1F7A5A */
+    --success-soft: 227 246 239;/* #E3F6EF */
+    --warning: 138 90 0;        /* #8A5A00 */
+    --warning-soft: 255 244 219;/* #FFF4DB */
+    color-scheme: light;
+  }
+
+  .dark {
+    --bg: 15 17 21;             /* #0F1115 */
+    --surface: 26 29 36;        /* #1A1D24 */
+    --surface-2: 21 24 30;      /* #15181E */
+    --line: 42 46 56;           /* #2A2E38 */
+    --ink: 242 243 245;         /* #F2F3F5 */
+    --ink-2: 139 144 160;       /* #8B90A0 */
+    --muted: 94 100 117;        /* #5E6475 */
+    --brand: 139 123 255;       /* #8B7BFF */
+    --on-brand: 15 17 21;
+    --accent: 255 138 120;      /* #FF8A78 */
+    --topo: 42 31 107;          /* #2A1F6B */
+    --danger: 253 162 155;      /* #FDA29B */
+    --danger-soft: 58 30 30;    /* #3A1E1E */
+    --success: 127 224 188;     /* #7FE0BC */
+    --success-soft: 22 51 42;   /* #16332A */
+    --warning: 252 211 77;      /* #FCD34D */
+    --warning-soft: 58 47 20;   /* #3A2F14 */
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--ink));
+    font-family: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    Scrollbar customizada
    Usada nas classes: .customized-scrollbar
    Antes estava duplicada via dangerouslySetInnerHTML no Hub.jsx e Auth.jsx
