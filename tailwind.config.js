@@ -7,6 +7,10 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  // Classes montadas em tempo de execução por classesDept() (src/theme/deptCores.js)
+  safelist: [
+    { pattern: /^(bg|text)-dept-(louvor|midia|infantil|diaconia|cantina|ministros|outro)-(bg|fg)$/ },
+  ],
   theme: {
     extend: {
       fontFamily: {
@@ -27,13 +31,16 @@ export default {
         success:   { DEFAULT: cor('success'), soft: cor('success-soft') },
         warning:   { DEFAULT: cor('warning'), soft: cor('warning-soft') },
 
-        // Tokens antigos dos departamentos — ainda usados nas telas da fase 3.
-        // Mantemos os valores alinhados com departmentThemes.jsx para consistência.
+        // Departamentos: DEFAULT = token antigo (telas da fase 3, alinhado com departmentThemes.jsx);
+        // bg/fg = tema Vibrante claro/escuro (ver src/theme/deptCores.js).
         dept: {
-          louvor:   '#2563eb', // blue-600
-          midia:    '#9333ea', // purple-600
-          infantil: '#ec4899', // pink-500
-          diaconia: '#111827', // gray-900
+          louvor:    { DEFAULT: '#2563eb', bg: cor('dept-louvor-bg'),    fg: cor('dept-louvor-fg') },
+          midia:     { DEFAULT: '#9333ea', bg: cor('dept-midia-bg'),     fg: cor('dept-midia-fg') },
+          infantil:  { DEFAULT: '#ec4899', bg: cor('dept-infantil-bg'),  fg: cor('dept-infantil-fg') },
+          diaconia:  { DEFAULT: '#111827', bg: cor('dept-diaconia-bg'),  fg: cor('dept-diaconia-fg') },
+          cantina:   { bg: cor('dept-cantina-bg'),   fg: cor('dept-cantina-fg') },
+          ministros: { bg: cor('dept-ministros-bg'), fg: cor('dept-ministros-fg') },
+          outro:     { bg: cor('dept-outro-bg'),     fg: cor('dept-outro-fg') },
         },
       },
       borderRadius: {

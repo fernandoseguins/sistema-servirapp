@@ -26,6 +26,15 @@
     --success-soft: 227 246 239;/* #E3F6EF */
     --warning: 138 90 0;        /* #8A5A00 */
     --warning-soft: 255 244 219;/* #FFF4DB */
+
+    /* Departamentos: fundo do chip / texto e ícone */
+    --dept-louvor-bg: 238 234 254;    --dept-louvor-fg: 59 42 158;     /* #EEEAFE / #3B2A9E */
+    --dept-midia-bg: 255 237 234;     --dept-midia-fg: 178 58 43;      /* #FFEDEA / #B23A2B */
+    --dept-infantil-bg: 227 246 239;  --dept-infantil-fg: 31 122 90;   /* #E3F6EF / #1F7A5A */
+    --dept-diaconia-bg: 255 244 219;  --dept-diaconia-fg: 138 90 0;    /* #FFF4DB / #8A5A00 */
+    --dept-cantina-bg: 255 235 217;   --dept-cantina-fg: 154 74 0;     /* #FFEBD9 / #9A4A00 */
+    --dept-ministros-bg: 251 231 238; --dept-ministros-fg: 140 35 70;  /* #FBE7EE / #8C2346 */
+    --dept-outro-bg: 241 239 248;     --dept-outro-fg: 75 71 102;      /* #F1EFF8 / #4B4766 */
     color-scheme: light;
   }
 
@@ -47,6 +56,14 @@
     --success-soft: 22 51 42;   /* #16332A */
     --warning: 252 211 77;      /* #FCD34D */
     --warning-soft: 58 47 20;   /* #3A2F14 */
+
+    --dept-louvor-bg: 42 35 80;       --dept-louvor-fg: 196 187 255;   /* #2A2350 / #C4BBFF */
+    --dept-midia-bg: 58 33 29;        --dept-midia-fg: 255 167 153;    /* #3A211D / #FFA799 */
+    --dept-infantil-bg: 22 51 42;     --dept-infantil-fg: 127 224 188; /* #16332A / #7FE0BC */
+    --dept-diaconia-bg: 58 47 20;     --dept-diaconia-fg: 252 211 77;  /* #3A2F14 / #FCD34D */
+    --dept-cantina-bg: 58 38 20;      --dept-cantina-fg: 253 186 116;  /* #3A2614 / #FDBA74 */
+    --dept-ministros-bg: 58 26 38;    --dept-ministros-fg: 249 168 196;/* #3A1A26 / #F9A8C4 */
+    --dept-outro-bg: 35 35 43;        --dept-outro-fg: 201 198 217;    /* #23232B / #C9C6D9 */
     color-scheme: dark;
   }
 
