@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2' // ✅ Corrigido aqui: supabase-js
 import { exigirServiceRole, escaparHtml } from '../_shared/seguranca.ts'
+import { dataBrasil } from '../_shared/data.ts'
 
 // Puxa a chave do Resend que guardamos no servidor
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
@@ -36,9 +37,8 @@ serve(async (req) => {
   )
 
   // Calcula a data exata de daqui a 4 dias
-  const dataAlvo = new Date()
-  dataAlvo.setDate(dataAlvo.getDate() + 4)
-  const dataFormatada = dataAlvo.toISOString().split('T')[0]
+  // (horário de Brasília — toISOString é UTC e erra o dia à noite)
+  const dataFormatada = dataBrasil(4)
 
   // Busca todas as escalas publicadas do Louvor para essa data
   const { data: escalas, error } = await supabaseAdmin

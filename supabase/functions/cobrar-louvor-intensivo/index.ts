@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { exigirServiceRole } from '../_shared/seguranca.ts'
 import { enviarPushParaUsuario } from '../_shared/push.ts'
+import { dataBrasil } from '../_shared/data.ts'
 
 const MINIMO_MUSICAS = 3
 
@@ -41,11 +42,9 @@ serve(async (req) => {
     global: { headers: { Authorization: authHeader } }
   })
 
-  const hoje = new Date().toISOString().split('T')[0]
-
-  const dataLimite = new Date()
-  dataLimite.setDate(dataLimite.getDate() + 3)
-  const limiteFormatado = dataLimite.toISOString().split('T')[0]
+  // Datas no horário de Brasília (toISOString é UTC e erra o dia à noite)
+  const hoje = dataBrasil()
+  const limiteFormatado = dataBrasil(3)
 
   console.log(`Verificando cobranças pendentes entre ${hoje} e ${limiteFormatado}`)
 

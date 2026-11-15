@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { exigirServiceRole } from '../_shared/seguranca.ts'
 import { enviarPushParaUsuario } from '../_shared/push.ts'
+import { dataBrasil } from '../_shared/data.ts'
 
 // Mesma regra de src/utils/escalas.js (rotuloTurno): "Noite" → "Culto da noite"
 function rotuloTurno(turno?: string | null): string {
@@ -35,9 +36,8 @@ serve(async (req) => {
     global: { headers: { Authorization: authHeader } }
   })
 
-  // Data de hoje (o cron roda em UTC; às 16h de Brasília ainda é o mesmo dia UTC)
-  const hoje = new Date()
-  const dataFormatada = hoje.toISOString().split('T')[0]
+  // Data de hoje no horário de Brasília (toISOString é UTC e erra o dia à noite)
+  const dataFormatada = dataBrasil()
 
   console.log(`Buscando escalas para HOJE: ${dataFormatada}`)
 
