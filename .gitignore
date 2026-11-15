@@ -42,3 +42,6 @@ supabase/.branches/
 
 # Claude Code: permissões locais
 .claude/settings.local.json
+
+# Pastas de trabalho temporárias dos agentes do Claude Code
+.claude/worktrees/
