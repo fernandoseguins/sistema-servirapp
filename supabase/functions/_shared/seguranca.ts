@@ -32,15 +32,32 @@ function iguaisTempoConstante(a: string, b: string): boolean {
   return diff === 0
 }
 
-// Só deixa passar chamadas feitas com a Service Role Key (cron / webhook / outra função).
+// Papel ("role") gravado no JWT, sem validar a assinatura.
+function papelDoJwt(token: string): string | null {
+  try {
+    const parte = token.split('.')[1] ?? ''
+    const base64 = parte.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(parte.length / 4) * 4, '=')
+    const papel = JSON.parse(atob(base64))?.role
+    return typeof papel === 'string' ? papel : null
+  } catch {
+    return null
+  }
+}
+
+// Só deixa passar chamadas feitas com a Service Role (cron / webhook / outra função).
 // Retorna uma Response 401 se não for, ou null se estiver ok.
+//
+// Aceita a chave idêntica à do ambiente OU um JWT com role "service_role".
+// O segundo caso só é seguro porque TODAS as funções que usam isto têm
+// `verify_jwt = true` (supabase/config.toml): o gateway já validou a assinatura.
+// (Os crons e o trigger do banco guardam um JWT service_role diferente da
+// SUPABASE_SERVICE_ROLE_KEY do ambiente — com a comparação exata, davam 401.)
 export function exigirServiceRole(req: Request): Response | null {
   const token = tokenDaRequisicao(req)
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  if (!token || !serviceKey || !iguaisTempoConstante(token, serviceKey)) {
-    return json({ error: 'Não autorizado' }, 401)
-  }
-  return null
+  if (token && serviceKey && iguaisTempoConstante(token, serviceKey)) return null
+  if (token && papelDoJwt(token) === 'service_role') return null
+  return json({ error: 'Não autorizado' }, 401)
 }
 
 // Exige um usuário LOGADO de verdade (rejeita a chave anon).

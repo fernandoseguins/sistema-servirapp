@@ -14,23 +14,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { exigirServiceRole, json, texto } from "../_shared/seguranca.ts"
 import { enviarPushParaUsuario } from "../_shared/push.ts"
 
-// O gateway (verify_jwt = true) já validou a assinatura do JWT; aqui basta
-// conferir que é a Service Role. Aceita também a chave idêntica à do ambiente.
-function ehServiceRole(req: Request): boolean {
-  if (!exigirServiceRole(req)) return true
-  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
-  try {
-    const parte = token.split('.')[1] ?? ''
-    const base64 = parte.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(parte.length / 4) * 4, '=')
-    return JSON.parse(atob(base64))?.role === 'service_role'
-  } catch {
-    return false
-  }
-}
-
 serve(async (req) => {
   if (req.method !== 'POST') return json({ erro: 'Método não permitido' }, 405)
-  if (!ehServiceRole(req)) return json({ error: 'Não autorizado' }, 401)
+  const negado = exigirServiceRole(req)
+  if (negado) return negado
 
   try {
     // O trigger manda o registro inserido em `record`
