@@ -105,12 +105,12 @@ serve(async (req) => {
 
     try {
       // Todos os aparelhos do condutor (o client usa a Service Role → passa pelo RLS de push_tokens)
-      // Mesma tag do cobrador-louvor: cobranças repetidas substituem a anterior no aparelho.
+      // Sem tag: o service worker usa o link (/escala/<id>) como tag — o mesmo do
+      // cobrador-louvor (via push-on-insert), então cobranças repetidas se substituem.
       const r = await enviarPushParaUsuario(supabaseAdmin, condutor.user_id, {
         titulo,
         mensagem,
         link: `https://servirapp.netlify.app/escala/${esc.id}`,
-        tag: `repertorio-${esc.id}`,
       })
       if (r.enviados > 0) lembretesEnviados++
     } catch (err) {

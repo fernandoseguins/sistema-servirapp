@@ -460,3 +460,9 @@ entrypoint = "./functions/chat-bot/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/chat-bot/*.html" ]
+
+[functions.push-on-insert]
+enabled = true
+verify_jwt = true
+import_map = "./functions/push-on-insert/deno.json"
+entrypoint = "./functions/push-on-insert/index.ts"
