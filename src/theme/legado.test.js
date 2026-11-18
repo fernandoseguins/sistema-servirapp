@@ -17,6 +17,7 @@ const TELAS_REFORMADAS = [
   { arquivo: 'pages/Avisos.jsx',          rota: '/avisos' },
   { arquivo: 'components/Skeletons.jsx',  rota: null },
   { arquivo: 'pages/Unavailability.jsx',  rota: '/indisponibilidade' },
+  { arquivo: 'pages/SwapRequests.jsx',    rota: '/trocas/abc' },
 ]
 
 const COR_ANTIGA = /\b(bg|text|border|ring|from|via|to|divide|placeholder)-(gray|slate|zinc|neutral|stone|blue|indigo|purple|violet|sky|cyan|teal|emerald|green|lime|yellow|amber|orange|red|rose|pink|fuchsia)-\d{2,3}\b/

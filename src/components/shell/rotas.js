@@ -5,6 +5,6 @@ export const ROTAS_FOCO = ['/gerar-escala', '/checkin', '/imprimir-escalas', '/c
 
 // Telas já no novo visual (o resto é legado e fica no tema claro)
 export const ROTAS_NOVAS = ['/hub', '/escalas', '/avisos', '/perfil', '/dashboard', '/escala/', '/dev/ui',
-  '/indisponibilidade']
+  '/indisponibilidade', '/trocas']
 
 export const comeca = (pathname, lista) => lista.some(p => pathname === p || pathname.startsWith(p.endsWith('/') ? p : p + '/'))
