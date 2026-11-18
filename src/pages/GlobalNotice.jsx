@@ -2,7 +2,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { Copy, CheckCircle2, RefreshCw, FileText, Search, Clock, Plus, Trash2, ChevronUp, ChevronDown, Save, RotateCcw, Users, AlertTriangle } from 'lucide-react'
-import PageHeader from '../components/PageHeader'
+import { useNavigate } from 'react-router-dom'
+import { TopBar, Button, Card, Input, Select } from '../components/ui'
 import { hojeLocal } from '../utils/datas'
 
 // Tempos padrão por tipo de culto (podem ser sobrescritos e salvos no aparelho)
@@ -28,13 +29,13 @@ const SUGESTOES_PARTES = ['louvor', 'momento de oração', 'ministração', 'Pal
 
 // Campos fixos do informativo (sempre aparecem, mesmo vazios, para preencher à mão)
 const CAMPOS = [
-  { key: 'ministrando',    label: 'Ministrando',        bloco: 1, color: 'text-red-700' },
-  { key: 'conducaoLouvor', label: 'Condução do Louvor', bloco: 1, color: 'text-blue-600' },
-  { key: 'conducaoCulto',  label: 'Condução do Culto',  bloco: 1, color: 'text-red-700' },
-  { key: 'oracao',         label: 'Oração',             bloco: 1, color: 'text-red-700' },
-  { key: 'diaconia',       label: 'Equipe Diaconia',    bloco: 2, color: 'text-gray-700' },
-  { key: 'midia',          label: 'Equipe Mídia',       bloco: 2, color: 'text-purple-600' },
-  { key: 'sonoplastia',    label: 'Sonoplastia',        bloco: 2, color: 'text-gray-700' },
+  { key: 'ministrando',    label: 'Ministrando',        bloco: 1 },
+  { key: 'conducaoLouvor', label: 'Condução do Louvor', bloco: 1 },
+  { key: 'conducaoCulto',  label: 'Condução do Culto',  bloco: 1 },
+  { key: 'oracao',         label: 'Oração',             bloco: 1 },
+  { key: 'diaconia',       label: 'Equipe Diaconia',    bloco: 2 },
+  { key: 'midia',          label: 'Equipe Mídia',       bloco: 2 },
+  { key: 'sonoplastia',    label: 'Sonoplastia',        bloco: 2 },
 ]
 
 const CAMPOS_VAZIOS = Object.fromEntries(CAMPOS.map(c => [c.key, '']))
@@ -61,6 +62,7 @@ function somarMinutos(hhmm, minutos) {
 }
 
 export default function GlobalNotice() {
+  const navigate = useNavigate()
   const hoje = hojeLocal()
 
   const [dataSelecionada,  setDataSelecionada]  = useState(hoje)
@@ -262,187 +264,179 @@ ${tempos.join('\n')}${fim}`
     setTimeout(() => setCopied(false), 2500)
   }
 
-  const inputCls = 'w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50'
+  const inputCls = 'w-full h-10 rounded-ctl bg-surface border border-line px-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand'
+  const iconBtn = 'rounded-ctl text-muted hover:text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-30'
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-
-      <PageHeader
-        title="Informativo Geral"
-        subtitle="Gerador automático para WhatsApp"
-        icon={<FileText className="w-5 h-5" />}
-        color="bg-gray-900"
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Informativo"
+        subtitulo="Texto do culto para o WhatsApp"
+        onVoltar={() => navigate(-1)}
+        icone={<span className="w-10 h-10 rounded-ctl flex items-center justify-center bg-brand/10 text-brand">
+          <FileText className="w-5 h-5" aria-hidden="true" />
+        </span>}
       />
 
-      <div className="max-w-xl mx-auto px-4 space-y-5">
+      <main className="max-w-[720px] mx-auto px-4 pb-6 space-y-4">
 
         {/* FILTROS */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
-          <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
-            <Search className="w-4 h-4 text-blue-500" /> Buscar escalas do dia
-          </p>
+        <Card className="space-y-3">
+          <h2 className="text-sm font-bold text-ink flex items-center gap-2">
+            <Search className="w-4 h-4 text-brand" aria-hidden="true" /> Escalas do dia
+          </h2>
           <div className="flex gap-3">
-            <div className="flex-[2]">
-              <label className="text-xs text-gray-500 mb-1 block font-medium">Data do Culto</label>
-              <input type="date" value={dataSelecionada}
-                onChange={e => setDataSelecionada(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50" />
-            </div>
+            <Input className="flex-[2]" label="Data do culto" type="date" value={dataSelecionada}
+              onChange={e => setDataSelecionada(e.target.value)} />
             {info.ehDomingo && (
-              <div className="flex-1">
-                <label className="text-xs text-gray-500 mb-1 block font-medium">Turno</label>
-                <select value={turnoSelecionado}
-                  onChange={e => setTurnoSelecionado(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
-                  <option value="Integral">Integral</option>
-                  <option value="Manhã">Manhã</option>
-                  <option value="Noite">Noite</option>
-                </select>
-              </div>
+              <Select className="flex-1" label="Turno" value={turnoSelecionado}
+                onChange={e => setTurnoSelecionado(e.target.value)}
+                options={[{ value: 'Integral', label: 'Integral' }, { value: 'Manhã', label: 'Manhã' }, { value: 'Noite', label: 'Noite' }]} />
             )}
           </div>
-          <label className="flex items-center gap-2 text-xs text-gray-600 font-medium cursor-pointer">
+          <label className="flex items-center gap-2 text-xs text-ink-2 cursor-pointer">
             <input type="checkbox" checked={incluirRascunho} onChange={e => setIncluirRascunho(e.target.checked)}
-              className="w-4 h-4 accent-blue-600" />
-            Incluir escalas ainda em rascunho (não publicadas)
+              className="w-4 h-4 accent-[rgb(var(--brand))]" />
+            Incluir escalas em rascunho (não publicadas)
           </label>
           {rascunhos.length > 0 && (
-            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex gap-2">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <p className="text-xs text-warning bg-warning-soft rounded-ctl px-3 py-2 flex gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
               Em rascunho: {rascunhos.join(', ')}. Confira antes de enviar.
             </p>
           )}
-        </div>
+        </Card>
 
         {/* ESCALADOS (editáveis) */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+        <Card className="space-y-3">
           <div className="flex justify-between items-center">
-            <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-500" /> Escalados
-            </p>
-            <button onClick={buscarEscalas} className="text-[11px] font-bold text-blue-600 flex items-center gap-1">
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Recarregar
-            </button>
+            <h2 className="text-sm font-bold text-ink flex items-center gap-2">
+              <Users className="w-4 h-4 text-brand" aria-hidden="true" /> Escalados
+            </h2>
+            <Button variant="fantasma" size="sm" onClick={buscarEscalas}
+              icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />}>
+              Recarregar
+            </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {CAMPOS.map(({ key, label, color }) => (
+            {CAMPOS.map(({ key, label }) => (
               <div key={key}>
-                <label className={`text-[10px] font-bold uppercase tracking-wider mb-1 block ${color}`}>{label}</label>
-                <input value={pessoas[key]} placeholder={loading ? 'Buscando...' : 'Ninguém escalado'}
+                <label htmlFor={`campo-${key}`} className="text-xs font-semibold mb-1 block text-ink-2">{label}</label>
+                <input id={`campo-${key}`} value={pessoas[key]} placeholder={loading ? 'Buscando...' : 'Ninguém escalado'}
                   onChange={e => setPessoas(prev => ({ ...prev, [key]: e.target.value }))}
                   className={inputCls} />
               </div>
             ))}
             {outrasEquipes.map((o, i) => (
               <div key={o.label}>
-                <label className="text-[10px] font-bold uppercase tracking-wider mb-1 block text-gray-500">{o.label}</label>
-                <input value={o.value}
+                <label htmlFor={`outra-${i}`} className="text-xs font-semibold mb-1 block text-ink-2">{o.label}</label>
+                <input id={`outra-${i}`} value={o.value}
                   onChange={e => setOutrasEquipes(prev => prev.map((x, idx) => idx === i ? { ...x, value: e.target.value } : x))}
                   className={inputCls} />
               </div>
             ))}
           </div>
-          <p className="text-[10px] text-gray-400">Deixe em branco para excluir uma equipe extra do texto.</p>
-        </div>
+          <p className="text-[11px] text-muted">Deixe em branco para tirar uma equipe extra do texto.</p>
+        </Card>
 
         {/* TEMPOS DO CULTO */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+        <Card className="space-y-3">
           <div className="flex justify-between items-start gap-2">
             <div>
-              <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-500" /> Tempos do culto
-              </p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{NOMES_TIPO[info.tipo]} · total {totalMin} min</p>
+              <h2 className="text-sm font-bold text-ink flex items-center gap-2">
+                <Clock className="w-4 h-4 text-brand" aria-hidden="true" /> Tempos do culto
+              </h2>
+              <p className="text-xs text-ink-2 mt-0.5">{NOMES_TIPO[info.tipo]} · total {totalMin} min</p>
             </div>
             <div className="w-28 shrink-0">
-              <label className="text-[10px] text-gray-500 block font-medium mb-1">Início (opcional)</label>
-              <input type="time" value={horaInicio} onChange={e => setHoraInicio(e.target.value)} className={inputCls} />
+              <label htmlFor="hora-inicio" className="text-[11px] text-ink-2 block mb-1">Início (opcional)</label>
+              <input id="hora-inicio" type="time" value={horaInicio} onChange={e => setHoraInicio(e.target.value)} className={inputCls} />
             </div>
           </div>
 
-          <div className="space-y-2">
+          <ol className="space-y-2">
             {partes.map((p, i) => (
-              <div key={i} className="flex items-center gap-1.5">
+              <li key={i} className="flex items-center gap-1.5">
                 <div className="flex flex-col">
-                  <button onClick={() => moverParte(i, -1)} disabled={i === 0} aria-label="Subir"
-                    className="text-gray-400 hover:text-gray-700 disabled:opacity-20"><ChevronUp className="w-4 h-4" /></button>
-                  <button onClick={() => moverParte(i, 1)} disabled={i === partes.length - 1} aria-label="Descer"
-                    className="text-gray-400 hover:text-gray-700 disabled:opacity-20"><ChevronDown className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => moverParte(i, -1)} disabled={i === 0} aria-label={`Subir ${p.nome || 'parte'}`} className={iconBtn}>
+                    <ChevronUp className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => moverParte(i, 1)} disabled={i === partes.length - 1} aria-label={`Descer ${p.nome || 'parte'}`} className={iconBtn}>
+                    <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                  </button>
                 </div>
-                <input value={p.min} inputMode="numeric" onChange={e => atualizarParte(i, 'min', e.target.value)}
+                <input value={p.min} inputMode="numeric" aria-label={`Minutos de ${p.nome || 'parte'}`} onChange={e => atualizarParte(i, 'min', e.target.value)}
                   className={`${inputCls} !w-14 text-center font-bold`} />
-                <span className="text-xs text-gray-500 shrink-0">min de</span>
-                <input value={p.nome} placeholder="ex.: louvor" onChange={e => atualizarParte(i, 'nome', e.target.value)}
-                  className={`${inputCls} flex-1`} />
-                <button onClick={() => removerParte(i)} aria-label="Remover parte"
-                  className="p-2 text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-              </div>
+                <span className="text-xs text-ink-2 shrink-0">min de</span>
+                <input value={p.nome} placeholder="ex.: louvor" aria-label="Nome da parte" onChange={e => atualizarParte(i, 'nome', e.target.value)}
+                  className={`${inputCls} flex-1 min-w-0`} />
+                <button type="button" onClick={() => removerParte(i)} aria-label={`Remover ${p.nome || 'parte'}`}
+                  className={`p-2 ${iconBtn} hover:!text-danger`}>
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </li>
             ))}
-          </div>
+          </ol>
 
           <div className="flex flex-wrap gap-1.5">
             {SUGESTOES_PARTES.filter(s => !partes.some(p => normalizar(p.nome) === normalizar(s))).map(s => (
-              <button key={s} onClick={() => adicionarParte(s)}
-                className="text-[11px] px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100">
+              <button type="button" key={s} onClick={() => adicionarParte(s)}
+                className="text-xs px-2.5 py-1 rounded-full bg-brand/10 text-brand font-semibold hover:bg-brand/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                 + {s}
               </button>
             ))}
-            <button onClick={() => adicionarParte()}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 flex items-center gap-1">
-              <Plus className="w-3 h-3" /> Outra
+            <button type="button" onClick={() => adicionarParte()}
+              className="text-xs px-2.5 py-1 rounded-full bg-surface-2 text-ink-2 font-semibold hover:bg-line flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <Plus className="w-3 h-3" aria-hidden="true" /> Outra
             </button>
           </div>
 
           <div className="flex gap-2 pt-1">
-            <button onClick={salvarComoPadrao}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-gray-900 text-white flex items-center justify-center gap-1.5">
-              {salvouPadrao ? <><CheckCircle2 className="w-4 h-4" /> Salvo!</> : <><Save className="w-4 h-4" /> Salvar como padrão</>}
-            </button>
-            <button onClick={restaurarPadrao}
-              className="py-2.5 px-3 rounded-xl text-xs font-bold bg-gray-100 text-gray-700 flex items-center gap-1.5">
-              <RotateCcw className="w-4 h-4" /> Restaurar
-            </button>
+            <Button size="sm" className="flex-1" onClick={salvarComoPadrao}
+              icon={salvouPadrao ? <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}>
+              {salvouPadrao ? 'Salvo' : 'Salvar como padrão'}
+            </Button>
+            <Button size="sm" variant="secundario" onClick={restaurarPadrao} icon={<RotateCcw className="w-4 h-4" aria-hidden="true" />}>
+              Restaurar
+            </Button>
           </div>
-          <p className="text-[10px] text-gray-400">O padrão é salvo neste aparelho, separado por tipo de culto.</p>
-        </div>
+          <p className="text-[11px] text-muted">O padrão fica salvo neste aparelho, separado por tipo de culto.</p>
+        </Card>
 
         {/* EDITOR */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-              📝 Rascunho Final
-            </span>
+        <Card padded={false} className="overflow-hidden">
+          <div className="bg-surface-2 px-4 py-3 border-b border-line flex justify-between items-center">
+            <label htmlFor="texto-final" className="text-xs font-bold text-ink-2">Texto final</label>
             {editadoAMao && (
-              <button onClick={() => { setTextoInformativo(textoGerado); setEditadoAMao(false) }}
-                className="text-[11px] font-bold text-blue-600 flex items-center gap-1">
-                <RotateCcw className="w-3.5 h-3.5" /> Regerar
-              </button>
+              <Button variant="fantasma" size="sm" onClick={() => { setTextoInformativo(textoGerado); setEditadoAMao(false) }}
+                icon={<RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />}>
+                Gerar de novo
+              </Button>
             )}
           </div>
 
           <div className="p-4">
-            <p className="text-[10px] text-gray-400 mb-2 font-medium">
-              Ajustes finos podem ser feitos aqui. Alterar os campos acima regenera o texto.
+            <p className="text-[11px] text-muted mb-2">
+              Dá para ajustar aqui. Mudar os campos acima gera o texto de novo.
             </p>
             <textarea
+              id="texto-final"
               value={textoInformativo}
               onChange={e => { setTextoInformativo(e.target.value); setEditadoAMao(true) }}
-              className="w-full h-80 bg-amber-50/40 border border-amber-100 rounded-xl p-4 text-sm font-medium text-gray-800 outline-none focus:ring-2 focus:ring-amber-300 leading-relaxed resize-none"
+              className="w-full h-80 bg-surface-2 border border-line rounded-ctl p-4 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand leading-relaxed resize-none"
             />
           </div>
 
           <div className="p-4 pt-0">
-            <button onClick={copiar}
-              className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]
-                ${copiado ? 'bg-green-500 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
-              {copiado
-                ? <><CheckCircle2 className="w-5 h-5" /> Copiado com sucesso!</>
-                : <><Copy className="w-5 h-5" /> Copiar para WhatsApp</>}
-            </button>
+            <Button full onClick={copiar}
+              className={copiado ? '!bg-success !text-on-success' : ''}
+              icon={copiado ? <CheckCircle2 className="w-5 h-5" aria-hidden="true" /> : <Copy className="w-5 h-5" aria-hidden="true" />}>
+              <span aria-live="polite">{copiado ? 'Copiado' : 'Copiar para o WhatsApp'}</span>
+            </Button>
           </div>
-        </div>
+        </Card>
 
-      </div>
+      </main>
     </div>
   )
 }
