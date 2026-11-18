@@ -34,8 +34,8 @@ function ProfileSkeleton() {
 
 // ── Indicador de força de senha ───────────────────────────────────────────────
 function PasswordStrength({ password }) {
-  const { score, label, color } = useMemo(() => {
-    if (!password) return { score: 0, label: '', color: '' }
+  const { score, label, color, texto } = useMemo(() => {
+    if (!password) return { score: 0, label: '', color: '', texto: '' }
     let s = 0
     if (password.length >= 6)  s++
     if (password.length >= 10) s++
@@ -43,11 +43,11 @@ function PasswordStrength({ password }) {
     if (/[0-9]/.test(password)) s++
     if (/[^A-Za-z0-9]/.test(password)) s++
     const levels = [
-      { label: 'Muito fraca', color: 'bg-red-500' },
-      { label: 'Fraca',       color: 'bg-orange-400' },
-      { label: 'Razoável',    color: 'bg-yellow-400' },
-      { label: 'Boa',         color: 'bg-blue-500' },
-      { label: 'Forte',       color: 'bg-green-500' },
+      { label: 'Muito fraca', color: 'bg-danger',  texto: 'text-danger' },
+      { label: 'Fraca',       color: 'bg-danger',  texto: 'text-danger' },
+      { label: 'Razoável',    color: 'bg-warning', texto: 'text-warning' },
+      { label: 'Boa',         color: 'bg-brand',   texto: 'text-brand' },
+      { label: 'Forte',       color: 'bg-success', texto: 'text-success' },
     ]
     return { score: s, ...levels[Math.min(s, 4)] }
   }, [password])
@@ -58,12 +58,10 @@ function PasswordStrength({ password }) {
     <div className="mt-2">
       <div className="flex gap-1 mb-1">
         {[1,2,3,4,5].map(i => (
-          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= score ? color : 'bg-gray-200'}`} />
+          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= score ? color : 'bg-surface-2'}`} />
         ))}
       </div>
-      <p className={`text-[10px] font-semibold ${
-        score <= 1 ? 'text-red-500' : score <= 2 ? 'text-orange-400' : score <= 3 ? 'text-yellow-500' : score <= 4 ? 'text-blue-500' : 'text-green-500'
-      }`}>{label}</p>
+      <p className={`text-[10px] font-semibold ${texto}`}>{label}</p>
     </div>
   )
 }

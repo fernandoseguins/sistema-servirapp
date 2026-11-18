@@ -3,14 +3,7 @@
 import { useLocation } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import TemaClaroForcado from './TemaClaroForcado'
-
-// Telas de foco: sem menu (tarefas longas ou impressão)
-const ROTAS_FOCO = ['/gerar-escala', '/checkin', '/imprimir-escalas', '/cabine']
-
-// Telas já no novo visual (o resto é legado e fica no tema claro)
-const ROTAS_NOVAS = ['/hub', '/escalas', '/avisos', '/perfil', '/dashboard', '/escala/', '/dev/ui']
-
-const comeca = (pathname, lista) => lista.some(p => pathname === p || pathname.startsWith(p.endsWith('/') ? p : p + '/'))
+import { ROTAS_FOCO, ROTAS_NOVAS, comeca } from './rotas'
 
 export default function AppShell({ logado, children }) {
   const { pathname } = useLocation()

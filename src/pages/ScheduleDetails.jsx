@@ -907,7 +907,7 @@ if (papelEncontrado) {
               <MessageSquare className="w-4 h-4 text-ink-2" />
               <h3 className="text-sm font-bold text-ink-2">Observações</h3>
             </div>
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-line">
 
               {/* Observação do Condutor */}
               <div className="p-4 space-y-2">
@@ -919,7 +919,7 @@ if (papelEncontrado) {
                   <div className="space-y-2">
                     <textarea rows={3} placeholder="Escreva aqui observações, pedidos ou contexto sobre o repertório..."
                       value={obsCondutor} onChange={e => setObsCondutor(e.target.value)}
-                      className="w-full border border-line rounded-xl p-3 text-xs text-ink-2 outline-none focus:ring-2 focus:ring-blue-400 resize-none bg-surface-2" />
+                      className="w-full border border-line rounded-xl p-3 text-xs text-ink-2 outline-none focus:ring-2 focus:ring-brand resize-none bg-surface-2" />
                     <button onClick={() => salvarObservacao('obs_condutor', obsCondutor)} disabled={salvandoObs}
                       className="text-xs font-bold bg-brand text-on-brand px-4 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50">
                       Salvar
@@ -942,7 +942,7 @@ if (papelEncontrado) {
                   <div className="space-y-2">
                     <textarea rows={3} placeholder="Escreva aqui o motivo da rejeição ou instruções para o condutor..."
                       value={obsLideres} onChange={e => setObsLideres(e.target.value)}
-                      className="w-full border border-line rounded-xl p-3 text-xs text-ink-2 outline-none focus:ring-2 focus:ring-amber-400 resize-none bg-surface-2" />
+                      className="w-full border border-line rounded-xl p-3 text-xs text-ink-2 outline-none focus:ring-2 focus:ring-brand resize-none bg-surface-2" />
                     <button onClick={() => salvarObservacao('obs_lideres', obsLideres)} disabled={salvandoObs}
                       className="text-xs font-bold bg-warning-soft text-warning px-4 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50">
                       Salvar
@@ -983,7 +983,7 @@ if (papelEncontrado) {
                   <p className="text-xs text-muted mt-1">Assim que a liderança aprovar, as músicas aparecem aqui.</p>
                 </div>
               ) : musicasEscala.length === 0 ? <p className="text-sm text-muted text-center py-6 font-medium">Nenhuma música definida.</p> : (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-line">
                   {musicasEscala.map((relacao, index) => {
                     const mus = relacao.songs; if (!mus) return null; const tomExibido = relacao.tom || mus.tom || '?';
                     return (
@@ -1000,7 +1000,14 @@ if (papelEncontrado) {
                               {mus.categoria && <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${mus.categoria.toLowerCase() === 'celebração' ? 'bg-warning-soft text-warning' : mus.categoria.toLowerCase() === 'adoração' ? 'bg-brand/10 text-brand' : 'bg-surface-2 text-ink-2'}`}>{mus.categoria}</span>}
                             </div>
                             <div className="flex gap-2 mt-1 items-center">
-                              <span onClick={() => podeGerirMusicas ? abrirModalTom(relacao.id) : null} className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase flex items-center gap-1 transition ${podeGerirMusicas ? 'bg-brand/10 text-brand border border-brand/30 hover:bg-brand/10 cursor-pointer' : 'bg-surface-2 text-ink-2'}`}>Tom: {tomExibido} {podeGerirMusicas && <Edit2 className="w-2.5 h-2.5 opacity-60" />}</span>
+                              {podeGerirMusicas ? (
+                                <button type="button" onClick={() => abrirModalTom(relacao.id)} aria-label={`Mudar tom (atual: ${tomExibido})`}
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase flex items-center gap-1 transition bg-brand/10 text-brand border border-brand/30 hover:bg-brand/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                                  Tom: {tomExibido} <Edit2 className="w-2.5 h-2.5 opacity-60" aria-hidden="true" />
+                                </button>
+                              ) : (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase bg-surface-2 text-ink-2">Tom: {tomExibido}</span>
+                              )}
                               {mus.artista && <span className="text-[10px] text-ink-2">{mus.artista}</span>}
                             </div>
                           </div>
@@ -1047,7 +1054,7 @@ if (papelEncontrado) {
                 <p className="text-xs text-muted mt-1">O Louvor ainda não adicionou músicas para este dia.</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-line">
                 {repertorioLouvor.map((item, idx) => (
                   <div key={idx} className="px-4 py-3 flex items-center gap-3">
                     <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-[10px] font-bold flex items-center justify-center flex-shrink-0">
@@ -1125,7 +1132,7 @@ if (papelEncontrado) {
                     placeholder="Som, vídeo, energia, internet..."
                     value={checklistForm.relato_problema}
                     onChange={e => setChecklistForm(prev => ({ ...prev, relato_problema: e.target.value }))}
-                    className="w-full border border-line rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-purple-400 resize-none bg-surface-2"
+                    className="w-full border border-line rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-brand resize-none bg-surface-2"
                   />
                 </div>
 
@@ -1188,7 +1195,7 @@ if (papelEncontrado) {
           </div>
           <div className="p-2">
             {escala.schedule_roles.length === 0 ? <p className="text-sm text-muted text-center py-6 font-medium">Ninguém escalado ainda.</p> : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-line">
                 {[...escala.schedule_roles].sort((a, b) => {
                   // ✅ Ordena pela posição em funcoesOrdenadas para manter sequência padrão
                   const getPrimaria = f => f.split(/[+\/]/).map(s => s.trim()).filter(Boolean)[0] || ''
@@ -1322,7 +1329,7 @@ if (papelEncontrado) {
                   <div className="flex flex-col gap-2">
                     {papelParaTrocar.funcao.split(/[+/]/).map(f => f.trim()).filter(Boolean).map(funcao => (
                       <label key={funcao} className="flex items-center gap-2 text-sm text-ink-2 cursor-pointer hover:bg-surface-2 p-1.5 rounded-lg transition">
-                        <input type="checkbox" checked={funcoesSelecionadasTroca.includes(funcao)} onChange={() => toggleFuncaoTroca(funcao)} className="w-4 h-4 rounded border-line text-warning focus:ring-yellow-500" /> {funcao}
+                        <input type="checkbox" checked={funcoesSelecionadasTroca.includes(funcao)} onChange={() => toggleFuncaoTroca(funcao)} className="w-4 h-4 rounded border-line text-warning focus:ring-warning" /> {funcao}
                       </label>
                     ))}
                   </div>
@@ -1330,14 +1337,14 @@ if (papelEncontrado) {
               )}
               <div>
                 <label className="block text-xs font-bold text-ink-2 mb-2">Quem você conversou e aceitou ficar no seu lugar?</label>
-                <select required value={substitutoId} onChange={(e) => setSubstitutoId(e.target.value)} className="w-full border border-line rounded-xl p-3 text-sm focus:ring-2 focus:ring-yellow-500 outline-none bg-surface-2">
+                <select required value={substitutoId} onChange={(e) => setSubstitutoId(e.target.value)} className="w-full border border-line rounded-xl p-3 text-sm focus:ring-2 focus:ring-warning outline-none bg-surface-2">
                   <option value="">Selecione o membro...</option>
                   {membrosEquipa.filter(m => m.id !== meuId).map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-ink-2 mb-2">Motivo da Substituição *</label>
-                <textarea required rows="2" placeholder="Explique o motivo (Ex: Viagem, saúde...)" value={motivoTroca} onChange={(e) => setMotivoTroca(e.target.value)} className="w-full border border-line rounded-xl p-3 text-sm outline-none bg-surface-2 focus:ring-2 focus:ring-yellow-500 resize-none" />
+                <textarea required rows="2" placeholder="Explique o motivo (Ex: Viagem, saúde...)" value={motivoTroca} onChange={(e) => setMotivoTroca(e.target.value)} className="w-full border border-line rounded-xl p-3 text-sm outline-none bg-surface-2 focus:ring-2 focus:ring-warning resize-none" />
               </div>
               <div className="bg-warning-soft border border-warning/40 p-3 rounded-xl flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
