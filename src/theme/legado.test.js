@@ -32,6 +32,10 @@ const TELAS_REFORMADAS = [
   { arquivo: 'pages/Cabine.jsx',          rota: '/cabine/abc' },
   { arquivo: 'pages/ChecklistMidia.jsx',  rota: '/checklist-midia' },
   { arquivo: 'pages/PrintSchedules.jsx',  rota: '/imprimir-escalas' },
+  { arquivo: 'pages/GestaoIgreja.jsx',    rota: '/gestao-igreja' },
+  { arquivo: 'pages/PainelDono.jsx',      rota: '/painel-dono' },
+  { arquivo: 'pages/IgrejaDetalhes.jsx',  rota: '/igreja/abc' },
+  { arquivo: 'pages/CriarIgreja.jsx',     rota: '/criar-igreja' },
 ]
 
 const COR_ANTIGA = /\b(bg|text|border|ring|from|via|to|divide|placeholder)-(gray|slate|zinc|neutral|stone|blue|indigo|purple|violet|sky|cyan|teal|emerald|green|lime|yellow|amber|orange|red|rose|pink|fuchsia)-\d{2,3}\b/
@@ -55,6 +59,6 @@ describe.each(TELAS_REFORMADAS)('$arquivo', ({ arquivo, rota }) => {
   })
 })
 
-it('guarda distingue tela legada (/gestao-igreja ainda não reformada)', () => {
-  expect(comeca('/gestao-igreja', ROTAS_NOVAS)).toBe(false)
+it('guarda distingue rota fora da lista', () => {
+  expect(comeca('/rota-que-nao-existe', ROTAS_NOVAS)).toBe(false)
 })

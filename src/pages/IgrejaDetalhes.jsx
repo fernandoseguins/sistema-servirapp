@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useUI } from '../context/UIContext'
-import PageHeader from '../components/PageHeader'
+import { TopBar } from '../components/ui'
 import {
   Crown, Church, Users, LayoutGrid, ShieldCheck, CalendarDays, Star,
   Copy, Power, PowerOff, Trash2, Loader2, Hash, Clock, UserCog
@@ -112,19 +112,19 @@ export default function IgrejaDetalhes() {
   // ── Guards ──────────────────────────────────────────────────────
   if (autorizado === null || loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-warning" />
       </div>
     )
   }
 
   if (!autorizado) {
     return (
-      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 text-center">
-        <ShieldCheck className="w-12 h-12 text-gray-300 mb-3" />
-        <p className="font-bold text-gray-700">Acesso restrito</p>
-        <p className="text-sm text-gray-400 mb-4">Esta área é exclusiva do dono do sistema.</p>
-        <button onClick={() => navigate('/hub')} className="bg-gray-900 text-white font-bold px-5 py-2.5 rounded-xl active:scale-[0.97] transition">Voltar</button>
+      <div className="min-h-screen bg-bg flex flex-col items-center justify-center p-6 text-center">
+        <ShieldCheck className="w-12 h-12 text-muted mb-3" />
+        <p className="font-bold text-ink">Acesso restrito</p>
+        <p className="text-sm text-muted mb-4">Esta área é exclusiva do dono do sistema.</p>
+        <button onClick={() => navigate('/hub')} className="bg-brand text-on-brand font-bold px-5 py-2.5 rounded-xl active:scale-[0.97] transition">Voltar</button>
       </div>
     )
   }
@@ -140,18 +140,18 @@ export default function IgrejaDetalhes() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
-      <PageHeader
-        title={igreja.nome}
-        subtitle="Detalhes da igreja"
-        icon={<Crown className="w-5 h-5" />}
-        color="bg-gradient-to-br from-amber-500 to-orange-600"
+    <div className="min-h-screen bg-bg pb-20">
+      <TopBar
+        titulo={igreja.nome}
+        subtitulo="Detalhes da igreja"
+        onVoltar={() => navigate('/painel-dono')}
+        icone={<span className="w-10 h-10 rounded-ctl flex items-center justify-center bg-brand/10 text-brand"><Crown className="w-5 h-5" aria-hidden="true" /></span>}
       />
 
-      <div className="max-w-2xl mx-auto px-4 space-y-5">
+      <div className="max-w-[720px] mx-auto px-4 pb-6 space-y-5">
 
         {/* Status + plano */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-surface rounded-2xl shadow-sm border border-line p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white flex-shrink-0" style={{ backgroundColor: igreja.cor_primaria || '#2563eb' }}>
@@ -159,12 +159,12 @@ export default function IgrejaDetalhes() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold ${igreja.ativa ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span className={`text-xs font-bold ${igreja.ativa ? 'text-success' : 'text-muted'}`}>
                     {igreja.ativa ? '● Ativa' : '○ Inativa'}
                   </span>
-                  <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full uppercase">{igreja.plano || 'free'}</span>
+                  <span className="text-xs font-bold text-warning bg-warning-soft px-2 py-0.5 rounded-full uppercase">{igreja.plano || 'free'}</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                <p className="text-xs text-muted mt-1 flex items-center gap-1">
                   <Clock className="w-3 h-3" /> Criada em {formatarData(igreja.criada_em)}
                 </p>
               </div>
@@ -175,61 +175,61 @@ export default function IgrejaDetalhes() {
         {/* Métricas */}
         <div className="grid grid-cols-3 gap-3">
           {metricas.map((m, i) => (
-            <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center text-center">
-              <div className="text-amber-500 mb-2">{m.icone}</div>
-              <span className="text-2xl font-bold text-gray-900 leading-none">{m.valor}</span>
-              <span className="text-[11px] text-gray-400 font-medium mt-1">{m.rotulo}</span>
+            <div key={i} className="bg-surface rounded-2xl shadow-sm border border-line p-4 flex flex-col items-center text-center">
+              <div className="text-warning mb-2">{m.icone}</div>
+              <span className="text-2xl font-bold text-ink leading-none">{m.valor}</span>
+              <span className="text-[11px] text-muted font-medium mt-1">{m.rotulo}</span>
             </div>
           ))}
         </div>
 
         {/* Código de convite */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+        <div className="bg-surface rounded-2xl shadow-sm border border-line p-5">
+          <p className="text-xs font-bold text-muted uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <Hash className="w-3.5 h-3.5" /> Código de convite
           </p>
-          <button onClick={copiarCodigo} className="w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 rounded-xl px-4 py-3 transition active:scale-[0.98]">
-            <span className="font-mono font-bold text-lg text-gray-800 tracking-widest">{igreja.codigo_convite}</span>
-            <Copy className="w-4 h-4 text-gray-400" />
+          <button onClick={copiarCodigo} className="w-full flex items-center justify-between bg-surface-2 hover:bg-surface-2 rounded-xl px-4 py-3 transition active:scale-[0.98]">
+            <span className="font-mono font-bold text-lg text-ink tracking-widest">{igreja.codigo_convite}</span>
+            <Copy className="w-4 h-4 text-muted" />
           </button>
         </div>
 
         {/* Ações */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-3">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Ações</p>
+        <div className="bg-surface rounded-2xl shadow-sm border border-line p-5 space-y-3">
+          <p className="text-xs font-bold text-muted uppercase tracking-wide mb-1">Ações</p>
 
-          <button onClick={() => navigate('/painel-dono')} className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-blue-50 transition active:scale-[0.98] text-left">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0"><UserCog className="w-5 h-5" /></div>
+          <button onClick={() => navigate('/painel-dono')} className="w-full flex items-center gap-3 p-3 rounded-xl border border-line hover:bg-brand/10 transition active:scale-[0.98] text-left">
+            <div className="w-9 h-9 rounded-lg bg-brand/10 text-brand flex items-center justify-center flex-shrink-0"><UserCog className="w-5 h-5" /></div>
             <div>
-              <p className="font-bold text-sm text-gray-800">Gerenciar admins</p>
-              <p className="text-xs text-gray-400">Promover ou rebaixar admins no painel</p>
+              <p className="font-bold text-sm text-ink">Gerenciar admins</p>
+              <p className="text-xs text-muted">Promover ou rebaixar admins no painel</p>
             </div>
           </button>
 
-          <button onClick={toggleAtiva} className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition active:scale-[0.98] text-left">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${igreja.ativa ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-600'}`}>
+          <button onClick={toggleAtiva} className="w-full flex items-center gap-3 p-3 rounded-xl border border-line hover:bg-surface-2 transition active:scale-[0.98] text-left">
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${igreja.ativa ? 'bg-surface-2 text-ink-2' : 'bg-success-soft text-success'}`}>
               {igreja.ativa ? <PowerOff className="w-5 h-5" /> : <Power className="w-5 h-5" />}
             </div>
             <div>
-              <p className="font-bold text-sm text-gray-800">{igreja.ativa ? 'Desativar igreja' : 'Ativar igreja'}</p>
-              <p className="text-xs text-gray-400">{igreja.ativa ? 'A igreja fica inacessível temporariamente' : 'Libera o acesso à igreja'}</p>
+              <p className="font-bold text-sm text-ink">{igreja.ativa ? 'Desativar igreja' : 'Ativar igreja'}</p>
+              <p className="text-xs text-muted">{igreja.ativa ? 'A igreja fica inacessível temporariamente' : 'Libera o acesso à igreja'}</p>
             </div>
           </button>
         </div>
 
         {/* Zona de perigo */}
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
-          <p className="text-xs font-bold text-red-600 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+        <div className="bg-danger-soft border border-danger/30 rounded-2xl p-5">
+          <p className="text-xs font-bold text-danger uppercase tracking-wide mb-3 flex items-center gap-1.5">
             <Trash2 className="w-3.5 h-3.5" /> Zona de perigo
           </p>
           <button
             onClick={apagarIgreja}
             disabled={apagando}
-            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition active:scale-[0.97] disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 bg-danger hover:bg-danger text-on-danger font-bold py-3 rounded-xl transition active:scale-[0.97] disabled:opacity-60"
           >
             {apagando ? <><Loader2 className="w-5 h-5 animate-spin" /> Apagando...</> : <><Trash2 className="w-5 h-5" /> Apagar igreja permanentemente</>}
           </button>
-          <p className="text-[11px] text-red-400 mt-2 text-center">Apaga a igreja e todos os seus dados. Não pode ser desfeito.</p>
+          <p className="text-[11px] text-danger mt-2 text-center">Apaga a igreja e todos os seus dados. Não pode ser desfeito.</p>
         </div>
 
       </div>
