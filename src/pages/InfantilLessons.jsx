@@ -5,7 +5,9 @@ import { urlSegura } from '../utils/url'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { BookOpen, Link as LinkIcon, Plus, Trash2, ExternalLink } from 'lucide-react'
 import { useUI } from '../context/UIContext'
-import PageHeader from '../components/PageHeader'
+import { TopBar } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
 
 export default function InfantilLessons() {
   const navigate  = useNavigate()
@@ -23,9 +25,9 @@ export default function InfantilLessons() {
   const [loading,  setLoading]  = useState(true)
 
   const theme = {
-    bgPrimary: 'bg-pink-500', textPrimary: 'text-pink-500',
-    bgLight: 'bg-pink-50', borderLight: 'border-pink-200',
-    btnHover: 'hover:bg-pink-600', textLight: 'text-pink-100'
+    bgPrimary: 'bg-brand', textPrimary: 'text-brand',
+    bgLight: 'bg-brand/10', borderLight: 'border-brand/30',
+    btnHover: 'hover:opacity-90', textLight: 'text-on-brand'
   }
 
   useEffect(() => {
@@ -74,39 +76,41 @@ export default function InfantilLessons() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-bg">
 
-      <PageHeader
-        title="Lições e Materiais"
-        subtitle="Acesso rápido aos materiais da aula"
-        icon={<BookOpen className="w-5 h-5" />}
-        color={theme.bgPrimary}
+      <TopBar
+        titulo="Lições e materiais"
+        subtitulo="Infantil · Materiais da aula"
+        onVoltar={() => navigate(-1)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept('Infantil').chip}`}>
+          <IconeDept nome="Infantil" className="w-5 h-5" />
+        </span>}
       />
 
-      <div className="max-w-md mx-auto px-4 space-y-6">
+      <div className="max-w-[720px] mx-auto px-4 pb-6 space-y-6">
 
         {/* PAINEL DO LÍDER */}
         {isLiderOuAdmin && (
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-surface p-6 rounded-2xl shadow-sm border border-line">
             <h2 className={`text-sm font-bold uppercase mb-4 flex items-center gap-2 ${theme.textPrimary}`}>
               <Plus className="w-5 h-5" /> Adicionar Link do Drive
             </h2>
             <form onSubmit={adicionarLicao} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">Título da Lição</label>
+                <label className="block text-xs font-bold text-ink-2 mb-1">Título da Lição</label>
                 <input type="text" required value={titulo} onChange={e => setTitulo(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-pink-500 outline-none bg-gray-50" />
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:ring-2 focus:ring-brand outline-none bg-surface-2" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
+                <label className="block text-xs font-bold text-ink-2 mb-1 flex items-center gap-1">
                   <LinkIcon className="w-3 h-3" /> Link do Google Drive / PDF
                 </label>
                 <input type="text" required value={link} onChange={e => setLink(e.target.value)}
                   placeholder="Cole o link aqui..."
-                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-pink-500 outline-none bg-gray-50" />
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:ring-2 focus:ring-brand outline-none bg-surface-2" />
               </div>
               <button type="submit" disabled={loading}
-                className={`w-full text-white font-bold py-3.5 rounded-xl transition active:scale-[0.97] flex items-center justify-center gap-2 mt-2 shadow-md disabled:opacity-50 ${theme.bgPrimary} ${theme.btnHover}`}>
+                className={`w-full text-on-brand font-bold py-3.5 rounded-xl transition active:scale-[0.97] flex items-center justify-center gap-2 mt-2 shadow-md disabled:opacity-50 ${theme.bgPrimary} ${theme.btnHover}`}>
                 {loading ? 'Salvando...' : 'Salvar Material'}
               </button>
             </form>
@@ -114,28 +118,28 @@ export default function InfantilLessons() {
         )}
 
         {/* LISTA DE LIÇÕES */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-sm font-bold text-gray-800 uppercase mb-4">Materiais Disponíveis</h2>
+        <div className="bg-surface p-6 rounded-2xl shadow-sm border border-line">
+          <h2 className="text-sm font-bold text-ink uppercase mb-4">Materiais Disponíveis</h2>
 
           {loading && licoes.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4 font-bold animate-pulse">A procurar na pasta...</p>
+            <p className="text-sm text-muted text-center py-4 font-bold animate-pulse">A procurar na pasta...</p>
           ) : licoes.length === 0 ? (
-            <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <BookOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 font-medium">Nenhum material adicionado ainda.</p>
+            <div className="text-center py-6 bg-surface-2 rounded-xl border border-dashed border-line">
+              <BookOpen className="w-8 h-8 text-muted mx-auto mb-2" />
+              <p className="text-sm text-ink-2 font-medium">Nenhum material adicionado ainda.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {licoes.map(licao => (
-                <div key={licao.id} className="flex items-center justify-between p-3.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-pink-50 hover:border-pink-200 transition group">
+                <div key={licao.id} className="flex items-center justify-between p-3.5 bg-surface-2 border border-line rounded-xl hover:bg-accent/10 hover:border-accent/30 transition group">
                   <a href={urlSegura(licao.link)} target="_blank" rel="noopener noreferrer"
                     className="flex-1 flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 bg-pink-100 text-pink-600 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                    <div className="p-2.5 bg-accent/10 text-accent-ink rounded-lg shrink-0 group-hover:scale-110 transition-transform">
                       <BookOpen className="w-5 h-5" />
                     </div>
                     <div className="min-w-0 pr-2">
-                      <p className="font-bold text-gray-800 text-sm truncate">{licao.titulo}</p>
-                      <p className="text-[10px] text-gray-500 flex items-center gap-1 font-medium mt-0.5">
+                      <p className="font-bold text-ink text-sm truncate">{licao.titulo}</p>
+                      <p className="text-[10px] text-ink-2 flex items-center gap-1 font-medium mt-0.5">
                         <ExternalLink className="w-3 h-3" /> Clique para abrir
                       </p>
                     </div>
@@ -143,7 +147,7 @@ export default function InfantilLessons() {
                   {isLiderOuAdmin && (
                     <button onClick={() => removerLicao(licao.id, licao.titulo)}
                       aria-label="Apagar lição"
-                      className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition shrink-0">
+                      className="p-2.5 text-muted hover:text-danger hover:bg-danger-soft rounded-xl transition shrink-0">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   )}
