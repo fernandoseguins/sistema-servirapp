@@ -7,7 +7,7 @@ import { enviarNotificacaoEmMassa, enviarNotificacao } from '../utils/notificaco
 import { TopBar, Button } from '../components/ui'
 import IconeDept from '../theme/IconeDept'
 import { classesDept } from '../theme/deptCores'
-import { CalendarDays, Wand2, Clock, Plus, Trash2, ListChecks, CalendarRange, AlertTriangle, Palette, Tag, UserMinus, X } from 'lucide-react'
+import { Loader2, CalendarDays, Wand2, Clock, Plus, Trash2, ListChecks, CalendarRange, AlertTriangle, Palette, Tag, UserMinus, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function GenerateSchedule() {

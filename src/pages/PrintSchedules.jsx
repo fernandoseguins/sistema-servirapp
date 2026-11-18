@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { ArrowLeft, Printer, AlertCircle } from 'lucide-react'
+import { Button } from '../components/ui'
 
 export default function PrintSchedules() {
   const location = useLocation()
@@ -63,19 +64,19 @@ export default function PrintSchedules() {
     return data.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
   }
 
-  if (loading) return <div className="text-center p-10 font-bold">A preparar documento...</div>
+  if (loading) return <div className="min-h-screen bg-bg text-ink-2 text-center p-10 font-bold" aria-busy="true">Preparando o documento...</div>
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-8 print:bg-white print:p-0">
+    <div className="min-h-screen bg-bg p-4 sm:p-8 print:bg-white print:p-0">
       
       {/* BARRA DE AÇÕES (Esconde na hora de imprimir) */}
-      <div className="max-w-4xl mx-auto bg-white p-4 rounded-xl shadow-sm mb-6 flex justify-between items-center print:hidden">
-        <button onClick={voltar}className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-bold px-4 py-2 bg-gray-100 rounded-lg transition">
-          <ArrowLeft className="w-5 h-5" /> Voltar
-        </button>
-        <button onClick={() => window.print()} className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 font-bold px-6 py-2 rounded-lg shadow-md transition">
-          <Printer className="w-5 h-5" /> Imprimir / Salvar PDF
-        </button>
+      <div className="max-w-4xl mx-auto bg-surface border border-line p-3 rounded-card mb-6 flex justify-between items-center gap-2 print:hidden">
+        <Button variant="secundario" onClick={voltar} icon={<ArrowLeft className="w-4 h-4" aria-hidden="true" />}>
+          Voltar
+        </Button>
+        <Button onClick={() => window.print()} icon={<Printer className="w-4 h-4" aria-hidden="true" />}>
+          Imprimir ou salvar PDF
+        </Button>
       </div>
 
       {/* ÁREA DA FOLHA A4 (Esta é a parte que sai no PDF) */}
@@ -83,11 +84,11 @@ export default function PrintSchedules() {
         
         <div className="text-center mb-8 border-b-2 border-black pb-6">
           <h1 className="text-3xl font-black text-black uppercase tracking-widest">Escala de {departamentoNome}</h1>
-          <h2 className="text-xl font-bold text-gray-700 mt-2 uppercase">{nomesMeses[mes]} {ano}</h2>
+          <h2 className="text-xl font-bold text-black/70 mt-2 uppercase">{nomesMeses[mes]} {ano}</h2>
         </div>
 
         {escalas.length === 0 ? (
-          <div className="text-center py-20 text-gray-500 flex flex-col items-center">
+          <div className="text-center py-20 text-black/60 flex flex-col items-center">
             <AlertCircle className="w-12 h-12 mb-3 opacity-50" />
             <p className="font-bold text-lg">Nenhuma escala publicada neste mês.</p>
             <p className="text-sm mt-1 print:hidden">Volte ao painel e publique as escalas primeiro.</p>
@@ -95,9 +96,9 @@ export default function PrintSchedules() {
         ) : (
           <div className="space-y-8">
             {escalas.map((escala) => (
-              <div key={escala.id} className="border-2 border-gray-900 rounded-xl overflow-hidden page-break-inside-avoid">
+              <div key={escala.id} className="border-2 border-black rounded-xl overflow-hidden page-break-inside-avoid">
                 {/* Cabeçalho da Escala */}
-                <div className="bg-gray-100 border-b-2 border-gray-900 p-4">
+                <div className="bg-black/5 border-b-2 border-black p-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-black text-black uppercase">
                       {formatarDataLonga(escala.data)}
@@ -107,7 +108,7 @@ export default function PrintSchedules() {
                     </span>
                   </div>
                   
-                  <div className="flex gap-4 mt-2 text-sm font-bold text-gray-700">
+                  <div className="flex gap-4 mt-2 text-sm font-bold text-black/70">
                     {escala.titulo && <span>📌 {escala.titulo}</span>}
                     {escala.cor_roupa && <span>👕 Roupa: {escala.cor_roupa}</span>}
                     {escala.horario_ensaio && <span>⏰ Ensaio: {escala.horario_ensaio}</span>}
@@ -117,16 +118,16 @@ export default function PrintSchedules() {
                 {/* Tabela de Membros */}
                 <div className="p-0">
                   {escala.schedule_roles.length === 0 ? (
-                    <p className="p-4 text-sm font-bold text-gray-400 italic">Sem membros escalados.</p>
+                    <p className="p-4 text-sm font-bold text-black/50 italic">Sem membros escalados.</p>
                   ) : (
                     <table className="w-full text-left border-collapse">
                       <tbody>
                         {escala.schedule_roles.map((papel, idx) => (
-                          <tr key={idx} className="border-b border-gray-200 last:border-0">
-                            <td className="py-3 px-4 w-1/3 text-xs font-bold uppercase tracking-wider text-gray-500 bg-gray-50 border-r border-gray-200">
+                          <tr key={idx} className="border-b border-black/15 last:border-0">
+                            <td className="py-3 px-4 w-1/3 text-xs font-bold uppercase tracking-wider text-black/60 bg-black/[0.03] border-r border-black/15">
                               {papel.funcao}
                             </td>
-                            <td className="py-3 px-4 text-sm font-bold text-gray-900">
+                            <td className="py-3 px-4 text-sm font-bold text-black">
                               {papel.users_profile?.nome || 'Membro Excluído'}
                             </td>
                           </tr>
@@ -140,7 +141,7 @@ export default function PrintSchedules() {
           </div>
         )}
 
-        <div className="mt-12 pt-4 border-t border-gray-300 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+        <div className="mt-12 pt-4 border-t border-black/25 text-center text-xs font-bold text-black/50 uppercase tracking-widest">
           Documento gerado automaticamente pelo Portal IEVV Curado
         </div>
 
@@ -149,6 +150,7 @@ export default function PrintSchedules() {
       {/* Estilo para garantir que um culto não é cortado ao meio na quebra de página do PDF */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
+          html, body { background: #fff !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .page-break-inside-avoid { page-break-inside: avoid; break-inside: avoid; }
         }
