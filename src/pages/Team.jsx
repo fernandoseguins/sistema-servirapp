@@ -1,12 +1,12 @@
 // src/pages/Team.jsx
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../supabase'
-import { getDeptTheme } from '../utils/departmentThemes'
 import { useUI } from '../context/UIContext'
-import PageHeader from '../components/PageHeader'
-import EmptyState from '../components/EmptyState'
 import { enviarNotificacao } from '../utils/notificacoes'
-import { ArrowLeft, Users, Shield, ShieldAlert, Trash2, User, Mic, Mic2, Settings2, Music, Monitor, Camera, PenTool, Baby, Smile, HeartHandshake, Edit2, XCircle, Save, Star, UserPlus, Plus, CalendarX, Calendar, CalendarCheck, ChevronLeft, ChevronRight } from 'lucide-react'
+import { TopBar, Button, Card, Pill, ListRow, Input, Select, Sheet, EmptyState } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
+import { Users, Shield, ShieldAlert, Trash2, Mic, Mic2, Settings2, Music, Monitor, Camera, PenTool, Baby, Smile, HeartHandshake, Edit2, Save, Star, UserPlus, Plus, CalendarX, Calendar, CalendarCheck, ChevronLeft, ChevronRight, MoreHorizontal, Search } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 // Rótulo legível do cargo para notificações
@@ -19,7 +19,6 @@ export default function Equipa() {
   const departamentoId = location.state?.departamentoId
   const departamentoNome = location.state?.departamentoNome
   const [departamentoTipo, setDepartamentoTipo] = useState(location.state?.departamentoTipo || '')
-  const [departamentoCor, setDepartamentoCor] = useState(null)
   
   const [equipa, setEquipa] = useState([])
   const [usuariosDisponiveis, setUsuariosDisponiveis] = useState([])
@@ -27,6 +26,8 @@ export default function Equipa() {
   const [adicionando, setAdicionando] = useState(false)
 
   const [loading, setLoading] = useState(true)
+  const [busca, setBusca] = useState('')
+  const [membroAcoes, setMembroAcoes] = useState(null)
   const { toast, confirm } = useUI()
 
   // Controladores do Modal de Edição de Funções
@@ -48,34 +49,10 @@ export default function Equipa() {
 
   const listaInstrumentos = ['Violão', 'Guitarra', 'Teclado', 'Bateria', 'Baixo', 'Percussão']
 
-  const getTheme = (nomeDept) => {
-    if (nomeDept === 'Mídia') return { 
-      bgPrimary: 'bg-purple-600', textPrimary: 'text-purple-600', 
-      tagBg: 'bg-purple-100', tagText: 'text-purple-700', border: 'border-purple-200', btnHover: 'hover:bg-purple-700'
-    }
-    if (nomeDept === 'Infantil') return { 
-      bgPrimary: 'bg-pink-500', textPrimary: 'text-pink-500', 
-      tagBg: 'bg-pink-100', tagText: 'text-pink-700', border: 'border-pink-200', btnHover: 'hover:bg-pink-600' 
-    }
-    if (nomeDept === 'Diaconia') return { 
-      bgPrimary: 'bg-gray-900', textPrimary: 'text-gray-900', 
-      tagBg: 'bg-gray-200', tagText: 'text-gray-800', border: 'border-gray-300', btnHover: 'hover:bg-black' 
-    }
-    return { 
-      bgPrimary: 'bg-blue-600', textPrimary: 'text-blue-600', 
-      tagBg: 'bg-blue-100', tagText: 'text-blue-700', border: 'border-blue-200', btnHover: 'hover:bg-blue-700' 
-    }
-  }
-
-  const deptThemeCustom = getDeptTheme(departamentoNome, departamentoCor)
-  const pers = deptThemeCustom.personalizado
-  const st = deptThemeCustom.styles || {}
-  const theme = getTheme(departamentoNome)  // estrutura de classes para departamentos padrão
-
   useEffect(() => {
     if (departamentoId) {
-      supabase.from('departamentos').select('tipo, cor').eq('id', departamentoId).single()
-        .then(({ data }) => { if (data) { setDepartamentoTipo(data.tipo || 'generico'); setDepartamentoCor(data.cor) } })
+      supabase.from('departamentos').select('tipo').eq('id', departamentoId).single()
+        .then(({ data }) => { if (data) setDepartamentoTipo(data.tipo || 'generico') })
     }
     if (!departamentoId) {
       navigate('/hub')
@@ -151,7 +128,7 @@ export default function Equipa() {
         tipo:           'admin',
         link:           `/dashboard/${departamentoId}`,
       })
-      toast.success('Novo membro recrutado e notificado!')
+      toast.success('Pessoa adicionada e avisada.')
       setNovoMembroId('')
       buscarEquipa()
     }
@@ -173,18 +150,19 @@ export default function Equipa() {
         link: `/dashboard/${departamentoId}`,
       })
 
-      toast.success('Cargo atualizado com sucesso!')
+      toast.success('Nível de acesso atualizado.')
       buscarEquipa()
     }
   }
 
   async function removerMembro(vinculoId, nomeMembro, userIdRemovido) {
-    if (!await confirm({ title: `Remover ${nomeMembro}?`, message: 'Esta pessoa será removida do departamento.', danger: true, labelOk: 'Remover', labelCancel: 'Cancelar' })) return
+    if (!await confirm({ title: `Remover ${nomeMembro}?`, message: 'Esta pessoa será removida do departamento.', danger: true, labelOk: 'Remover', labelCancel: 'Cancelar' })) return false
     
     const { error } = await supabase.from('membros_departamentos').delete().eq('id', vinculoId)
     
     if (error) {
       toast.error('Erro ao remover membro.')
+      return false
     } else {
       // ✅ Notificar o membro removido (pelo user_id do vínculo — nunca pelo nome, que pode repetir)
       if (userIdRemovido) {
@@ -199,6 +177,7 @@ export default function Equipa() {
       }
       toast.info(`${nomeMembro} não faz mais parte da equipe.`)
       buscarEquipa()
+      return true
     }
   }
 
@@ -375,36 +354,36 @@ export default function Equipa() {
       if (perfil.infantil_sala3_8) tags.push({ icon: <Smile className="w-3 h-3" />, label: 'Sala 03-08' })
       if (perfil.infantil_sala9_11) tags.push({ icon: <Smile className="w-3 h-3" />, label: 'Sala 09-11' })
       if (perfil.infantil_acolhimento) tags.push({ icon: <HeartHandshake className="w-3 h-3" />, label: 'Acolhimento' })
-      if (perfil.infantil_auxiliar) tags.push({ icon: <Smile className="w-3 h-3 text-blue-500" />, label: 'Auxiliar' }) 
+      if (perfil.infantil_auxiliar) tags.push({ icon: <Smile className="w-3 h-3" />, label: 'Auxiliar' }) 
     }
     else if (departamentoNome === 'Diaconia') {
       if (perfil.diaconia) tags.push({ icon: <Shield className="w-3 h-3" />, label: 'Diaconia' }) 
     }
 
     if (tags.length === 0) {
-      return <span className="text-[10px] text-gray-400 italic font-medium">Nenhuma função definida.</span>
+      return <p className="text-xs text-muted mt-1">Nenhuma função definida.</p>
     }
 
   return (
-      <div className="flex flex-wrap gap-1.5 mt-2">
+      <div className="flex flex-wrap gap-1.5 mt-1.5">
         {tags.map((tag, idx) => (
-          <span key={idx} style={pers ? { ...st.tagBg, ...st.tagText, ...st.tagBorder } : {}} className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${pers ? "" : theme.tagBg + " " + theme.tagText + " " + theme.border}`}>
-            {tag.icon} {tag.label}
-          </span>
+          <Pill key={idx} tom="dept" dept={departamentoNome}>{tag.icon} {tag.label}</Pill>
         ))}
       </div>
     )
   }
 
-  const OptionCheckbox = ({ icon, label, checked, field, colorClass }) => (
-    <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition flex-1 ${checked ? `bg-gray-50 border-gray-400 ${colorClass}` : 'border-gray-100 hover:bg-gray-50 text-gray-500'}`}>
-      <input 
-        type="checkbox" className="hidden" 
-        checked={checked} 
-        onChange={(e) => setPerfilEditando({...perfilEditando, [field]: e.target.checked})} 
+  const OptionCheckbox = ({ icon, label, checked, field }) => (
+    <label className={`flex items-center gap-2 p-3 rounded-ctl border-2 cursor-pointer transition flex-1
+      focus-within:ring-2 focus-within:ring-brand
+      ${checked ? 'bg-brand/10 border-brand text-brand' : 'border-line text-ink-2 hover:bg-surface-2'}`}>
+      <input
+        type="checkbox" className="sr-only"
+        checked={!!checked}
+        onChange={(e) => setPerfilEditando({...perfilEditando, [field]: e.target.checked})}
       />
       {icon}
-      <span className="text-[11px] font-bold uppercase tracking-wider">{label}</span>
+      <span className="text-xs font-semibold">{label}</span>
     </label>
   )
 
@@ -417,267 +396,266 @@ export default function Equipa() {
     [equipa]
   )
 
+  const termo = busca.trim().toLowerCase()
+  const membrosVisiveis = termo
+    ? membrosOrdenados.filter(m => (m.users_profile?.nome || '').toLowerCase().includes(termo))
+    : membrosOrdenados
+
+  const RotuloCargo = ({ role }) => role === 'admin'
+    ? <Pill tom="aviso"><ShieldAlert className="w-3 h-3" aria-hidden="true" /> Admin</Pill>
+    : role === 'líder'
+      ? <Pill tom="brand"><Shield className="w-3 h-3" aria-hidden="true" /> Líder</Pill>
+      : null
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      
-      <PageHeader
-        title={departamentoNome}
-        subtitle="Gestão de membros e cargos"
-        icon={<Users className="w-5 h-5" />}
-        color={pers ? deptThemeCustom.hexValue : theme.bgPrimary}
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Equipe"
+        subtitulo={departamentoNome}
+        onVoltar={() => navigate(-1)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept(departamentoNome).chip}`}>
+          <IconeDept nome={departamentoNome} className="w-5 h-5" />
+        </span>}
       />
 
-      <div className="max-w-xl mx-auto px-4 space-y-4">
+      <main className="max-w-[720px] mx-auto px-4 pb-6 space-y-4">
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
-          <h2 className={`text-sm font-bold uppercase mb-3 flex items-center gap-2 ${pers ? "" : theme.textPrimary}`} style={pers ? st.textPrimary : {}}>
-            <UserPlus className="w-5 h-5" /> Adicionar à Equipe
+        <Card>
+          <h2 className="text-sm font-bold text-ink mb-3 flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-brand" aria-hidden="true" /> Adicionar à equipe
           </h2>
-          <form onSubmit={adicionarNovoMembro} className="flex gap-2">
-            <select 
-              value={novoMembroId} 
+          <form onSubmit={adicionarNovoMembro} className="flex gap-2 items-end">
+            <Select
+              className="flex-1"
+              aria-label="Pessoa da igreja"
+              value={novoMembroId}
               onChange={(e) => setNovoMembroId(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-xl p-2.5 text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-blue-500 text-gray-700"
-            >
-              <option value="">Selecione um membro da igreja...</option>
-              {usuariosDisponiveis.map(u => (
-                <option key={u.id} value={u.id}>{u.nome}</option>
-              ))}
-            </select>
-            <button 
-              type="submit" 
-              disabled={!novoMembroId || adicionando}
-              style={pers ? st.bgPrimary : {}} className={`text-white px-4 rounded-xl font-bold transition active:scale-[0.97] flex items-center justify-center shadow-sm disabled:opacity-50 ${pers ? "" : theme.bgPrimary + " " + theme.btnHover}`}
-              title="Recrutar para o departamento"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+              options={[{ value: '', label: 'Escolha uma pessoa' }, ...usuariosDisponiveis.map(u => ({ value: u.id, label: u.nome }))]}
+            />
+            <Button type="submit" disabled={!novoMembroId} loading={adicionando} aria-label="Adicionar à equipe"
+              icon={<Plus className="w-5 h-5" aria-hidden="true" />} />
           </form>
-        </div>
+        </Card>
+
+        {!loading && equipa.length > 0 && (
+          <Input
+            type="search"
+            aria-label="Buscar membro"
+            placeholder="Buscar pelo nome"
+            icon={<Search className="w-4 h-4" aria-hidden="true" />}
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        )}
 
         {loading ? (
-          <div className="text-center p-10 text-gray-500 font-bold animate-pulse">A carregar equipe...</div>
+          <div className="space-y-3" aria-busy="true">
+            {[1, 2, 3].map(i => <div key={i} className="h-20 bg-surface-2 rounded-card animate-pulse" />)}
+          </div>
         ) : equipa.length === 0 ? (
-          <EmptyState
-            icon={<Users className="w-6 h-6" />}
-            title="Departamento sem membros"
-            subtitle="Adicione membros para começar a gerir este departamento."
-          />
+          <Card>
+            <EmptyState
+              icon={<Users className="w-6 h-6" aria-hidden="true" />}
+              titulo="Ninguém na equipe ainda"
+              texto="Adicione pessoas da igreja pelo campo acima."
+            />
+          </Card>
+        ) : membrosVisiveis.length === 0 ? (
+          <Card>
+            <EmptyState icon={<Search className="w-6 h-6" aria-hidden="true" />} titulo="Ninguém com esse nome" texto="Confira a busca." />
+          </Card>
         ) : (
-          <div className="space-y-3">
-            {equipa.map((membro) => (
-              <div key={membro.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                
-                <div className="flex justify-between items-start mb-2 gap-3">
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div className={`p-2 rounded-full mt-1 flex-shrink-0 ${membro.role === 'admin' || membro.role === 'líder' ? 'bg-yellow-100 text-yellow-600' : 'bg-gray-100 text-gray-500'}`}>
-                      {membro.role === 'admin' ? <ShieldAlert className="w-5 h-5" /> : membro.role === 'líder' ? <Shield className="w-5 h-5" /> : <User className="w-5 h-5" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      {/* Nome em sua própria linha (pode quebrar sem empurrar os ícones) */}
-                      <h3 className="font-bold text-gray-900 text-lg leading-tight break-words">
-                        {membro.users_profile?.nome || 'Membro'}
-                      </h3>
-                      {/* Ícones de ação numa linha separada — nunca colam na lixeira */}
-                      <div className="flex items-center gap-3 mt-1">
-                        <button onClick={() => abrirModal(membro.users_profile)} className="text-gray-300 hover:text-blue-600 transition" title="Editar Funções do Membro">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => abrirModalIndisponibilidade(membro.users_profile?.id, membro.users_profile?.nome)} className="text-gray-300 hover:text-blue-500 transition" title="Ver Agenda Global">
-                          <Calendar className="w-4 h-4" />
-                        </button>
-                      </div>
-                      {renderizarFuncoes(membro.users_profile)}
-                    </div>
+          <Card padded={false} className="px-4">
+            {membrosVisiveis.map((membro) => {
+              const nome = membro.users_profile?.nome || 'Membro'
+              return (
+                <div key={membro.id} className="flex items-start gap-3 py-3 border-b border-line last:border-b-0">
+                  <div className="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm flex-shrink-0" aria-hidden="true">
+                    {nome.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()}
                   </div>
-
-                  {/* Lixeira protegida: não encolhe e mantém distância dos outros ícones */}
-                  <button 
-                    onClick={() => removerMembro(membro.id, membro.users_profile?.nome || 'Membro', membro.user_id)}
-                    className="p-2 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0 ml-2"
-                    title="Remover Membro"
-                  >
-                    <Trash2 className="w-5 h-5" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-ink text-sm break-words">{nome}</p>
+                      <RotuloCargo role={membro.role} />
+                    </div>
+                    {renderizarFuncoes(membro.users_profile)}
+                  </div>
+                  <button type="button" onClick={() => setMembroAcoes(membro)} aria-label={`Ações de ${nome}`}
+                    className="p-2 -mr-2 rounded-ctl text-ink-2 hover:bg-surface-2 transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                    <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
+              )
+            })}
+          </Card>
+        )}
+      </main>
 
-                <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nível de Acesso:</span>
-                  <select 
-                    value={membro.role} 
-                    onChange={(e) => alterarCargo(membro.id, e.target.value, membro.user_id, membro.users_profile?.nome || 'Membro')}
-                    className="text-sm border border-gray-200 rounded-lg p-1.5 outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 font-medium cursor-pointer"
-                  >
-                    <option value="membro">Membro Comum</option>
-                    <option value="líder">Líder (Gera Escalas)</option>
-                    <option value="admin">Administrador Geral</option>
-                  </select>
-                </div>
-
-              </div>
-            ))}
+      {/* AÇÕES DO MEMBRO */}
+      <Sheet aberto={!!membroAcoes} onFechar={() => setMembroAcoes(null)} titulo={membroAcoes?.users_profile?.nome || 'Membro'}>
+        {membroAcoes && (
+          <div className="space-y-4">
+            <Select
+              label="Nível de acesso"
+              value={membroAcoes.role}
+              onChange={(e) => {
+                const novo = e.target.value
+                setMembroAcoes({ ...membroAcoes, role: novo })
+                alterarCargo(membroAcoes.id, novo, membroAcoes.user_id, membroAcoes.users_profile?.nome || 'Membro')
+              }}
+              options={[
+                { value: 'membro', label: 'Membro' },
+                { value: 'líder', label: 'Líder (gera escalas)' },
+                { value: 'admin', label: 'Administrador' },
+              ]}
+            />
+            <div>
+              <ListRow
+                icon={<Edit2 className="w-5 h-5 text-brand" aria-hidden="true" />}
+                titulo="Editar funções"
+                onClick={() => { const m = membroAcoes; setMembroAcoes(null); abrirModal(m.users_profile) }}
+              />
+              <ListRow
+                icon={<Calendar className="w-5 h-5 text-brand" aria-hidden="true" />}
+                titulo="Ver agenda"
+                subtitulo="Escalas em outros departamentos e dias off"
+                onClick={() => { const m = membroAcoes; setMembroAcoes(null); abrirModalIndisponibilidade(m.users_profile?.id, m.users_profile?.nome) }}
+              />
+            </div>
+            <Button variant="perigo" full icon={<Trash2 className="w-4 h-4" aria-hidden="true" />}
+              onClick={() => removerMembro(membroAcoes.id, membroAcoes.users_profile?.nome || 'Membro', membroAcoes.user_id).then(removido => { if (removido) setMembroAcoes(null) })}>
+              Remover da equipe
+            </Button>
           </div>
         )}
-      </div>
+      </Sheet>
 
-      {/* MODAL DE EDIÇÃO DE FUNÇÕES */}
-      {modalAberto && perfilEditando && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-xl animate-in slide-in-from-bottom-10 sm:zoom-in-95">
-            <div className="flex justify-between items-center mb-5 border-b border-gray-100 pb-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Settings2 className={`w-5 h-5 ${pers ? "" : theme.textPrimary}`} style={pers ? st.textPrimary : {}} /> Ajustar Funções
-                </h2>
-                <p className="text-xs text-gray-500 font-medium mt-1">A editar: <strong className="text-gray-800">{perfilEditando.nome}</strong></p>
-              </div>
-              <button onClick={() => setModalAberto(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition"><XCircle className="w-6 h-6" /></button>
-            </div>
-            
-            <form onSubmit={salvarNovasFuncoes} className="space-y-4">
-              
-              {departamentoNome === 'Louvor' && (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    <OptionCheckbox icon={<Star className="w-4 h-4"/>} label="Condução" checked={perfilEditando.conducao} field="conducao" colorClass="text-yellow-600" />
-                    <OptionCheckbox icon={<Mic className="w-4 h-4"/>} label="Voz Principal" checked={perfilEditando.voz} field="voz" colorClass="text-blue-600" />
-                    <OptionCheckbox icon={<Mic2 className="w-4 h-4"/>} label="Backing Vocal" checked={perfilEditando.backing_vocal} field="backing_vocal" colorClass="text-purple-600" />
-                    <OptionCheckbox icon={<Settings2 className="w-4 h-4"/>} label="Mesa de Som" checked={perfilEditando.sonoplastia} field="sonoplastia" colorClass="text-gray-800" />
-                  </div>
+      {/* EDIÇÃO DE FUNÇÕES */}
+      <Sheet aberto={modalAberto && !!perfilEditando} onFechar={() => setModalAberto(false)} titulo={`Funções de ${perfilEditando?.nome || ''}`}>
+        {perfilEditando && (
+          <form onSubmit={salvarNovasFuncoes} className="space-y-4">
 
-                  <div className="mt-4 border-t border-gray-100 pt-3">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                      <Music className="w-4 h-4 text-indigo-500"/> Instrumentos
-                    </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {listaInstrumentos.map(inst => {
-                        const isSelecionado = perfilEditando.instrumentosSelecionados?.includes(inst)
-                        return (
-                          <button 
-                            key={inst} 
-                            type="button" 
-                            onClick={() => toggleInstrumentoModal(inst)} 
-                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition ${isSelecionado ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300' : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'}`}
-                          >
-                            {inst}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {departamentoNome === 'Mídia' && (
-                <div className="flex flex-col gap-2">
-                  <OptionCheckbox icon={<Monitor className="w-4 h-4"/>} label="Computador/Projeção" checked={perfilEditando.midia_computador} field="midia_computador" colorClass="text-indigo-600" />
-                  <OptionCheckbox icon={<Camera className="w-4 h-4"/>} label="Fotos e Vídeos" checked={perfilEditando.midia_fotografia} field="midia_fotografia" colorClass="text-pink-600" />
-                  <OptionCheckbox icon={<PenTool className="w-4 h-4"/>} label="Redação/Social" checked={perfilEditando.midia_redacao} field="midia_redacao" colorClass="text-orange-600" />
-                </div>
-              )}
-
-              {departamentoNome === 'Infantil' && (
+            {departamentoNome === 'Louvor' && (
+              <>
                 <div className="grid grid-cols-2 gap-2">
-                  <OptionCheckbox icon={<Baby className="w-4 h-4"/>} label="Berçário" checked={perfilEditando.infantil_bercario} field="infantil_bercario" colorClass="text-pink-600" />
-                  <OptionCheckbox icon={<Smile className="w-4 h-4"/>} label="Sala 03-08" checked={perfilEditando.infantil_sala3_8} field="infantil_sala3_8" colorClass="text-yellow-600" />
-                  <OptionCheckbox icon={<Smile className="w-4 h-4"/>} label="Sala 09-11" checked={perfilEditando.infantil_sala9_11} field="infantil_sala9_11" colorClass="text-green-600" />
-                  <OptionCheckbox icon={<HeartHandshake className="w-4 h-4"/>} label="Acolhimento" checked={perfilEditando.infantil_acolhimento} field="infantil_acolhimento" colorClass="text-red-600" />
-                  <OptionCheckbox icon={<HeartHandshake className="w-4 h-4 text-blue-400"/>} label="Auxiliar" checked={perfilEditando.infantil_auxiliar} field="infantil_auxiliar" colorClass="text-blue-600" />
+                  <OptionCheckbox icon={<Star className="w-4 h-4" aria-hidden="true" />} label="Condução" checked={perfilEditando.conducao} field="conducao" />
+                  <OptionCheckbox icon={<Mic className="w-4 h-4" aria-hidden="true" />} label="Voz principal" checked={perfilEditando.voz} field="voz" />
+                  <OptionCheckbox icon={<Mic2 className="w-4 h-4" aria-hidden="true" />} label="Backing vocal" checked={perfilEditando.backing_vocal} field="backing_vocal" />
+                  <OptionCheckbox icon={<Settings2 className="w-4 h-4" aria-hidden="true" />} label="Mesa de som" checked={perfilEditando.sonoplastia} field="sonoplastia" />
                 </div>
-              )}
 
-              {departamentoNome === 'Diaconia' && (
-                <div className="flex gap-2">
-                  <OptionCheckbox icon={<Shield className="w-4 h-4"/>} label="Atuar na Diaconia" checked={perfilEditando.diaconia} field="diaconia" colorClass="text-gray-900" />
-                </div>
-              )}
+                <fieldset className="border-t border-line pt-3">
+                  <legend className="text-xs font-semibold text-ink-2 mb-2 flex items-center gap-1">
+                    <Music className="w-4 h-4 text-brand" aria-hidden="true" /> Instrumentos
+                  </legend>
+                  <div className="flex flex-wrap gap-1.5">
+                    {listaInstrumentos.map(inst => {
+                      const isSelecionado = perfilEditando.instrumentosSelecionados?.includes(inst)
+                      return (
+                        <button
+                          key={inst}
+                          type="button"
+                          aria-pressed={!!isSelecionado}
+                          onClick={() => toggleInstrumentoModal(inst)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand
+                            ${isSelecionado ? 'bg-brand text-on-brand border-brand' : 'bg-surface text-ink-2 border-line hover:bg-surface-2'}`}
+                        >
+                          {inst}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </fieldset>
+              </>
+            )}
 
-              <button type="submit" disabled={salvandoFuncoes} style={pers ? st.bgPrimary : {}} className={`w-full text-white font-bold py-3.5 rounded-xl transition active:scale-[0.97] flex items-center justify-center gap-2 mt-4 shadow-md ${pers ? "" : theme.bgPrimary + " " + theme.btnHover}`}>
-                <Save className="w-5 h-5" />
-                {salvandoFuncoes ? 'Salvando...' : 'Salvar Funções do Membro'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL RADAR GLOBAL */}
-      {modalIndispAberto && membroIndisp && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95">
-            
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-500" /> Agenda Global
-                </h2>
-                <p className="text-xs text-gray-500 font-medium mt-1">
-                  Radar de: <strong className="text-gray-800">{membroIndisp.nome}</strong>
-                </p>
+            {departamentoNome === 'Mídia' && (
+              <div className="flex flex-col gap-2">
+                <OptionCheckbox icon={<Monitor className="w-4 h-4" aria-hidden="true" />} label="Computador/projeção" checked={perfilEditando.midia_computador} field="midia_computador" />
+                <OptionCheckbox icon={<Camera className="w-4 h-4" aria-hidden="true" />} label="Fotos e vídeos" checked={perfilEditando.midia_fotografia} field="midia_fotografia" />
+                <OptionCheckbox icon={<PenTool className="w-4 h-4" aria-hidden="true" />} label="Redação/redes sociais" checked={perfilEditando.midia_redacao} field="midia_redacao" />
               </div>
-              <button onClick={() => setModalIndispAberto(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition"><XCircle className="w-6 h-6" /></button>
-            </div>
+            )}
 
-            {/* ✅ SELETOR DE MÊS DENTRO DA GAVETA */}
-            <div className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-200 mb-4">
-              <span className="text-sm font-bold text-gray-800 uppercase tracking-wider pl-2">
-                {nomesMeses[mesModal]} {anoModal}
-              </span>
+            {departamentoNome === 'Infantil' && (
+              <div className="grid grid-cols-2 gap-2">
+                <OptionCheckbox icon={<Baby className="w-4 h-4" aria-hidden="true" />} label="Berçário" checked={perfilEditando.infantil_bercario} field="infantil_bercario" />
+                <OptionCheckbox icon={<Smile className="w-4 h-4" aria-hidden="true" />} label="Sala 03-08" checked={perfilEditando.infantil_sala3_8} field="infantil_sala3_8" />
+                <OptionCheckbox icon={<Smile className="w-4 h-4" aria-hidden="true" />} label="Sala 09-11" checked={perfilEditando.infantil_sala9_11} field="infantil_sala9_11" />
+                <OptionCheckbox icon={<HeartHandshake className="w-4 h-4" aria-hidden="true" />} label="Acolhimento" checked={perfilEditando.infantil_acolhimento} field="infantil_acolhimento" />
+                <OptionCheckbox icon={<HeartHandshake className="w-4 h-4" aria-hidden="true" />} label="Auxiliar" checked={perfilEditando.infantil_auxiliar} field="infantil_auxiliar" />
+              </div>
+            )}
+
+            {departamentoNome === 'Diaconia' && (
+              <div className="flex gap-2">
+                <OptionCheckbox icon={<Shield className="w-4 h-4" aria-hidden="true" />} label="Atuar na Diaconia" checked={perfilEditando.diaconia} field="diaconia" />
+              </div>
+            )}
+
+            <Button type="submit" full loading={salvandoFuncoes} icon={<Save className="w-4 h-4" aria-hidden="true" />}>
+              {salvandoFuncoes ? 'Salvando...' : 'Salvar funções'}
+            </Button>
+          </form>
+        )}
+      </Sheet>
+
+      {/* AGENDA DO MEMBRO EM TODOS OS DEPARTAMENTOS */}
+      <Sheet aberto={modalIndispAberto && !!membroIndisp} onFechar={() => setModalIndispAberto(false)} titulo={`Agenda de ${membroIndisp?.nome || ''}`}>
+        {membroIndisp && (
+          <div>
+            <div className="flex items-center justify-between bg-surface-2 p-2 rounded-ctl mb-4">
+              <span className="text-sm font-bold text-ink pl-2" aria-live="polite">{nomesMeses[mesModal]} {anoModal}</span>
               <div className="flex gap-1">
-                <button onClick={mesAnteriorModal} className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500 transition active:scale-[0.97]"><ChevronLeft className="w-4 h-4" /></button>
-                <button onClick={proximoMesModal} className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500 transition active:scale-[0.97]"><ChevronRight className="w-4 h-4" /></button>
+                <button type="button" onClick={mesAnteriorModal} aria-label="Mês anterior"
+                  className="p-1.5 rounded-ctl text-ink-2 hover:bg-line transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                  <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <button type="button" onClick={proximoMesModal} aria-label="Próximo mês"
+                  className="p-1.5 rounded-ctl text-ink-2 hover:bg-line transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                  <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                </button>
               </div>
             </div>
 
             {loadingIndisp ? (
-              <p className="text-center py-6 text-sm font-bold text-gray-400 animate-pulse">A procurar agenda...</p>
+              <div className="space-y-2" aria-busy="true">
+                {[1, 2].map(i => <div key={i} className="h-16 bg-surface-2 rounded-ctl animate-pulse" />)}
+              </div>
             ) : listaIndisp.length === 0 ? (
               <EmptyState
-                icon={<CalendarCheck className="w-6 h-6" />}
-                title="Sem conflitos este mês"
-                subtitle="Pode escalar este membro à vontade!"
-                size="sm"
-                variant="success"
+                icon={<CalendarCheck className="w-6 h-6" aria-hidden="true" />}
+                titulo="Livre neste mês"
+                texto="Sem escalas em outros departamentos nem dias off."
               />
             ) : (
-              <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 customized-scrollbar">
-                {listaIndisp.map(item => (
-                  <div key={item.id} className={`p-3.5 rounded-xl border relative overflow-hidden ${item.tipo === 'OFF' ? 'bg-red-50/50 border-red-100' : 'bg-blue-50/50 border-blue-100'}`}>
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${item.tipo === 'OFF' ? 'bg-red-400' : 'bg-blue-400'}`}></div>
-                    
-                    <div className="pl-2 flex justify-between items-start">
-                      <div className="pr-2">
-                        <p className={`font-bold text-sm flex items-center gap-1.5 mb-1 ${item.tipo === 'OFF' ? 'text-red-900' : 'text-blue-900'}`}>
-                          {item.tipo === 'OFF' ? <CalendarX className="w-3.5 h-3.5 text-red-500" /> : <CalendarCheck className="w-3.5 h-3.5 text-blue-500" />}
+              <ul className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                {listaIndisp.map(item => {
+                  const off = item.tipo === 'OFF'
+                  return (
+                    <li key={item.id} className={`p-3 rounded-ctl flex justify-between items-start gap-2 ${off ? 'bg-danger-soft' : 'bg-brand/10'}`}>
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm flex items-center gap-1.5 mb-0.5 text-ink">
+                          {off ? <CalendarX className="w-3.5 h-3.5 text-danger" aria-hidden="true" /> : <CalendarCheck className="w-3.5 h-3.5 text-brand" aria-hidden="true" />}
                           {formatarDataBR(item.data)}
                         </p>
-                        <p className={`text-[11px] font-bold uppercase tracking-wider ${item.tipo === 'OFF' ? 'text-red-600' : 'text-blue-600'}`}>
-                          {item.tipo === 'ESCALA' ? `Escalado: ${item.departamento}` : `Folga: ${item.departamento}`}
+                        <p className={`text-xs font-semibold ${off ? 'text-danger' : 'text-brand'}`}>
+                          {item.tipo === 'ESCALA' ? `Escalado: ${item.departamento}` : `Dia off: ${item.departamento}`}
                         </p>
-                        <p className="text-xs text-gray-600 font-medium mt-1 leading-snug">{item.motivo}</p>
+                        <p className="text-xs text-ink-2 mt-0.5">{item.motivo}</p>
                       </div>
-                      
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider font-bold ${item.tipo === 'OFF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {item.turno === 'Integral' ? 'Dia Todo' : item.turno}
-                        </span>
-                        {item.tipo === 'ESCALA' && item.statusEscala === 'Rascunho' && (
-                          <span className="text-[9px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-md uppercase font-bold border border-orange-200">Rascunho</span>
-                        )}
+                        <Pill tom={off ? 'perigo' : 'brand'}>{item.turno === 'Integral' ? 'Dia todo' : item.turno}</Pill>
+                        {item.tipo === 'ESCALA' && item.statusEscala === 'Rascunho' && <Pill tom="aviso">Rascunho</Pill>}
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
-            
-            <button onClick={() => setModalIndispAberto(false)} className="w-full mt-4 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition">
-              Fechar
-            </button>
           </div>
-        </div>
-      )}
-
+        )}
+      </Sheet>
     </div>
   )
 }
