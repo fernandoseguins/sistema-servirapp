@@ -144,7 +144,7 @@ export default function IgrejaDetalhes() {
       <TopBar
         titulo={igreja.nome}
         subtitulo="Detalhes da igreja"
-        onVoltar={() => navigate('/painel-dono')}
+        onVoltar={() => navigate(-1)}
         icone={<span className="w-10 h-10 rounded-ctl flex items-center justify-center bg-brand/10 text-brand"><Crown className="w-5 h-5" aria-hidden="true" /></span>}
       />
 

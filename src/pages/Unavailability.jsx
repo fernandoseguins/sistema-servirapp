@@ -218,7 +218,7 @@ export default function Unavailability() {
   }
 
   async function apagarTodasIndisponibilidades() {
-    if(!await confirm({ title: 'Apagar todas as suas ausências?', message: 'Você volta a ficar disponível em todas as datas deste departamento.', labelOk: 'Apagar tudo', labelCancel: 'Cancelar' })) return
+    if(!await confirm({ title: 'Apagar todas as suas ausências?', message: 'Você volta a ficar disponível em todas as datas deste departamento.', danger: true, labelOk: 'Apagar tudo', labelCancel: 'Cancelar' })) return
     setLoading(true)
     
     const { error } = await supabase

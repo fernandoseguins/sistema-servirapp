@@ -139,6 +139,7 @@ export default function Equipa() {
     const { error } = await supabase.from('membros_departamentos').update({ role: novoCargo }).eq('id', vinculoId)
     if (error) {
       toast.error('Erro ao alterar cargo.')
+      return false
     } else {
       // ✅ Push + in-app via utilitário centralizado
       await enviarNotificacao({
@@ -152,6 +153,7 @@ export default function Equipa() {
 
       toast.success('Nível de acesso atualizado.')
       buscarEquipa()
+      return true
     }
   }
 
@@ -498,10 +500,12 @@ export default function Equipa() {
             <Select
               label="Nível de acesso"
               value={membroAcoes.role}
-              onChange={(e) => {
+              onChange={async (e) => {
                 const novo = e.target.value
-                setMembroAcoes({ ...membroAcoes, role: novo })
-                alterarCargo(membroAcoes.id, novo, membroAcoes.user_id, membroAcoes.users_profile?.nome || 'Membro')
+                const m = membroAcoes
+                if (await alterarCargo(m.id, novo, m.user_id, m.users_profile?.nome || 'Membro')) {
+                  setMembroAcoes(atual => atual && atual.id === m.id ? { ...atual, role: novo } : atual)
+                }
               }}
               options={[
                 { value: 'membro', label: 'Membro' },

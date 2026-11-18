@@ -164,7 +164,7 @@ export default function GestaoIgreja() {
       <TopBar
         titulo="Gestão da igreja"
         subtitulo="Painel administrativo"
-        onVoltar={() => navigate('/hub')}
+        onVoltar={() => navigate(-1)}
         icone={<span className="w-10 h-10 rounded-ctl flex items-center justify-center bg-brand/10 text-brand"><Settings className="w-5 h-5" aria-hidden="true" /></span>}
       />
 
@@ -328,7 +328,7 @@ export default function GestaoIgreja() {
 
       {/* Sub-modal: Gerenciar líder de um membro */}
       {membroLider && (
-        <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
+        <div className="fixed inset-0 z-[210] flex items-end md:items-center justify-center p-0 md:p-4">
           <button type="button" tabIndex={-1} aria-label="Fechar" className="absolute inset-0 bg-black/50 cursor-default" onClick={() => setMembroLider(null)} />
           <div role="dialog" aria-modal="true" className="relative bg-surface rounded-t-3xl md:rounded-3xl w-full md:max-w-md max-h-[85vh] flex flex-col">
             <div className="p-5 border-b border-line flex items-center justify-between">
