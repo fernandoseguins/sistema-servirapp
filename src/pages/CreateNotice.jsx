@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useUI } from '../context/UIContext'
-import PageHeader from '../components/PageHeader'
-import { getDeptTheme } from '../utils/departmentThemes'
+import { TopBar, Button, Card, Pill, Input, EmptyState } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
 import { enviarNotificacaoEmMassa } from '../utils/notificacoes'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Bell, BellRing, AlertTriangle, MessageSquare, Send, Trash2 } from 'lucide-react'
@@ -24,18 +25,7 @@ export default function CreateNotice() {
   const [loading, setLoading] = useState(true)
   const [enviando,setEnviando]= useState(false)
 
-  // ✅ Tema centralizado
-  const [departamentoCor, setDepartamentoCor] = useState(null)
-  const theme  = getDeptTheme(departamentoNome, departamentoCor)
-  const pers = theme.personalizado
-  const st = theme.styles || {}
   const mochila = { state: { departamentoId, departamentoNome, userRole } }
-
-  useEffect(() => {
-    if (!departamentoId) return
-    supabase.from('departamentos').select('cor, icone').eq('id', departamentoId).single()
-      .then(({ data }) => { if (data) setDepartamentoCor(data.cor) })
-  }, [departamentoId])
 
 
   useEffect(() => {
@@ -104,7 +94,7 @@ export default function CreateNotice() {
     }
 
     const qtdNotificados = (membros || []).filter(m => m.user_id !== user.id).length
-    toast.success(`Aviso publicado!${qtdNotificados > 0 ? ` ${qtdNotificados} ${qtdNotificados === 1 ? 'membro notificado' : 'membros notificados'}.` : ''}`)
+    toast.success(`Aviso publicado.${qtdNotificados > 0 ? ` ${qtdNotificados} ${qtdNotificados === 1 ? 'membro notificado' : 'membros notificados'}.` : ''}`)
     setTitulo('')
     setConteudo('')
     setUrgente(false)
@@ -115,7 +105,7 @@ export default function CreateNotice() {
   async function apagarAviso(id) {
     if (!await confirm({
       title:       'Apagar este aviso?',
-      message:     'O aviso será removido permanentemente do mural.',
+      message:     'O aviso sai do mural e não pode ser recuperado.',
       danger:      true,
       labelOk:     'Apagar',
       labelCancel: 'Cancelar',
@@ -131,104 +121,93 @@ export default function CreateNotice() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-
-      <PageHeader
-        title="Criar Aviso"
-        subtitle={`Notificar equipe — ${departamentoNome}`}
-        icon={<Bell className="w-5 h-5" />}
-        color={pers ? theme.hexValue : theme.bgPrimary}
-        onBack={() => navigate(-1, mochila)}
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Criar aviso"
+        subtitulo={departamentoNome}
+        onVoltar={() => navigate(-1, mochila)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept(departamentoNome).chip}`}>
+          <IconeDept nome={departamentoNome} className="w-5 h-5" />
+        </span>}
       />
 
-      <div className="max-w-md mx-auto px-4 space-y-6">
+      <main className="max-w-[720px] mx-auto px-4 pb-6 space-y-5">
 
-        {/* FORMULÁRIO */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className={`text-sm font-bold uppercase mb-4 flex items-center gap-2 ${pers ? "" : theme.textPrimary}`} style={pers ? st.textPrimary : {}}>
-            <MessageSquare className="w-4 h-4" /> Novo Aviso
+        <Card>
+          <h2 className="text-sm font-bold text-ink mb-4 flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-brand" aria-hidden="true" /> Novo aviso
           </h2>
 
           <form onSubmit={criarAviso} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1.5">Título</label>
-              <input type="text" required placeholder="Ex: Reunião no sábado"
-                value={titulo} onChange={e => setTitulo(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
-            </div>
+            <Input label="Título" required placeholder="Ex: Reunião no sábado"
+              value={titulo} onChange={e => setTitulo(e.target.value)} />
 
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1.5">Mensagem</label>
-              <textarea required placeholder="Escreva os detalhes aqui..." rows="4"
+              <label htmlFor="aviso-mensagem" className="block text-xs font-semibold text-ink-2 mb-1.5">Mensagem</label>
+              <textarea id="aviso-mensagem" required placeholder="Escreva os detalhes" rows="4"
                 value={conteudo} onChange={e => setConteudo(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 resize-none" />
+                className="w-full rounded-ctl bg-surface border border-line p-3 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand resize-none" />
             </div>
 
-            <label className="flex items-center gap-3 cursor-pointer bg-red-50 p-3 rounded-xl border border-red-100 hover:bg-red-100 transition">
+            <label className="flex items-center gap-3 cursor-pointer bg-danger-soft p-3 rounded-ctl focus-within:ring-2 focus-within:ring-brand">
               <input type="checkbox" checked={urgente} onChange={e => setUrgente(e.target.checked)}
-                className="w-5 h-5 text-red-600 rounded focus:ring-red-500 cursor-pointer" />
-              <span className="text-sm font-bold text-red-700 flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4" /> Marcar como URGENTE
+                className="w-5 h-5 rounded cursor-pointer accent-[rgb(var(--danger))]" />
+              <span className="text-sm font-bold text-danger flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4" aria-hidden="true" /> Marcar como urgente
               </span>
             </label>
 
-            {/* Info de quem vai receber */}
-            <div style={pers ? st.bgLight : {}} className={`flex items-center gap-2 ${pers ? "" : theme.bgLight} rounded-xl px-4 py-3`}>
-              <Bell className={`w-4 h-4 ${pers ? "" : theme.textPrimary} flex-shrink-0`} style={pers ? st.textPrimary : {}} />
-              <p className="text-xs text-gray-600">
-                Todos os membros de <span className="font-bold">{departamentoNome}</span> vão receber esta notificação no app e no celular.
-              </p>
-            </div>
+            <p className="flex items-center gap-2 bg-surface-2 rounded-ctl px-3 py-2.5 text-xs text-ink-2">
+              <Bell className="w-4 h-4 text-brand flex-shrink-0" aria-hidden="true" />
+              <span>Todos de <strong className="text-ink">{departamentoNome}</strong> recebem o aviso no app e no celular.</span>
+            </p>
 
-            <button type="submit" disabled={enviando || !titulo || !conteudo}
-              className={`w-full text-white font-bold py-3.5 rounded-xl shadow-md transition active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-50 ${pers ? "" : theme.bgPrimary + " " + theme.btnHover}`} style={pers ? st.bgPrimary : {}}>
-              {enviando
-                ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Enviando...</>
-                : <><Send className="w-5 h-5" /> Publicar e Notificar</>
-              }
-            </button>
+            <Button type="submit" full loading={enviando} disabled={!titulo || !conteudo}
+              icon={<Send className="w-4 h-4" aria-hidden="true" />}>
+              {enviando ? 'Enviando...' : 'Publicar e avisar'}
+            </Button>
           </form>
-        </div>
+        </Card>
 
-        {/* LISTA DE AVISOS */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-sm font-bold text-gray-800 uppercase mb-4 flex items-center gap-2">
-            <BellRing className="w-4 h-4 text-yellow-500" /> Avisos Ativos ({avisos.length})
+        <section>
+          <h2 className="text-sm font-bold text-ink mb-2 flex items-center gap-2">
+            <BellRing className="w-4 h-4 text-warning" aria-hidden="true" /> Avisos no mural <Pill>{avisos.length}</Pill>
           </h2>
 
           {loading ? (
-            <p className="text-sm text-gray-400 text-center py-4 animate-pulse font-bold">A carregar...</p>
+            <div className="space-y-2" aria-busy="true">
+              {[1, 2].map(i => <div key={i} className="h-20 bg-surface-2 rounded-card animate-pulse" />)}
+            </div>
           ) : avisos.length === 0 ? (
-            <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <BellRing className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 font-medium">O mural está vazio.</p>
-            </div>
+            <Card>
+              <EmptyState icon={<BellRing className="w-6 h-6" aria-hidden="true" />} titulo="O mural está vazio" texto="Os avisos publicados aparecem aqui." />
+            </Card>
           ) : (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <ul className="space-y-3">
               {avisos.map(aviso => (
-                <div key={aviso.id}
-                  className={`p-4 rounded-xl border-l-4 ${aviso.urgente ? 'bg-red-50 border-red-500' : 'bg-gray-50 border-blue-400'}`}>
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className={`font-bold text-sm ${aviso.urgente ? 'text-red-700' : 'text-gray-900'}`}>
-                      {aviso.urgente && <AlertTriangle className="w-3.5 h-3.5 inline mr-1 mb-0.5" />}
-                      {aviso.titulo}
-                    </h3>
-                    <button onClick={() => apagarAviso(aviso.id)} aria-label="Apagar aviso"
-                      className="text-gray-300 hover:text-red-500 transition p-1">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{aviso.conteudo}</p>
-                  <p className="text-[10px] text-gray-400 mt-2 font-medium">
-                    {new Date(aviso.data_criacao).toLocaleDateString('pt-BR')} às {new Date(aviso.data_criacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
+                <li key={aviso.id}>
+                  <Card className={`border-l-4 ${aviso.urgente ? '!border-l-danger' : '!border-l-brand'}`}>
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                      <h3 className={`font-bold text-sm ${aviso.urgente ? 'text-danger' : 'text-ink'}`}>
+                        {aviso.urgente && <AlertTriangle className="w-3.5 h-3.5 inline mr-1 mb-0.5" aria-label="Urgente" />}
+                        {aviso.titulo}
+                      </h3>
+                      <button type="button" onClick={() => apagarAviso(aviso.id)} aria-label={`Apagar aviso ${aviso.titulo}`}
+                        className="p-1.5 -mr-1 rounded-ctl text-muted hover:text-danger hover:bg-danger-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-ink-2 whitespace-pre-wrap leading-relaxed">{aviso.conteudo}</p>
+                    <p className="text-[11px] text-muted mt-2">
+                      {new Date(aviso.data_criacao).toLocaleDateString('pt-BR')} às {new Date(aviso.data_criacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </Card>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </div>
-
-      </div>
+        </section>
+      </main>
     </div>
   )
 }
