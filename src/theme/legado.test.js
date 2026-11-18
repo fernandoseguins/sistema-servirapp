@@ -19,6 +19,7 @@ const TELAS_REFORMADAS = [
   { arquivo: 'pages/Unavailability.jsx',  rota: '/indisponibilidade' },
   { arquivo: 'pages/SwapRequests.jsx',    rota: '/trocas/abc' },
   { arquivo: 'pages/Team.jsx',            rota: '/equipe' },
+  { arquivo: 'pages/Songs.jsx',           rota: '/louvores' },
 ]
 
 const COR_ANTIGA = /\b(bg|text|border|ring|from|via|to|divide|placeholder)-(gray|slate|zinc|neutral|stone|blue|indigo|purple|violet|sky|cyan|teal|emerald|green|lime|yellow|amber|orange|red|rose|pink|fuchsia)-\d{2,3}\b/
@@ -42,6 +43,6 @@ describe.each(TELAS_REFORMADAS)('$arquivo', ({ arquivo, rota }) => {
   })
 })
 
-it('guarda distingue tela legada (/louvores ainda não reformada)', () => {
-  expect(comeca('/louvores', ROTAS_NOVAS)).toBe(false)
+it('guarda distingue tela legada (/criar-aviso ainda não reformada)', () => {
+  expect(comeca('/criar-aviso', ROTAS_NOVAS)).toBe(false)
 })

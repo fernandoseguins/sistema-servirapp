@@ -3,11 +3,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabase'
 import { urlSegura } from '../utils/url'
 import { useUI } from '../context/UIContext'
-import { getDeptTheme } from '../utils/departmentThemes'
-import PageHeader from '../components/PageHeader'
-import EmptyState from '../components/EmptyState'
+import { TopBar, Button, Card, Pill, Input, Select, Sheet, EmptyState } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Music, Plus, Search, Trash2, Edit2, PlayCircle, Mic2, FileSpreadsheet, Flame, Heart, FileText, ChevronDown } from 'lucide-react'
+import { Music, Plus, Search, Trash2, Edit2, PlayCircle, Mic2, FileSpreadsheet, Flame, Heart, FileText, ChevronDown } from 'lucide-react'
 
 export default function Songs() {
   const navigate = useNavigate()
@@ -16,17 +16,7 @@ export default function Songs() {
   
   const departamentoId = location.state?.departamentoId
   const departamentoNome = location.state?.departamentoNome
-  const [departamentoCor, setDepartamentoCor] = useState(null)
-  const theme = getDeptTheme(departamentoNome || '', departamentoCor)
-  const pers = theme.personalizado
   const userRole = location.state?.userRole
-
-  // Busca a cor/ícone do departamento (para temas personalizados)
-  useEffect(() => {
-    if (!departamentoId) return
-    supabase.from('departamentos').select('cor, icone').eq('id', departamentoId).single()
-      .then(({ data }) => { if (data) setDepartamentoCor(data.cor) })
-  }, [departamentoId])
 
   const isLiderOuAdmin = userRole === 'admin' || userRole === 'líder'
 
@@ -112,7 +102,7 @@ export default function Songs() {
 
     if (error) toast.error('Erro ao salvar música.')
     else {
-      toast.success('Repertório atualizado!')
+      toast.success('Música salva.')
       setModalAberto(false)
       buscarMusicas()
     }
@@ -120,7 +110,7 @@ export default function Songs() {
   }
 
   async function apagarMusica(id, nomeMusica) {
-    if (!await confirm({ title: 'Confirmar ação', labelOk: 'Confirmar', labelCancel: 'Cancelar' })) return
+    if (!await confirm({ title: `Apagar "${nomeMusica}"?`, message: 'A música sai do repertório deste departamento.', danger: true, labelOk: 'Apagar', labelCancel: 'Cancelar' })) return
     const { error } = await supabase.from('songs').delete().eq('id', id)
     if (!error) buscarMusicas()
   }
@@ -196,257 +186,173 @@ export default function Songs() {
 
   const mochila = { state: { departamentoId, departamentoNome, userRole } }
 
-  // ✅ CARD DA MÚSICA
+  // ✅ LINHA DA MÚSICA
   const RenderMusicCard = ({ musica }) => (
-    <div key={musica.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex-1 pr-2">
-          <h3 className="font-bold text-gray-900 text-base leading-tight">{musica.titulo}</h3>
+    <li className="py-3 border-b border-line last:border-b-0">
+      <div className="flex justify-between items-start gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-ink text-sm leading-tight">{musica.titulo}</p>
           {musica.artista && (
-            <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-              <Mic2 className="w-3 h-3" /> {musica.artista}
+            <p className="text-xs text-ink-2 mt-0.5 flex items-center gap-1">
+              <Mic2 className="w-3 h-3" aria-hidden="true" /> {musica.artista}
             </p>
           )}
         </div>
-        
+        {musica.tom && <Pill tom="brand">Tom {musica.tom}</Pill>}
         {isLiderOuAdmin && (
-          <div className="flex gap-1 shrink-0">
-            <button onClick={() => abrirModal(musica)} className="p-1.5 text-blue-400 hover:bg-blue-50 rounded-lg transition"><Edit2 className="w-4 h-4" /></button>
-            <button onClick={() => apagarMusica(musica.id, musica.titulo)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
+          <div className="flex shrink-0 -mr-1">
+            <button type="button" onClick={() => abrirModal(musica)} aria-label={`Editar ${musica.titulo}`}
+              className="p-1.5 text-ink-2 hover:text-brand hover:bg-surface-2 rounded-ctl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <Edit2 className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <button type="button" onClick={() => apagarMusica(musica.id, musica.titulo)} aria-label={`Apagar ${musica.titulo}`}
+              className="p-1.5 text-ink-2 hover:text-danger hover:bg-danger-soft rounded-ctl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
+            </button>
           </div>
         )}
       </div>
 
       {(musica.link_cifra || musica.link_youtube) && (
-        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-50">
-          
+        <div className="flex flex-wrap items-center gap-2 mt-2">
           {musica.link_cifra && (
-            <a href={urlSegura(musica.link_cifra)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition">
-              <FileText className="w-3.5 h-3.5" /> Cifra
+            <a href={urlSegura(musica.link_cifra)} target="_blank" rel="noopener noreferrer" aria-label={`Cifra de ${musica.titulo} (abre em nova aba)`}
+              className="flex items-center gap-1 text-xs font-semibold text-brand bg-brand/10 hover:bg-brand/20 px-3 py-1.5 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <FileText className="w-3.5 h-3.5" aria-hidden="true" /> Cifra
             </a>
           )}
-
           {musica.link_youtube && (
-            <a href={urlSegura(musica.link_youtube)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition ml-auto">
-              <PlayCircle className="w-3.5 h-3.5" /> Ouvir
+            <a href={urlSegura(musica.link_youtube)} target="_blank" rel="noopener noreferrer" aria-label={`Ouvir ${musica.titulo} (abre em nova aba)`}
+              className="flex items-center gap-1 text-xs font-semibold text-accent-ink bg-accent/15 hover:bg-accent/25 px-3 py-1.5 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <PlayCircle className="w-3.5 h-3.5" aria-hidden="true" /> Ouvir
             </a>
           )}
         </div>
       )}
-    </div>
+    </li>
+  )
+
+  const Bloco = ({ id, icone, titulo, lista, aberto, alternar }) => lista.length > 0 && (
+    <Card padded={false} className="overflow-hidden">
+      <h2>
+        <button type="button" onClick={alternar} aria-expanded={aberto} aria-controls={`bloco-${id}`}
+          className="w-full flex justify-between items-center px-4 py-3 hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand">
+          <span className="text-sm font-bold text-ink flex items-center gap-2">{icone} {titulo} <Pill>{lista.length}</Pill></span>
+          <ChevronDown className={`w-5 h-5 text-ink-2 transition-transform duration-300 ${aberto ? 'rotate-180' : ''}`} aria-hidden="true" />
+        </button>
+      </h2>
+      {aberto && (
+        <ul id={`bloco-${id}`} className="px-4 border-t border-line">
+          {lista.map(musica => <RenderMusicCard key={musica.id} musica={musica} />)}
+        </ul>
+      )}
+    </Card>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 relative">
-      
-      <PageHeader
-        bg={pers ? theme.hexValue : theme.bgPrimary}
-        icon={<Music className="w-5 h-5" />}
-        title="Repertório"
-        subtitle={`Lista de músicas — ${departamentoNome}`}
-        onBack={() => navigate(-1, mochila)}
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Músicas"
+        subtitulo={departamentoNome}
+        onVoltar={() => navigate(-1, mochila)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept(departamentoNome).chip}`}>
+          <IconeDept nome={departamentoNome} className="w-5 h-5" />
+        </span>}
       />
 
-      <div className="max-w-md mx-auto px-4 space-y-4">
+      <main className="max-w-[720px] mx-auto px-4 pb-6 space-y-4">
 
-        {/* FERRAMENTAS DO LÍDER */}
         {isLiderOuAdmin && (
-          <div className="flex gap-2 mb-2">
-            <button onClick={() => abrirModal()} className="flex-1 bg-white border border-gray-200 text-blue-600 font-bold py-3 rounded-2xl shadow-sm hover:bg-blue-50 transition flex justify-center items-center gap-2 text-sm">
-              <Plus className="w-4 h-4" /> Adicionar 1
-            </button>
-            <button onClick={() => setModalImportAberto(true)} className="flex-1 bg-white border border-green-200 text-green-600 font-bold py-3 rounded-2xl shadow-sm hover:bg-green-50 transition flex justify-center items-center gap-2 text-sm">
-              <FileSpreadsheet className="w-4 h-4" /> Importar Excel
-            </button>
+          <div className="flex gap-2">
+            <Button className="flex-1" onClick={() => abrirModal()} icon={<Plus className="w-4 h-4" aria-hidden="true" />}>
+              Adicionar
+            </Button>
+            <Button variant="secundario" className="flex-1" onClick={() => setModalImportAberto(true)} icon={<FileSpreadsheet className="w-4 h-4" aria-hidden="true" />}>
+              Importar Excel
+            </Button>
           </div>
         )}
 
-        {/* BARRA DE PESQUISA */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input 
-            type="text" placeholder="Buscar por título ou artista..." value={busca} onChange={(e) => setBusca(e.target.value)}
-            className="w-full bg-white border border-gray-200 text-gray-900 rounded-2xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm" 
-          />
-        </div>
+        <Input
+          type="search"
+          aria-label="Buscar música"
+          placeholder="Buscar por título ou artista"
+          icon={<Search className="w-4 h-4" aria-hidden="true" />}
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
 
-
-        {/* LISTA DE MÚSICAS SEPARADA POR CATEGORIA */}
         {loading && musicas.length === 0 ? (
-          <p className="text-center py-10 text-gray-400 font-bold animate-pulse">A carregar repertório...</p>
-        ) : musicasFiltradas.length === 0 ? (
-          <div className="mt-6">
-            <EmptyState
-              icon={<Music className="w-6 h-6" />}
-              title={busca ? `Nenhuma música para "${busca}"` : "Repertório vazio"}
-              subtitle={busca ? "Tente outro termo de busca." : "Adicione músicas para começar a construir o repertório."}
-            />
+          <div className="space-y-3" aria-busy="true">
+            {[1, 2, 3].map(i => <div key={i} className="h-16 bg-surface-2 rounded-card animate-pulse" />)}
           </div>
+        ) : musicasFiltradas.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={<Music className="w-6 h-6" aria-hidden="true" />}
+              titulo={busca ? `Nenhuma música para "${busca}"` : 'Nenhuma música ainda'}
+              texto={busca ? 'Tente outro termo.' : (isLiderOuAdmin ? 'Adicione músicas para montar o repertório.' : 'O líder ainda não cadastrou músicas.')}
+            />
+          </Card>
         ) : (
-          <div className="space-y-6 pt-2">
-            
-            {/* BLOCO CELEBRAÇÃO */}
-            {celebracao.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <button 
-                  onClick={() => setMostrarCelebracao(!mostrarCelebracao)}
-                  className="w-full flex justify-between items-center p-4 bg-orange-50 hover:bg-orange-100 transition"
-                >
-                  <h2 className="text-sm font-bold text-orange-600 uppercase flex items-center gap-2">
-                    <Flame className="w-5 h-5" /> Celebração ({celebracao.length})
-                  </h2>
-                  <ChevronDown className={`w-5 h-5 text-orange-600 transition-transform duration-300 ${mostrarCelebracao ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {mostrarCelebracao && (
-                  <div className="p-3 space-y-3 bg-gray-50 border-t border-gray-100">
-                    {celebracao.map(musica => <RenderMusicCard key={musica.id} musica={musica} />)}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* BLOCO ADORAÇÃO */}
-            {adoracao.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <button 
-                  onClick={() => setMostrarAdoracao(!mostrarAdoracao)}
-                  className="w-full flex justify-between items-center p-4 bg-blue-50 hover:bg-blue-100 transition"
-                >
-                  <h2 className="text-sm font-bold text-blue-600 uppercase flex items-center gap-2">
-                    <Heart className="w-5 h-5" /> Adoração ({adoracao.length})
-                  </h2>
-                  <ChevronDown className={`w-5 h-5 text-blue-600 transition-transform duration-300 ${mostrarAdoracao ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {mostrarAdoracao && (
-                  <div className="p-3 space-y-3 bg-gray-50 border-t border-gray-100">
-                    {adoracao.map(musica => <RenderMusicCard key={musica.id} musica={musica} />)}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* BLOCO SEM CATEGORIA */}
-            {semCategoria.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <button 
-                  onClick={() => setMostrarOutras(!mostrarOutras)}
-                  className="w-full flex justify-between items-center p-4 bg-gray-100 hover:bg-gray-200 transition"
-                >
-                  <h2 className="text-sm font-bold text-gray-600 uppercase flex items-center gap-2">
-                    Outras / Sem Categoria ({semCategoria.length})
-                  </h2>
-                  <ChevronDown className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${mostrarOutras ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {mostrarOutras && (
-                  <div className="p-3 space-y-3 bg-gray-50 border-t border-gray-100">
-                    {semCategoria.map(musica => <RenderMusicCard key={musica.id} musica={musica} />)}
-                  </div>
-                )}
-              </div>
-            )}
-
+          <div className="space-y-4">
+            <Bloco id="celebracao" icone={<Flame className="w-5 h-5 text-accent-ink" aria-hidden="true" />} titulo="Celebração"
+              lista={celebracao} aberto={mostrarCelebracao} alternar={() => setMostrarCelebracao(!mostrarCelebracao)} />
+            <Bloco id="adoracao" icone={<Heart className="w-5 h-5 text-brand" aria-hidden="true" />} titulo="Adoração"
+              lista={adoracao} aberto={mostrarAdoracao} alternar={() => setMostrarAdoracao(!mostrarAdoracao)} />
+            <Bloco id="outras" icone={<Music className="w-5 h-5 text-ink-2" aria-hidden="true" />} titulo="Outras"
+              lista={semCategoria} aberto={mostrarOutras} alternar={() => setMostrarOutras(!mostrarOutras)} />
           </div>
         )}
-      </div>
+      </main>
 
-      {/* MODAL DE IMPORTAÇÃO MÁGICA (EXCEL) */}
-      {modalImportAberto && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-green-600" /> Importação Mágica
-            </h2>
-            
-            <div className="bg-green-50 border border-green-200 p-3 rounded-xl mb-4 text-green-800 text-xs font-medium space-y-2">
-              <p>1. Abra o seu ficheiro de Excel.</p>
-              <p>2. Organize em 3 colunas: <strong className="font-bold">Título | Artista | Categoria</strong></p>
-              <p className="text-[10px] text-green-600 italic">* Categorias aceites: Celebração ou Adoração</p>
-              <p>3. Selecione as células, faça <b>CTRL+C</b> (copiar) e <b>CTRL+V</b> (colar) na caixa abaixo!</p>
-            </div>
-            
-            <form onSubmit={processarImportacao} className="space-y-4">
-              <textarea 
-                required placeholder="Cole aqui as colunas do Excel..." rows="6"
-                value={textoImportacao} onChange={(e) => setTextoImportacao(e.target.value)} 
-                className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none bg-gray-50 resize-none whitespace-pre" 
-              />
-              <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => {setModalImportAberto(false); setTextoImportacao('')}} className="flex-1 bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition">Cancelar</button>
-                <button type="submit" disabled={processandoLote} className="flex-1 bg-green-600 text-white font-bold py-3.5 rounded-xl hover:bg-green-700 transition active:scale-[0.97] shadow-md disabled:opacity-50 flex justify-center gap-2">
-                  {processandoLote ? 'Importando...' : 'Importar Tudo'}
-                </button>
-              </div>
-            </form>
+      {/* IMPORTAÇÃO DO EXCEL */}
+      <Sheet aberto={modalImportAberto} onFechar={() => { setModalImportAberto(false); setTextoImportacao('') }} titulo="Importar do Excel">
+        <ol className="bg-surface-2 p-3 rounded-ctl mb-4 text-ink-2 text-xs space-y-1.5 list-decimal list-inside">
+          <li>Abra a planilha no Excel.</li>
+          <li>Organize em 3 colunas: <strong className="text-ink">Título | Artista | Categoria</strong> (Celebração ou Adoração).</li>
+          <li>Selecione as células, copie (Ctrl+C) e cole (Ctrl+V) abaixo.</li>
+        </ol>
+        <form onSubmit={processarImportacao} className="space-y-4">
+          <textarea
+            required placeholder="Cole aqui as colunas do Excel" rows="6" aria-label="Colunas copiadas do Excel"
+            value={textoImportacao} onChange={(e) => setTextoImportacao(e.target.value)}
+            className="w-full rounded-ctl bg-surface border border-line p-3 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand resize-none whitespace-pre"
+          />
+          <div className="flex gap-2">
+            <Button variant="secundario" className="flex-1" onClick={() => { setModalImportAberto(false); setTextoImportacao('') }}>Cancelar</Button>
+            <Button type="submit" className="flex-1" loading={processandoLote}>{processandoLote ? 'Importando...' : 'Importar tudo'}</Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Sheet>
 
-      {/* MODAL DE CRIAR/EDITAR (MÚSICA ÚNICA) */}
-      {modalAberto && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Music className="w-5 h-5 text-blue-600" />
-                {editandoId ? 'Editar Música' : 'Nova Música'}
-              </h2>
-            </div>
-            <form onSubmit={salvarMusica} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">Título *</label>
-                <input type="text" required value={titulo} onChange={(e) => setTitulo(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-blue-500" />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Artista / Versão</label>
-                  <input type="text" value={artista} onChange={(e) => setArtista(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-blue-500" placeholder="Ex: Morada" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Categoria *</label>
-                  <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-blue-500">
-                    <option value="Adoração">Adoração</option>
-                    <option value="Celebração">Celebração</option>
-                  </select>
-                </div>
-              </div>
+      {/* CRIAR/EDITAR MÚSICA */}
+      <Sheet aberto={modalAberto} onFechar={() => setModalAberto(false)} titulo={editandoId ? 'Editar música' : 'Nova música'}>
+        <form onSubmit={salvarMusica} className="space-y-3">
+          <Input label="Título *" required value={titulo} onChange={(e) => setTitulo(e.target.value)} />
 
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Tom</label>
-                  <input type="text" value={tom} onChange={(e) => setTom(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-blue-500" placeholder="Ex: G, C#m..." />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs font-bold text-gray-500 mb-1">BPM (Opcional)</label>
-                  <input type="number" value={bpm} onChange={(e) => setBpm(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-blue-500" placeholder="Ex: 72" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Link (Ouvir)</label>
-                  <input type="url" value={link} onChange={(e) => setLink(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none bg-gray-50 text-red-600 focus:ring-2 focus:ring-blue-500" placeholder="YouTube, Spotify..." />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Link (Cifra)</label>
-                  <input type="url" value={linkCifra} onChange={(e) => setLinkCifra(e.target.value)} className="w-full border border-gray-300 rounded-xl p-3 text-sm outline-none bg-gray-50 text-blue-600 focus:ring-2 focus:ring-blue-500" placeholder="Cifra Club..." />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <button type="button" onClick={() => setModalAberto(false)} className="flex-1 bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition">Cancelar</button>
-                <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition active:scale-[0.97] shadow-md disabled:opacity-50">Salvar</button>
-              </div>
-            </form>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Artista / versão" value={artista} onChange={(e) => setArtista(e.target.value)} placeholder="Ex: Morada" />
+            <Select label="Categoria *" value={categoria} onChange={(e) => setCategoria(e.target.value)}
+              options={[{ value: 'Adoração', label: 'Adoração' }, { value: 'Celebração', label: 'Celebração' }]} />
           </div>
-        </div>
-      )}
 
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Tom" value={tom} onChange={(e) => setTom(e.target.value)} placeholder="Ex: G, C#m" />
+            <Input label="BPM (opcional)" type="number" value={bpm} onChange={(e) => setBpm(e.target.value)} placeholder="Ex: 72" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Link para ouvir" type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="YouTube, Spotify" />
+            <Input label="Link da cifra" type="url" value={linkCifra} onChange={(e) => setLinkCifra(e.target.value)} placeholder="Cifra Club" />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button variant="secundario" className="flex-1" onClick={() => setModalAberto(false)}>Cancelar</Button>
+            <Button type="submit" className="flex-1" loading={loading}>Salvar</Button>
+          </div>
+        </form>
+      </Sheet>
     </div>
   )
 }
