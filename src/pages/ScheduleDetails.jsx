@@ -124,7 +124,6 @@ export default function ScheduleDetails() {
   const dataCurta = (iso) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : ''
   const contextoEscala = () => [departamentoNome, `${dataCurta(escala?.data)} (${rotuloTurno(escala?.turno)})`].filter(Boolean).join(' · ')
 
-  // ✅ Tema centralizado via utils/departmentThemes.jsx
 
   const funcoesMidia = ['Computador', 'Fotografia', 'Redação']
   const funcoesInfantil = ['Berçário', 'Sala 03 - 08 anos', 'Sala 09 - 11 anos', 'Acolhimento', 'Auxiliar']

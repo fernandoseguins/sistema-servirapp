@@ -1,64 +1,63 @@
 // src/theme/legado.test.js
-// Guarda da reforma visual: telas já reformadas não podem voltar a usar
-// cores soltas do Tailwind, peças antigas ou elementos não-botão clicáveis,
-// e a rota delas tem que estar liberada do invólucro claro (ROTAS_NOVAS).
+// Guarda da reforma visual: telas não podem voltar a usar cores soltas do
+// Tailwind, peças antigas ou elementos não-botão clicáveis; e nada no app pode
+// voltar a importar as peças do visual antigo (removidas na fase 3).
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { ROTAS_NOVAS, comeca } from '../components/shell/rotas'
+import { readFileSync, readdirSync } from 'node:fs'
 
-// arquivo: relativo a src/. rota: caminho real de exemplo (null = sem checagem).
+// Relativo a src/.
 const TELAS_REFORMADAS = [
-  { arquivo: 'pages/Hub.jsx',             rota: '/hub' },
-  { arquivo: 'pages/Dashboard.jsx',       rota: '/dashboard' },
-  { arquivo: 'pages/ScheduleDetails.jsx', rota: '/escala/abc' },
-  { arquivo: 'pages/Profile.jsx',         rota: '/perfil' },
-  { arquivo: 'pages/Auth.jsx',            rota: null },
-  { arquivo: 'pages/MinhasEscalas.jsx',   rota: '/escalas' },
-  { arquivo: 'pages/Avisos.jsx',          rota: '/avisos' },
-  { arquivo: 'components/Skeletons.jsx',  rota: null },
-  { arquivo: 'pages/Unavailability.jsx',  rota: '/indisponibilidade' },
-  { arquivo: 'pages/SwapRequests.jsx',    rota: '/trocas/abc' },
-  { arquivo: 'pages/Team.jsx',            rota: '/equipe' },
-  { arquivo: 'pages/Songs.jsx',           rota: '/louvores' },
-  { arquivo: 'pages/CreateNotice.jsx',    rota: '/criar-aviso' },
-  { arquivo: 'pages/AvisoGeral.jsx',      rota: '/aviso-geral' },
-  { arquivo: 'pages/GlobalNotice.jsx',    rota: '/informativo' },
-  { arquivo: 'pages/FrequencyReport.jsx', rota: '/frequencia' },
-  { arquivo: 'pages/GenerateSchedule.jsx', rota: '/gerar-escala' },
-  { arquivo: 'pages/CantinaSchedule.jsx', rota: '/cantina' },
-  { arquivo: 'pages/MinistrosSchedule.jsx', rota: '/ministros' },
-  { arquivo: 'pages/InfantilLessons.jsx', rota: '/licoes' },
-  { arquivo: 'pages/InfantilCheckin.jsx', rota: '/checkin' },
-  { arquivo: 'pages/Cabine.jsx',          rota: '/cabine/abc' },
-  { arquivo: 'pages/ChecklistMidia.jsx',  rota: '/checklist-midia' },
-  { arquivo: 'pages/PrintSchedules.jsx',  rota: '/imprimir-escalas' },
-  { arquivo: 'pages/GestaoIgreja.jsx',    rota: '/gestao-igreja' },
-  { arquivo: 'pages/PainelDono.jsx',      rota: '/painel-dono' },
-  { arquivo: 'pages/IgrejaDetalhes.jsx',  rota: '/igreja/abc' },
-  { arquivo: 'pages/CriarIgreja.jsx',     rota: '/criar-igreja' },
+  'pages/Hub.jsx',
+  'pages/Dashboard.jsx',
+  'pages/ScheduleDetails.jsx',
+  'pages/Profile.jsx',
+  'pages/Auth.jsx',
+  'pages/MinhasEscalas.jsx',
+  'pages/Avisos.jsx',
+  'components/Skeletons.jsx',
+  'components/InstallPrompt.jsx',
+  'pages/Unavailability.jsx',
+  'pages/SwapRequests.jsx',
+  'pages/Team.jsx',
+  'pages/Songs.jsx',
+  'pages/CreateNotice.jsx',
+  'pages/AvisoGeral.jsx',
+  'pages/GlobalNotice.jsx',
+  'pages/FrequencyReport.jsx',
+  'pages/GenerateSchedule.jsx',
+  'pages/CantinaSchedule.jsx',
+  'pages/MinistrosSchedule.jsx',
+  'pages/InfantilLessons.jsx',
+  'pages/InfantilCheckin.jsx',
+  'pages/Cabine.jsx',
+  'pages/ChecklistMidia.jsx',
+  'pages/PrintSchedules.jsx',
+  'pages/GestaoIgreja.jsx',
+  'pages/PainelDono.jsx',
+  'pages/IgrejaDetalhes.jsx',
+  'pages/CriarIgreja.jsx',
 ]
 
 const COR_ANTIGA = /\b(bg|text|border|ring|from|via|to|divide|placeholder)-(gray|slate|zinc|neutral|stone|blue|indigo|purple|violet|sky|cyan|teal|emerald|green|lime|yellow|amber|orange|red|rose|pink|fuchsia)-\d{2,3}\b/
-const IMPORT_ANTIGO = /from\s+['"][^'"]*(components\/PageHeader|components\/EmptyState|departmentThemes)['"]/
+const IMPORT_ANTIGO = /from\s+['"][^'"]*(components\/PageHeader|components\/EmptyState|departmentThemes|TemaClaroForcado|GlobalUserMenu)['"]/
 const DIV_CLICAVEL = /<(div|span|li|img)\b[^>]*\bonClick=/
 
-const ler = (arquivo) => readFileSync(new URL('../' + arquivo, import.meta.url), 'utf8')
+const SRC = new URL('../', import.meta.url)
+const ler = (arquivo) => readFileSync(new URL(arquivo, SRC), 'utf8')
 
-describe.each(TELAS_REFORMADAS)('$arquivo', ({ arquivo, rota }) => {
+describe.each(TELAS_REFORMADAS)('%s', (arquivo) => {
   it('não usa cores soltas do Tailwind', () => {
     expect(ler(arquivo)).not.toMatch(COR_ANTIGA)
-  })
-  it('não importa peças antigas', () => {
-    expect(ler(arquivo)).not.toMatch(IMPORT_ANTIGO)
   })
   it('não tem div/span/li/img clicável', () => {
     expect(ler(arquivo)).not.toMatch(DIV_CLICAVEL)
   })
-  it.skipIf(!rota)('rota fora do invólucro claro', () => {
-    expect(comeca(rota, ROTAS_NOVAS)).toBe(true)
-  })
 })
 
-it('guarda distingue rota fora da lista', () => {
-  expect(comeca('/rota-que-nao-existe', ROTAS_NOVAS)).toBe(false)
+it('nenhum arquivo do app importa peças do visual antigo', () => {
+  const arquivos = readdirSync(SRC, { recursive: true })
+    .map(String)
+    .filter(f => /\.(js|jsx)$/.test(f) && !f.endsWith('.test.js'))
+  const culpados = arquivos.filter(f => IMPORT_ANTIGO.test(ler(f.replaceAll('\\', '/'))))
+  expect(culpados).toEqual([])
 })

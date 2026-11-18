@@ -11,7 +11,7 @@ function tokens(seletorRegex) {
   for (const [, nome, r, g, b] of bloco.matchAll(/--([\w-]+):\s*(\d+)\s+(\d+)\s+(\d+)/g)) out[nome] = [+r, +g, +b]
   return out
 }
-const CLARO = tokens(/:root,\s*\.tema-claro-forcado\s*\{([\s\S]*?)\n {2}\}/)
+const CLARO = tokens(/:root\s*\{([\s\S]*?)\n {2}\}/)
 const ESCURO = tokens(/\.dark\s*\{([\s\S]*?)\n {2}\}/)
 
 const lum = ([r, g, b]) => {

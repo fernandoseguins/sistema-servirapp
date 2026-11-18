@@ -7,8 +7,7 @@
    Claro em :root, escuro em .dark (classe no <html>, ver src/theme/aparencia.js).
 ───────────────────────────────────────────────────────────────────────────── */
 @layer base {
-  :root,
-  .tema-claro-forcado {
+  :root {
     --bg: 247 246 251;          /* #F7F6FB */
     --surface: 255 255 255;     /* #FFFFFF */
     --surface-2: 244 242 253;   /* #F4F2FD */

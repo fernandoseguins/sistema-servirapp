@@ -1,5 +1,5 @@
 // src/theme/IconeDept.jsx
-// Ícone de cada departamento (mesmos ícones usados hoje em departmentThemes.jsx).
+// Ícone de cada departamento.
 import { Music, Camera, Baby, Shield, Coffee, HandHeart, LayoutGrid } from 'lucide-react'
 import { slugDept } from './deptCores'
 

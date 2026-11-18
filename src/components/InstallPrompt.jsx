@@ -30,29 +30,29 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 pb-8 animate-in slide-in-from-bottom-5">
-      <div className="bg-white border border-gray-200 shadow-2xl rounded-2xl p-5 relative max-w-sm mx-auto">
+      <div className="bg-surface border border-line shadow-2xl rounded-2xl p-5 relative max-w-sm mx-auto">
         
         {/* Botão de Fechar */}
-        <button onClick={fecharAviso} className="absolute top-3 right-3 text-gray-400 hover:bg-gray-100 p-1.5 rounded-full transition">
-          <X className="w-5 h-5" />
+        <button type="button" onClick={fecharAviso} aria-label="Fechar" className="absolute top-3 right-3 text-muted hover:bg-surface-2 p-1.5 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+          <X className="w-5 h-5" aria-hidden="true" />
         </button>
         
         <div className="flex items-center gap-3 mb-3 pr-6">
-          <div className="bg-blue-100 p-2.5 rounded-full text-blue-600 shrink-0">
+          <div className="bg-brand/10 p-2.5 rounded-full text-brand shrink-0">
             <BellRing className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 leading-tight text-sm">Ative as Notificações!</h3>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">Instale o app SerVir para ser avisado das suas escalas.</p>
+            <h3 className="font-bold text-ink leading-tight text-sm">Ative as Notificações!</h3>
+            <p className="text-xs text-ink-2 font-medium mt-0.5">Instale o app SerVir para ser avisado das suas escalas.</p>
           </div>
         </div>
 
-        <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100 mt-4 text-[13px] text-gray-700 font-medium leading-relaxed">
+        <div className="bg-surface-2 p-3.5 rounded-xl border border-line mt-4 text-[13px] text-ink font-medium leading-relaxed">
           <p className="mb-2">
-            1. Toque em <Share className="inline-flex w-6 h-6 items-center justify-center text-blue-500 bg-white p-1 rounded shadow-sm mx-1 align-middle" /> na barra inferior.
+            1. Toque em <Share className="inline-flex w-6 h-6 items-center justify-center text-brand bg-surface p-1 rounded shadow-sm mx-1 align-middle" /> na barra inferior.
           </p>
           <p>
-            2. Depois selecione <PlusSquare className="inline-flex w-6 h-6 items-center justify-center text-gray-800 bg-white p-1 rounded shadow-sm mx-1 align-middle" /> <strong className="text-gray-900">Adicionar à Tela de Início</strong>.
+            2. Depois selecione <PlusSquare className="inline-flex w-6 h-6 items-center justify-center text-ink bg-surface p-1 rounded shadow-sm mx-1 align-middle" /> <strong className="text-ink">Adicionar à Tela de Início</strong>.
           </p>
         </div>
 

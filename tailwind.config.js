@@ -34,13 +34,12 @@ export default {
         success:   { DEFAULT: cor('success'), soft: cor('success-soft') },
         warning:   { DEFAULT: cor('warning'), soft: cor('warning-soft') },
 
-        // Departamentos: DEFAULT = token antigo (telas da fase 3, alinhado com departmentThemes.jsx);
-        // bg/fg = tema Vibrante claro/escuro (ver src/theme/deptCores.js).
+        // Departamentos: bg/fg = tema Vibrante claro/escuro (ver src/theme/deptCores.js).
         dept: {
-          louvor:    { DEFAULT: '#2563eb', bg: cor('dept-louvor-bg'),    fg: cor('dept-louvor-fg') },
-          midia:     { DEFAULT: '#9333ea', bg: cor('dept-midia-bg'),     fg: cor('dept-midia-fg') },
-          infantil:  { DEFAULT: '#ec4899', bg: cor('dept-infantil-bg'),  fg: cor('dept-infantil-fg') },
-          diaconia:  { DEFAULT: '#111827', bg: cor('dept-diaconia-bg'),  fg: cor('dept-diaconia-fg') },
+          louvor:    { bg: cor('dept-louvor-bg'),    fg: cor('dept-louvor-fg') },
+          midia:     { bg: cor('dept-midia-bg'),     fg: cor('dept-midia-fg') },
+          infantil:  { bg: cor('dept-infantil-bg'),  fg: cor('dept-infantil-fg') },
+          diaconia:  { bg: cor('dept-diaconia-bg'),  fg: cor('dept-diaconia-fg') },
           cantina:   { bg: cor('dept-cantina-bg'),   fg: cor('dept-cantina-fg') },
           ministros: { bg: cor('dept-ministros-bg'), fg: cor('dept-ministros-fg') },
           outro:     { bg: cor('dept-outro-bg'),     fg: cor('dept-outro-fg') },
