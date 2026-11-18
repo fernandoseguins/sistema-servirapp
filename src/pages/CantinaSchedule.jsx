@@ -444,7 +444,7 @@ export default function CantinaSchedule() {
                   <h3 className="text-base font-bold text-ink">Escalar {modalAberto.funcao}</h3>
                   <p className="text-xs text-muted">{formatarData(modalAberto.data)}{cultosExtras.some(e => e.data === modalAberto.data) ? '' : ' · Domingo à noite'}</p>
                 </div>
-                <button onClick={() => setModalAberto(null)} className="p-2 hover:bg-surface-2 rounded-lg"><X className="w-5 h-5 text-muted" /></button>
+                <button type="button" onClick={() => setModalAberto(null)} aria-label="Fechar" className="p-2 hover:bg-surface-2 rounded-lg"><X className="w-5 h-5 text-muted" aria-hidden="true" /></button>
               </div>
               <div className="relative">
                 <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />

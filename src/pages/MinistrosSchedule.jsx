@@ -7,7 +7,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useUI } from '../context/UIContext'
 import { useNavigate, useLocation } from 'react-router-dom'
-import PageHeader from '../components/PageHeader'
+import { TopBar } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
 import { HandHeart, UserPlus, Trash2, ChevronLeft, ChevronRight, Search, X, Lock, UserCog, CalendarPlus, Plus, Star, Check } from 'lucide-react'
 import { enviarNotificacao } from '../utils/notificacoes'
 
@@ -288,45 +290,47 @@ export default function MinistrosSchedule() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <PageHeader
-        title="Escala de Ministros"
-        subtitle="Montagem manual por culto"
-        icon={<HandHeart className="w-5 h-5" />}
-        color="bg-red-900"
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Escala de ministros"
+        subtitulo="Ministros · Montagem manual por culto"
+        onVoltar={() => navigate(-1)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept('Ministros').chip}`}>
+          <IconeDept nome="Ministros" className="w-5 h-5" />
+        </span>}
       />
 
-      <div className="max-w-2xl mx-auto px-4 space-y-4">
+      <div className="max-w-[720px] mx-auto px-4 pb-6 space-y-4">
 
         {/* Navegação de mês */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <button onClick={mesAnterior} aria-label="Mês anterior" className="p-2 hover:bg-gray-100 rounded-lg transition active:scale-[0.97]"><ChevronLeft className="w-5 h-5 text-gray-500" /></button>
-          <span className="text-sm font-bold text-gray-800 capitalize">{nomesMeses[mesAtual]} {anoAtual}</span>
-          <button onClick={proximoMes} aria-label="Próximo mês" className="p-2 hover:bg-gray-100 rounded-lg transition active:scale-[0.97]"><ChevronRight className="w-5 h-5 text-gray-500" /></button>
+        <div className="bg-surface p-4 rounded-2xl shadow-sm border border-line flex items-center justify-between">
+          <button onClick={mesAnterior} aria-label="Mês anterior" className="p-2 hover:bg-surface-2 rounded-lg transition active:scale-[0.97]"><ChevronLeft className="w-5 h-5 text-ink-2" /></button>
+          <span className="text-sm font-bold text-ink capitalize">{nomesMeses[mesAtual]} {anoAtual}</span>
+          <button onClick={proximoMes} aria-label="Próximo mês" className="p-2 hover:bg-surface-2 rounded-lg transition active:scale-[0.97]"><ChevronRight className="w-5 h-5 text-ink-2" /></button>
         </div>
 
         {ehLider && (
           <button
             onClick={() => { setModalExtra(true); setExtraData(''); setExtraNome(''); setExtraFuncoes([]) }}
-            className="w-full bg-white border-2 border-dashed border-purple-300 text-purple-600 font-bold rounded-2xl py-3.5 flex items-center justify-center gap-2 hover:bg-purple-50 transition"
+            className="w-full bg-surface border-2 border-dashed border-brand/30 text-brand font-bold rounded-2xl py-3.5 flex items-center justify-center gap-2 hover:bg-brand/10 transition"
           >
             <CalendarPlus className="w-5 h-5" /> Criar Culto Extra
           </button>
         )}
 
         {!ehLider && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2">
-            <Lock className="w-4 h-4 text-red-800 flex-shrink-0" />
-            <p className="text-xs text-red-800 font-medium">Apenas líderes montam a escala. Você pode visualizar.</p>
+          <div className="bg-danger-soft border border-danger/30 rounded-xl px-4 py-3 flex items-center gap-2">
+            <Lock className="w-4 h-4 text-danger flex-shrink-0" />
+            <p className="text-xs text-danger font-medium">Apenas líderes montam a escala. Você pode visualizar.</p>
           </div>
         )}
 
         {loading ? (
           <div className="space-y-3">
-            {[1,2,3,4].map(i => <div key={i} className="bg-white rounded-2xl border border-gray-100 h-40 animate-pulse" />)}
+            {[1,2,3,4].map(i => <div key={i} className="bg-surface rounded-2xl border border-line h-40 animate-pulse" />)}
           </div>
         ) : cultos.length === 0 ? (
-          <div className="bg-white p-8 rounded-2xl border border-gray-100 text-center text-gray-400">
+          <div className="bg-surface p-8 rounded-2xl border border-line text-center text-muted">
             <HandHeart className="w-10 h-10 mx-auto mb-3 opacity-20" />
             <p className="text-sm font-medium">Nenhum culto neste mês.</p>
           </div>
@@ -337,17 +341,17 @@ export default function MinistrosSchedule() {
             const [ano, mes] = ex.data.split('-')
             return Number(ano) === anoAtual && Number(mes) === mesAtual + 1
           }).map(extra => (
-            <div key={'extra-' + extra.data} className="bg-white rounded-2xl shadow-sm border-2 border-purple-200 overflow-hidden">
-              <div className="bg-purple-600 px-4 py-3 flex items-center justify-between">
+            <div key={'extra-' + extra.data} className="bg-surface rounded-2xl shadow-sm border-2 border-brand/30 overflow-hidden">
+              <div className="bg-topo px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 text-white" />
                   <div>
                     <p className="text-sm font-bold text-white leading-tight">{extra.titulo}</p>
-                    <p className="text-[10px] text-purple-100 leading-tight">Culto Extra · {formatarData(extra.data)}</p>
+                    <p className="text-[10px] text-white/80 leading-tight">Culto Extra · {formatarData(extra.data)}</p>
                   </div>
                 </div>
                 {ehLider && (
-                  <button onClick={() => removerCultoExtra(extra.escala.id, extra.titulo)} className="text-purple-200 hover:text-white transition p-1" title="Remover culto extra">
+                  <button onClick={() => removerCultoExtra(extra.escala.id, extra.titulo)} className="text-white/80 hover:text-white transition p-1" aria-label="Remover culto extra">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
@@ -357,28 +361,28 @@ export default function MinistrosSchedule() {
                 {extra.funcoes.map(funcao => {
                   const pessoas = pessoasNaFuncao(extra.escala, funcao)
                   return (
-                    <div key={funcao} className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                    <div key={funcao} className="rounded-xl bg-surface-2 border border-line p-3">
                       <div className="flex items-center justify-between mb-1.5">
-                        <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wider">{funcao}</p>
+                        <p className="text-[10px] font-bold text-brand uppercase tracking-wider">{funcao}</p>
                         {ehLider && (
                           <button onClick={() => { setModalAberto({ data: extra.data, turno: 'Extra', tipo: extra.titulo, funcao }); setBusca(''); setNomeVisitante('') }}
-                            className="flex items-center gap-1 text-[11px] font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg hover:bg-purple-100 transition">
+                            className="flex items-center gap-1 text-[11px] font-bold text-brand bg-brand/10 px-2.5 py-1 rounded-lg hover:bg-brand/10 transition">
                             <UserPlus className="w-3 h-3" /> Escalar
                           </button>
                         )}
                       </div>
                       {pessoas.length === 0 ? (
-                        <p className="text-sm text-gray-400 italic">Vaga em aberto</p>
+                        <p className="text-sm text-muted italic">Vaga em aberto</p>
                       ) : (
                         <div className="space-y-1.5">
                           {pessoas.map(p => (
                             <div key={p.id} className="flex items-center gap-2">
                               {p.nome_externo
-                                ? <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900"><UserCog className="w-3.5 h-3.5 text-purple-400" /> {p.nome_externo} <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">VISITANTE</span></span>
-                                : <span className="text-sm font-semibold text-gray-900">{p.users_profile?.nome}</span>}
+                                ? <span className="flex items-center gap-1.5 text-sm font-semibold text-ink"><UserCog className="w-3.5 h-3.5 text-brand" /> {p.nome_externo} <span className="text-[9px] bg-brand/10 text-brand px-1.5 py-0.5 rounded-full font-bold">VISITANTE</span></span>
+                                : <span className="text-sm font-semibold text-ink">{p.users_profile?.nome}</span>}
                               {ehLider && (
                                 <button onClick={() => removerPessoa(extra.data, 'Extra', p.id, p.nome_externo || p.users_profile?.nome)}
-                                  className="ml-auto text-gray-300 hover:text-red-500 transition">
+                                  className="ml-auto text-muted hover:text-danger transition">
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               )}
@@ -396,41 +400,41 @@ export default function MinistrosSchedule() {
           {cultos.map(culto => {
             const funcoes = FUNCOES_POR_DIA[culto.tipo] || []
             return (
-              <div key={`${culto.data}_${culto.turno}`} className="bg-white rounded-2xl shadow-sm border border-red-100 overflow-hidden">
-                <div className="bg-red-900 px-4 py-3 flex items-center justify-between">
+              <div key={`${culto.data}_${culto.turno}`} className="bg-surface rounded-2xl shadow-sm border border-danger/30 overflow-hidden">
+                <div className="bg-danger-soft px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <HandHeart className="w-4 h-4 text-white" />
-                    <p className="text-sm font-bold text-white">{culto.tipo}</p>
+                    <HandHeart className="w-4 h-4 text-danger" />
+                    <p className="text-sm font-bold text-danger">{culto.tipo}</p>
                   </div>
-                  <span className="bg-white/20 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">{formatarData(culto.data)}</span>
+                  <span className="bg-surface/70 text-danger text-[10px] px-2.5 py-1 rounded-full font-bold">{formatarData(culto.data)}</span>
                 </div>
 
                 <div className="p-3 space-y-2">
                   {funcoes.map(funcao => {
                     const pessoas = pessoasNaFuncao(culto.escala, funcao)
                     return (
-                      <div key={funcao} className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                      <div key={funcao} className="rounded-xl bg-surface-2 border border-line p-3">
                         <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-[10px] font-bold text-red-900 uppercase tracking-wider">{funcao}</p>
+                          <p className="text-[10px] font-bold text-danger uppercase tracking-wider">{funcao}</p>
                           {ehLider && (
                             <button onClick={() => { setModalAberto({ data: culto.data, turno: culto.turno, tipo: culto.tipo, funcao }); setBusca(''); setNomeVisitante('') }}
-                              className="flex items-center gap-1 text-[11px] font-bold text-red-900 bg-red-50 px-2.5 py-1 rounded-lg hover:bg-red-100 transition">
+                              className="flex items-center gap-1 text-[11px] font-bold text-danger bg-danger-soft px-2.5 py-1 rounded-lg hover:bg-danger-soft transition">
                               <UserPlus className="w-3 h-3" /> Escalar
                             </button>
                           )}
                         </div>
                         {pessoas.length === 0 ? (
-                          <p className="text-sm text-gray-400 italic">Vaga em aberto</p>
+                          <p className="text-sm text-muted italic">Vaga em aberto</p>
                         ) : (
                           <div className="space-y-1.5">
                             {pessoas.map(p => (
                               <div key={p.id} className="flex items-center gap-2">
                                 {p.nome_externo
-                                  ? <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900"><UserCog className="w-3.5 h-3.5 text-red-400" /> {p.nome_externo} <span className="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold">VISITANTE</span></span>
-                                  : <span className="text-sm font-semibold text-gray-900">{p.users_profile?.nome}</span>}
+                                  ? <span className="flex items-center gap-1.5 text-sm font-semibold text-ink"><UserCog className="w-3.5 h-3.5 text-danger" /> {p.nome_externo} <span className="text-[9px] bg-danger-soft text-danger px-1.5 py-0.5 rounded-full font-bold">VISITANTE</span></span>
+                                  : <span className="text-sm font-semibold text-ink">{p.users_profile?.nome}</span>}
                                 {ehLider && (
                                   <button onClick={() => removerPessoa(culto.data, culto.turno, p.id, p.nome_externo || p.users_profile?.nome)}
-                                    className="ml-auto text-gray-300 hover:text-red-500 transition">
+                                    className="ml-auto text-muted hover:text-danger transition">
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 )}
@@ -451,25 +455,26 @@ export default function MinistrosSchedule() {
 
       {/* Modal */}
       {modalAberto && (
-        <div className="fixed inset-0 bg-black/40 z-[200] flex items-start justify-center p-4 pt-[8vh] overflow-hidden" onClick={() => setModalAberto(null)}>
-          <div className="bg-white w-full max-w-md rounded-3xl flex flex-col" style={{ maxHeight: '70dvh' }} onClick={e => e.stopPropagation()}>
-            <div className="p-5 border-b border-gray-100">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 pt-[8vh] overflow-hidden">
+          <button type="button" tabIndex={-1} aria-label="Fechar" className="absolute inset-0 bg-black/40 cursor-default" onClick={() => setModalAberto(null)} />
+          <div role="dialog" aria-modal="true" className="relative bg-surface w-full max-w-md rounded-3xl flex flex-col" style={{ maxHeight: '70dvh' }}>
+            <div className="p-5 border-b border-line">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Escalar {modalAberto.funcao}</h3>
-                  <p className="text-xs text-gray-400">{modalAberto.tipo} · {formatarData(modalAberto.data)}</p>
+                  <h3 className="text-base font-bold text-ink">Escalar {modalAberto.funcao}</h3>
+                  <p className="text-xs text-muted">{modalAberto.tipo} · {formatarData(modalAberto.data)}</p>
                 </div>
-                <button onClick={() => setModalAberto(null)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-400" /></button>
+                <button type="button" onClick={() => setModalAberto(null)} aria-label="Fechar" className="p-2 hover:bg-surface-2 rounded-lg"><X className="w-5 h-5 text-muted" aria-hidden="true" /></button>
               </div>
 
               {/* Ministro de fora */}
-              <div className="bg-red-50 border border-red-100 rounded-xl p-3 mb-3">
-                <p className="text-[10px] font-bold text-red-900 uppercase tracking-wider mb-1.5">Ministro de fora (visitante)</p>
+              <div className="bg-danger-soft border border-danger/30 rounded-xl p-3 mb-3">
+                <p className="text-[10px] font-bold text-danger uppercase tracking-wider mb-1.5">Ministro de fora (visitante)</p>
                 <div className="flex gap-2">
                   <input type="text" placeholder="Nome do visitante" value={nomeVisitante} onChange={e => setNomeVisitante(e.target.value)}
-                    className="flex-1 px-3 py-2 bg-white border border-red-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-300" />
+                    className="flex-1 px-3 py-2 bg-surface border border-danger/30 rounded-lg text-sm outline-none focus:ring-2 focus:ring-danger" />
                   <button onClick={adicionarVisitante} disabled={!nomeVisitante.trim()}
-                    className="bg-red-900 text-white text-xs font-bold px-4 rounded-lg hover:bg-red-950 transition active:scale-[0.97] disabled:opacity-40">
+                    className="bg-danger text-on-danger text-xs font-bold px-4 rounded-lg hover:bg-danger transition active:scale-[0.97] disabled:opacity-40">
                     Add
                   </button>
                 </div>
@@ -477,22 +482,22 @@ export default function MinistrosSchedule() {
 
               {/* Busca cadastrados */}
               <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                 <input type="text" placeholder="Ou busque um cadastrado..." value={busca} onChange={e => setBusca(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-300" />
+                  className="w-full pl-10 pr-3 py-2.5 bg-surface-2 border border-line rounded-xl text-sm outline-none focus:ring-2 focus:ring-danger" />
               </div>
             </div>
 
             <div className="overflow-y-auto p-3 space-y-1" style={{ minHeight: '120px', WebkitOverflowScrolling: 'touch' }}>
               {usuariosFiltrados.length === 0 ? (
-                <p className="text-center text-gray-400 text-sm py-8">Ninguém encontrado.</p>
+                <p className="text-center text-muted text-sm py-8">Ninguém encontrado.</p>
               ) : usuariosFiltrados.map(u => (
                 <button key={u.id} onClick={() => adicionarPessoa(u)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition text-left">
-                  <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-danger-soft transition text-left">
+                  <div className="w-9 h-9 rounded-full bg-surface-2 text-ink-2 flex items-center justify-center text-xs font-bold flex-shrink-0">
                     {u.nome?.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium text-gray-800">{u.nome}</span>
+                  <span className="text-sm font-medium text-ink">{u.nome}</span>
                 </button>
               ))}
             </div>
@@ -502,39 +507,40 @@ export default function MinistrosSchedule() {
 
       {/* Modal: Criar Culto Extra (com seleção de funções) */}
       {modalExtra && (
-        <div className="fixed inset-0 bg-black/40 z-[200] flex items-start justify-center p-4 pt-[7vh] overflow-hidden" onClick={() => setModalExtra(false)}>
-          <div className="bg-white w-full max-w-md rounded-3xl flex flex-col" style={{ maxHeight: '82dvh' }} onClick={e => e.stopPropagation()}>
-            <div className="p-5 border-b border-gray-100">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 pt-[7vh] overflow-hidden">
+          <button type="button" tabIndex={-1} aria-label="Fechar" className="absolute inset-0 bg-black/40 cursor-default" onClick={() => setModalExtra(false)} />
+          <div role="dialog" aria-modal="true" className="relative bg-surface w-full max-w-md rounded-3xl flex flex-col" style={{ maxHeight: '82dvh' }}>
+            <div className="p-5 border-b border-line">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-xl bg-brand/10 text-brand flex items-center justify-center">
                     <Star className="w-5 h-5" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Novo Culto Extra</h3>
+                  <h3 className="text-lg font-bold text-ink">Novo Culto Extra</h3>
                 </div>
-                <button onClick={() => setModalExtra(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-400" /></button>
+                <button onClick={() => setModalExtra(false)} className="p-2 hover:bg-surface-2 rounded-lg"><X className="w-5 h-5 text-muted" /></button>
               </div>
             </div>
 
             <div className="overflow-y-auto p-5" style={{ WebkitOverflowScrolling: 'touch' }}>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Nome do culto</label>
+              <label className="block text-sm font-bold text-ink mb-2">Nome do culto</label>
               <input
                 type="text"
                 value={extraNome}
                 onChange={e => setExtraNome(e.target.value)}
                 placeholder="Ex: Vigília, Congresso, Santa Ceia..."
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 mb-4 text-sm outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full bg-surface-2 border border-line rounded-xl py-3 px-4 mb-4 text-sm outline-none focus:ring-2 focus:ring-brand"
               />
 
-              <label className="block text-sm font-bold text-gray-700 mb-2">Data do culto</label>
+              <label className="block text-sm font-bold text-ink mb-2">Data do culto</label>
               <input
                 type="date"
                 value={extraData}
                 onChange={e => setExtraData(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 mb-4 text-sm outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full bg-surface-2 border border-line rounded-xl py-3 px-4 mb-4 text-sm outline-none focus:ring-2 focus:ring-brand"
               />
 
-              <label className="block text-sm font-bold text-gray-700 mb-2">Funções deste culto</label>
+              <label className="block text-sm font-bold text-ink mb-2">Funções deste culto</label>
               <div className="space-y-2 mb-2">
                 {FUNCOES_DISPONIVEIS.map(f => {
                   const marcada = extraFuncoes.includes(f)
@@ -543,23 +549,23 @@ export default function MinistrosSchedule() {
                       key={f}
                       type="button"
                       onClick={() => toggleExtraFuncao(f)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition text-left ${marcada ? 'border-purple-400 bg-purple-50' : 'border-gray-100 bg-gray-50 hover:border-gray-200'}`}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition text-left ${marcada ? 'border-brand bg-brand/10' : 'border-line bg-surface-2 hover:border-line'}`}
                     >
-                      <div className={`w-5 h-5 rounded-md flex items-center justify-center ${marcada ? 'bg-purple-600' : 'bg-white border-2 border-gray-300'}`}>
-                        {marcada && <Check className="w-3.5 h-3.5 text-white" />}
+                      <div className={`w-5 h-5 rounded-md flex items-center justify-center ${marcada ? 'bg-brand' : 'bg-surface border-2 border-line'}`}>
+                        {marcada && <Check className="w-3.5 h-3.5 text-on-brand" aria-hidden="true" />}
                       </div>
-                      <span className={`text-sm font-bold ${marcada ? 'text-purple-700' : 'text-gray-600'}`}>{f}</span>
+                      <span className={`text-sm font-bold ${marcada ? 'text-brand' : 'text-ink-2'}`}>{f}</span>
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            <div className="p-5 border-t border-gray-100 flex gap-2">
-              <button onClick={() => setModalExtra(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hover:bg-gray-200 transition">
+            <div className="p-5 border-t border-line flex gap-2">
+              <button onClick={() => setModalExtra(false)} className="flex-1 bg-surface-2 text-ink-2 font-bold rounded-xl py-3 hover:bg-line transition">
                 Cancelar
               </button>
-              <button onClick={criarCultoExtra} className="flex-1 bg-purple-600 text-white font-bold rounded-xl py-3 hover:bg-purple-700 transition active:scale-[0.97] flex items-center justify-center gap-2">
+              <button onClick={criarCultoExtra} className="flex-1 bg-brand text-on-brand font-bold rounded-xl py-3 hover:bg-brand transition active:scale-[0.97] flex items-center justify-center gap-2">
                 <Plus className="w-5 h-5" /> Criar
               </button>
             </div>
