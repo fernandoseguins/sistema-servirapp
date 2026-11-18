@@ -7,7 +7,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useUI } from '../context/UIContext'
 import { useNavigate, useLocation } from 'react-router-dom'
-import PageHeader from '../components/PageHeader'
+import { TopBar } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
 import { Coffee, UserPlus, Trash2, CalendarDays, ChevronLeft, ChevronRight, Search, X, Lock, CalendarPlus, Plus, Star } from 'lucide-react'
 import { enviarNotificacao } from '../utils/notificacoes'
 // Regra da rotação (sequência + âncora) mora em utils/cantinaRotacao.js —
@@ -271,28 +273,30 @@ export default function CantinaSchedule() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <PageHeader
-        title="Escala da Cantina"
-        subtitle="1 Caixa + 2 Atendentes · Domingos à noite"
-        icon={<Coffee className="w-5 h-5" />}
-        color="bg-amber-500"
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Escala da cantina"
+        subtitulo="Cantina · 1 Caixa + 2 Atendentes · Domingos à noite"
+        onVoltar={() => navigate(-1)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept('Cantina').chip}`}>
+          <IconeDept nome="Cantina" className="w-5 h-5" />
+        </span>}
       />
 
-      <div className="max-w-2xl mx-auto px-4 space-y-4">
+      <div className="max-w-[720px] mx-auto px-4 pb-6 space-y-4">
 
         {/* Navegação de mês */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <button onClick={mesAnterior} aria-label="Mês anterior" className="p-2 hover:bg-gray-100 rounded-lg transition active:scale-[0.97]"><ChevronLeft className="w-5 h-5 text-gray-500" /></button>
-          <span className="text-sm font-bold text-gray-800 capitalize">{nomesMeses[mesAtual]} {anoAtual}</span>
-          <button onClick={proximoMes} aria-label="Próximo mês" className="p-2 hover:bg-gray-100 rounded-lg transition active:scale-[0.97]"><ChevronRight className="w-5 h-5 text-gray-500" /></button>
+        <div className="bg-surface p-4 rounded-2xl shadow-sm border border-line flex items-center justify-between">
+          <button onClick={mesAnterior} aria-label="Mês anterior" className="p-2 hover:bg-surface-2 rounded-lg transition active:scale-[0.97]"><ChevronLeft className="w-5 h-5 text-ink-2" /></button>
+          <span className="text-sm font-bold text-ink capitalize">{nomesMeses[mesAtual]} {anoAtual}</span>
+          <button onClick={proximoMes} aria-label="Próximo mês" className="p-2 hover:bg-surface-2 rounded-lg transition active:scale-[0.97]"><ChevronRight className="w-5 h-5 text-ink-2" /></button>
         </div>
 
         {/* Botão Criar Culto Extra (só líderes) */}
         {ehLider && (
           <button
             onClick={() => { setModalExtra(true); setExtraData(''); setExtraNome('') }}
-            className="w-full bg-white border-2 border-dashed border-amber-300 text-amber-600 font-bold rounded-2xl py-3.5 flex items-center justify-center gap-2 hover:bg-amber-50 transition"
+            className="w-full bg-surface border-2 border-dashed border-warning/30 text-warning font-bold rounded-2xl py-3.5 flex items-center justify-center gap-2 hover:bg-warning-soft transition"
           >
             <CalendarPlus className="w-5 h-5" /> Criar Culto Extra
           </button>
@@ -300,18 +304,18 @@ export default function CantinaSchedule() {
 
         {/* Aviso para membros (não líderes) */}
         {!ehLider && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2">
-            <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <p className="text-xs text-amber-700 font-medium">Apenas líderes podem montar a escala. Você pode visualizar.</p>
+          <div className="bg-warning-soft border border-warning/30 rounded-xl px-4 py-3 flex items-center gap-2">
+            <Lock className="w-4 h-4 text-warning flex-shrink-0" />
+            <p className="text-xs text-warning font-medium">Apenas líderes podem montar a escala. Você pode visualizar.</p>
           </div>
         )}
 
         {loading ? (
           <div className="space-y-3">
-            {[1,2,3,4].map(i => <div key={i} className="bg-white rounded-2xl border border-gray-100 h-40 animate-pulse" />)}
+            {[1,2,3,4].map(i => <div key={i} className="bg-surface rounded-2xl border border-line h-40 animate-pulse" />)}
           </div>
         ) : domingos.length === 0 ? (
-          <div className="bg-white p-8 rounded-2xl border border-gray-100 text-center text-gray-400">
+          <div className="bg-surface p-8 rounded-2xl border border-line text-center text-muted">
             <Coffee className="w-10 h-10 mx-auto mb-3 opacity-20" />
             <p className="text-sm font-medium">Nenhum domingo neste mês.</p>
           </div>
@@ -322,20 +326,20 @@ export default function CantinaSchedule() {
             const [ano, mes] = ex.data.split('-')
             return Number(ano) === anoAtual && Number(mes) === mesAtual + 1
           }).map(extra => (
-            <div key={'extra-' + extra.data} className="bg-white rounded-2xl shadow-sm border-2 border-purple-200 overflow-hidden">
+            <div key={'extra-' + extra.data} className="bg-surface rounded-2xl shadow-sm border-2 border-brand/30 overflow-hidden">
               {/* Cabeçalho roxo para distinguir do domingo normal */}
-              <div className="bg-purple-600 px-4 py-3 flex items-center justify-between">
+              <div className="bg-topo px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 text-white" />
                   <div>
                     <p className="text-sm font-bold text-white leading-tight">{extra.titulo}</p>
-                    <p className="text-[10px] text-purple-100 leading-tight">Culto Extra · {formatarData(extra.data)}</p>
+                    <p className="text-[10px] text-white/80 leading-tight">Culto Extra · {formatarData(extra.data)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="bg-white/20 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">Extra</span>
                   {ehLider && (
-                    <button onClick={() => removerCultoExtra(extra.escala.id, extra.titulo)} className="text-purple-200 hover:text-white transition p-1" title="Remover culto extra">
+                    <button onClick={() => removerCultoExtra(extra.escala.id, extra.titulo)} className="text-white/80 hover:text-white transition p-1" aria-label="Remover culto extra">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
@@ -347,26 +351,26 @@ export default function CantinaSchedule() {
                 {FUNCOES_CANTINA.map(funcao => {
                   const pessoa = pessoaNaFuncao(extra.escala, funcao)
                   return (
-                    <div key={funcao} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
-                      <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+                    <div key={funcao} className="flex items-center gap-3 p-3 rounded-xl bg-surface-2 border border-line">
+                      <div className="w-9 h-9 rounded-full bg-brand/10 text-brand flex items-center justify-center flex-shrink-0">
                         <Coffee className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">{funcao}</p>
+                        <p className="text-[10px] font-bold text-brand uppercase tracking-wider">{funcao}</p>
                         {pessoa ? (
-                          <p className="text-sm font-semibold text-gray-900 truncate">{pessoa.users_profile?.nome}</p>
+                          <p className="text-sm font-semibold text-ink truncate">{pessoa.users_profile?.nome}</p>
                         ) : (
-                          <p className="text-sm text-gray-400 italic">Vaga em aberto</p>
+                          <p className="text-sm text-muted italic">Vaga em aberto</p>
                         )}
                       </div>
                       {ehLider && (pessoa ? (
                         <button onClick={() => removerPessoa(extra.data, pessoa.id, pessoa.users_profile?.nome)}
-                          className="text-gray-300 hover:text-red-500 transition p-1.5">
+                          className="text-muted hover:text-danger transition p-1.5">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       ) : (
                         <button onClick={() => { setModalAberto({ data: extra.data, funcao }); setBusca('') }}
-                          className="flex items-center gap-1 text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition">
+                          className="flex items-center gap-1 text-xs font-bold text-brand bg-brand/10 px-3 py-1.5 rounded-lg hover:bg-brand/10 transition">
                           <UserPlus className="w-3.5 h-3.5" /> Escalar
                         </button>
                       ))}
@@ -378,17 +382,17 @@ export default function CantinaSchedule() {
           ))}
 
           {domingos.map(dom => (
-            <div key={dom.data} className="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+            <div key={dom.data} className="bg-surface rounded-2xl shadow-sm border border-warning/30 overflow-hidden">
               {/* Cabeçalho: dept responsável (em vez de "Domingo Noite") */}
-              <div className="bg-amber-500 px-4 py-3 flex items-center justify-between">
+              <div className="bg-warning-soft px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Coffee className="w-4 h-4 text-white" />
+                  <Coffee className="w-4 h-4 text-warning" />
                   <div>
-                    <p className="text-sm font-bold text-white leading-tight">{dom.deptResponsavel}</p>
-                    <p className="text-[10px] text-amber-100 leading-tight">Responsável · {formatarData(dom.data)}</p>
+                    <p className="text-sm font-bold text-warning leading-tight">{dom.deptResponsavel}</p>
+                    <p className="text-[10px] text-warning leading-tight">Responsável · {formatarData(dom.data)}</p>
                   </div>
                 </div>
-                <span className="bg-white/20 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">Domingo Noite</span>
+                <span className="bg-surface/70 text-warning text-[10px] px-2.5 py-1 rounded-full font-bold">Domingo Noite</span>
               </div>
 
               {/* As 3 funções */}
@@ -396,26 +400,26 @@ export default function CantinaSchedule() {
                 {FUNCOES_CANTINA.map(funcao => {
                   const pessoa = pessoaNaFuncao(dom.escala, funcao)
                   return (
-                    <div key={funcao} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
-                      <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                    <div key={funcao} className="flex items-center gap-3 p-3 rounded-xl bg-surface-2 border border-line">
+                      <div className="w-9 h-9 rounded-full bg-warning-soft text-warning flex items-center justify-center flex-shrink-0">
                         <Coffee className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">{funcao}</p>
+                        <p className="text-[10px] font-bold text-warning uppercase tracking-wider">{funcao}</p>
                         {pessoa ? (
-                          <p className="text-sm font-semibold text-gray-900 truncate">{pessoa.users_profile?.nome}</p>
+                          <p className="text-sm font-semibold text-ink truncate">{pessoa.users_profile?.nome}</p>
                         ) : (
-                          <p className="text-sm text-gray-400 italic">Vaga em aberto</p>
+                          <p className="text-sm text-muted italic">Vaga em aberto</p>
                         )}
                       </div>
                       {ehLider && (pessoa ? (
                         <button onClick={() => removerPessoa(dom.data, pessoa.id, pessoa.users_profile?.nome)}
-                          className="text-gray-300 hover:text-red-500 transition p-1.5">
+                          className="text-muted hover:text-danger transition p-1.5">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       ) : (
                         <button onClick={() => { setModalAberto({ data: dom.data, funcao }); setBusca('') }}
-                          className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition">
+                          className="flex items-center gap-1 text-xs font-bold text-warning bg-warning-soft px-3 py-1.5 rounded-lg hover:bg-warning-soft transition">
                           <UserPlus className="w-3.5 h-3.5" /> Escalar
                         </button>
                       ))}
@@ -431,32 +435,33 @@ export default function CantinaSchedule() {
 
       {/* Modal de seleção de pessoa */}
       {modalAberto && (
-        <div className="fixed inset-0 bg-black/40 z-[200] flex items-start justify-center p-4 pt-[8vh] overflow-hidden" onClick={() => setModalAberto(null)}>
-          <div className="bg-white w-full max-w-md rounded-3xl flex flex-col" style={{ maxHeight: '70dvh' }} onClick={e => e.stopPropagation()}>
-            <div className="p-5 border-b border-gray-100">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 pt-[8vh] overflow-hidden">
+          <button type="button" tabIndex={-1} aria-label="Fechar" className="absolute inset-0 bg-black/40 cursor-default" onClick={() => setModalAberto(null)} />
+          <div role="dialog" aria-modal="true" className="relative bg-surface w-full max-w-md rounded-3xl flex flex-col" style={{ maxHeight: '70dvh' }}>
+            <div className="p-5 border-b border-line">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Escalar {modalAberto.funcao}</h3>
-                  <p className="text-xs text-gray-400">{formatarData(modalAberto.data)}{cultosExtras.some(e => e.data === modalAberto.data) ? '' : ' · Domingo à noite'}</p>
+                  <h3 className="text-base font-bold text-ink">Escalar {modalAberto.funcao}</h3>
+                  <p className="text-xs text-muted">{formatarData(modalAberto.data)}{cultosExtras.some(e => e.data === modalAberto.data) ? '' : ' · Domingo à noite'}</p>
                 </div>
-                <button onClick={() => setModalAberto(null)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-400" /></button>
+                <button onClick={() => setModalAberto(null)} className="p-2 hover:bg-surface-2 rounded-lg"><X className="w-5 h-5 text-muted" /></button>
               </div>
               <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                 <input autoFocus type="text" placeholder="Buscar pessoa..." value={busca} onChange={e => setBusca(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                  className="w-full pl-10 pr-3 py-2.5 bg-surface-2 border border-line rounded-xl text-sm outline-none focus:ring-2 focus:ring-warning" />
               </div>
             </div>
             <div className="overflow-y-auto p-3 space-y-1" style={{ minHeight: '120px', WebkitOverflowScrolling: 'touch' }}>
               {usuariosFiltrados.length === 0 ? (
-                <p className="text-center text-gray-400 text-sm py-8">Ninguém encontrado.</p>
+                <p className="text-center text-muted text-sm py-8">Ninguém encontrado.</p>
               ) : usuariosFiltrados.map(u => (
                 <button key={u.id} onClick={() => adicionarPessoa(u)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-amber-50 transition text-left">
-                  <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-warning-soft transition text-left">
+                  <div className="w-9 h-9 rounded-full bg-surface-2 text-ink-2 flex items-center justify-center text-xs font-bold flex-shrink-0">
                     {u.nome?.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium text-gray-800">{u.nome}</span>
+                  <span className="text-sm font-medium text-ink">{u.nome}</span>
                 </button>
               ))}
             </div>
@@ -466,40 +471,41 @@ export default function CantinaSchedule() {
 
       {/* Modal: Criar Culto Extra */}
       {modalExtra && (
-        <div className="fixed inset-0 bg-black/40 z-[200] flex items-start justify-center p-4 pt-[10vh]" onClick={() => setModalExtra(false)}>
-          <div className="bg-white w-full max-w-md rounded-3xl p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 pt-[10vh]">
+          <button type="button" tabIndex={-1} aria-label="Fechar" className="absolute inset-0 bg-black/40 cursor-default" onClick={() => setModalExtra(false)} />
+          <div role="dialog" aria-modal="true" className="relative bg-surface w-full max-w-md rounded-3xl p-6">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-brand/10 text-brand flex items-center justify-center">
                   <Star className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">Novo Culto Extra</h3>
+                <h3 className="text-lg font-bold text-ink">Novo Culto Extra</h3>
               </div>
-              <button onClick={() => setModalExtra(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-400" /></button>
+              <button onClick={() => setModalExtra(false)} className="p-2 hover:bg-surface-2 rounded-lg"><X className="w-5 h-5 text-muted" /></button>
             </div>
 
-            <label className="block text-sm font-bold text-gray-700 mb-2">Nome do culto</label>
+            <label className="block text-sm font-bold text-ink mb-2">Nome do culto</label>
             <input
               type="text"
               value={extraNome}
               onChange={e => setExtraNome(e.target.value)}
               placeholder="Ex: Vigília, Congresso, Santa Ceia..."
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 mb-4 text-sm outline-none focus:ring-2 focus:ring-purple-400"
+              className="w-full bg-surface-2 border border-line rounded-xl py-3 px-4 mb-4 text-sm outline-none focus:ring-2 focus:ring-brand"
             />
 
-            <label className="block text-sm font-bold text-gray-700 mb-2">Data do culto</label>
+            <label className="block text-sm font-bold text-ink mb-2">Data do culto</label>
             <input
               type="date"
               value={extraData}
               onChange={e => setExtraData(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 mb-6 text-sm outline-none focus:ring-2 focus:ring-purple-400"
+              className="w-full bg-surface-2 border border-line rounded-xl py-3 px-4 mb-6 text-sm outline-none focus:ring-2 focus:ring-brand"
             />
 
             <div className="flex gap-2">
-              <button onClick={() => setModalExtra(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hover:bg-gray-200 transition">
+              <button onClick={() => setModalExtra(false)} className="flex-1 bg-surface-2 text-ink-2 font-bold rounded-xl py-3 hover:bg-line transition">
                 Cancelar
               </button>
-              <button onClick={criarCultoExtra} className="flex-1 bg-purple-600 text-white font-bold rounded-xl py-3 hover:bg-purple-700 transition active:scale-[0.97] flex items-center justify-center gap-2">
+              <button onClick={criarCultoExtra} className="flex-1 bg-brand text-on-brand font-bold rounded-xl py-3 hover:bg-brand transition active:scale-[0.97] flex items-center justify-center gap-2">
                 <Plus className="w-5 h-5" /> Criar
               </button>
             </div>

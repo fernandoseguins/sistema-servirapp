@@ -25,6 +25,7 @@ const TELAS_REFORMADAS = [
   { arquivo: 'pages/GlobalNotice.jsx',    rota: '/informativo' },
   { arquivo: 'pages/FrequencyReport.jsx', rota: '/frequencia' },
   { arquivo: 'pages/GenerateSchedule.jsx', rota: '/gerar-escala' },
+  { arquivo: 'pages/CantinaSchedule.jsx', rota: '/cantina' },
 ]
 
 const COR_ANTIGA = /\b(bg|text|border|ring|from|via|to|divide|placeholder)-(gray|slate|zinc|neutral|stone|blue|indigo|purple|violet|sky|cyan|teal|emerald|green|lime|yellow|amber|orange|red|rose|pink|fuchsia)-\d{2,3}\b/
@@ -48,6 +49,6 @@ describe.each(TELAS_REFORMADAS)('$arquivo', ({ arquivo, rota }) => {
   })
 })
 
-it('guarda distingue tela legada (/cantina ainda não reformada)', () => {
-  expect(comeca('/cantina', ROTAS_NOVAS)).toBe(false)
+it('guarda distingue tela legada (/ministros ainda não reformada)', () => {
+  expect(comeca('/ministros', ROTAS_NOVAS)).toBe(false)
 })
