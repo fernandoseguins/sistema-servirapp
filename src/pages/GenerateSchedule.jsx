@@ -4,8 +4,10 @@ import { supabase } from '../supabase'
 import { useUI } from '../context/UIContext'
 import { useIgreja } from '../context/IgrejaContext'
 import { enviarNotificacaoEmMassa, enviarNotificacao } from '../utils/notificacoes'
-import PageHeader from '../components/PageHeader'
-import { ArrowLeft, CalendarDays, Wand2, Clock, Plus, Trash2, ListChecks, CalendarRange, AlertTriangle, Palette, Tag, UserMinus, X } from 'lucide-react'
+import { TopBar, Button } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
+import { CalendarDays, Wand2, Clock, Plus, Trash2, ListChecks, CalendarRange, AlertTriangle, Palette, Tag, UserMinus, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function GenerateSchedule() {
@@ -481,8 +483,9 @@ export default function GenerateSchedule() {
 
     } catch (error) {
       setProgresso({ etapa: 0, texto: '', cultoAtual: 0, cultoTotal: 0 })
-      (() => { console.error('Erro:', error); toast.error('Ocorreu um erro. Tente novamente.') })()
-      setLoading(false) 
+      console.error('Erro:', error)
+      toast.error('Ocorreu um erro. Tente novamente.')
+      setLoading(false)
     }
   }
 
@@ -627,40 +630,42 @@ export default function GenerateSchedule() {
   const todasCoresRenderizar = Array.from(new Set([...coresBase, ...coresSalvasBD]))
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      
-      <PageHeader
-        title="Gerar Escala do Mês"
-        subtitle={`Criar escalas para ${departamentoNome}`}
-        icon={<CalendarDays className="w-5 h-5" />}
-        color='bg-blue-600'
+    <div className="min-h-screen bg-bg pb-[env(safe-area-inset-bottom)]">
+
+      <TopBar
+        titulo="Gerar escala do mês"
+        subtitulo={departamentoNome}
+        onVoltar={() => navigate(-1)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept(departamentoNome).chip}`}>
+          <IconeDept nome={departamentoNome} className="w-5 h-5" />
+        </span>}
       />
 
-      <div className="max-w-md mx-auto px-4 space-y-6">
-        
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-xl shadow-md text-white">
-          <h2 className="text-sm font-bold uppercase mb-2 flex items-center gap-2">
-            <CalendarRange className="w-5 h-5 text-blue-200" />
-            Mês Padrão
-          </h2>
-          <p className="text-xs text-blue-100 mb-4 opacity-90">Adiciona cultos padrão para todo o mês.</p>
-          <div className="flex gap-2">
-            <input type="month" value={mesAuto} onChange={(e) => setMesAuto(e.target.value)} className="flex-1 border-0 rounded-lg p-3 text-gray-800 font-medium outline-none shadow-inner" />
-            <button onClick={preencherMesPadrao} disabled={!mesAuto} className="bg-white text-blue-700 px-4 font-bold rounded-lg hover:bg-blue-50 transition active:scale-[0.97] disabled:opacity-50 shadow-sm">Aplicar</button>
-          </div>
-        </div>
+      <main className="max-w-[720px] mx-auto px-4 pb-6 space-y-4">
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-sm font-bold text-gray-800 uppercase mb-4 flex items-center gap-2">Cultos Extras</h2>
+        <section className="bg-topo p-5 rounded-card text-white">
+          <h2 className="text-sm font-bold mb-1 flex items-center gap-2">
+            <CalendarRange className="w-5 h-5" aria-hidden="true" />
+            Mês padrão
+          </h2>
+          <p className="text-xs text-white/80 mb-4">Adiciona os cultos de sempre para o mês inteiro.</p>
+          <div className="flex gap-2">
+            <input type="month" aria-label="Mês" value={mesAuto} onChange={(e) => setMesAuto(e.target.value)} className="flex-1 min-w-0 h-11 rounded-ctl px-3 bg-surface text-ink font-medium focus:outline-none focus:ring-2 focus:ring-white" />
+            <Button variant="secundario" onClick={preencherMesPadrao} disabled={!mesAuto}>Aplicar</Button>
+          </div>
+        </section>
+
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-line">
+          <h2 className="text-sm font-bold text-ink uppercase mb-4 flex items-center gap-2">Cultos Extras</h2>
           <form onSubmit={adicionarALista} className="space-y-4">
             <div className="flex gap-2">
               <div className="flex-[2]">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Data Extra</label>
-                <input type="date" required value={dataCulto} onChange={(e) => setDataCulto(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 outline-none" />
+                <label className="block text-xs font-medium text-ink-2 mb-1">Data Extra</label>
+                <input type="date" required value={dataCulto} onChange={(e) => setDataCulto(e.target.value)} className="w-full border border-line rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand outline-none" />
               </div>
               <div className="flex-[2]">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Turno</label>
-                <select value={turnoEscala} onChange={(e) => setTurnoEscala(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
+                <label className="block text-xs font-medium text-ink-2 mb-1">Turno</label>
+                <select value={turnoEscala} onChange={(e) => setTurnoEscala(e.target.value)} className="w-full border border-line rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand outline-none bg-surface-2">
                   <option value="Integral">Integral</option>
                   <option value="Manhã">Manhã</option>
                   <option value="Noite">Noite</option>
@@ -668,26 +673,26 @@ export default function GenerateSchedule() {
               </div>
             </div>
             <div>
-              <label className="flex items-center gap-1 text-xs font-medium text-gray-500 mb-1"><Tag className="w-3.5 h-3.5" /> Nome / Tema do Culto</label>
-              <input type="text" placeholder="Ex: Culto de Jovens..." value={tituloCulto} onChange={(e) => setTituloCulto(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 outline-none" />
+              <label className="flex items-center gap-1 text-xs font-medium text-ink-2 mb-1"><Tag className="w-3.5 h-3.5" /> Nome / Tema do Culto</label>
+              <input type="text" placeholder="Ex: Culto de Jovens..." value={tituloCulto} onChange={(e) => setTituloCulto(e.target.value)} className="w-full border border-line rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand outline-none" />
             </div>
-            <button type="submit" className="w-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-2.5 rounded-lg hover:bg-indigo-100 transition active:scale-[0.97] flex items-center justify-center gap-2 font-bold"><Plus className="w-5 h-5" /> Adicionar Culto</button>
+            <button type="submit" className="w-full bg-brand/10 text-brand border border-brand/30 px-3 py-2.5 rounded-lg hover:bg-brand/10 transition active:scale-[0.97] flex items-center justify-center gap-2 font-bold"><Plus className="w-5 h-5" /> Adicionar Culto</button>
           </form>
         </div>
 
         {departamentoTipo === 'louvor' && (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-sm font-bold text-gray-800 uppercase mb-3 flex items-center gap-2"><Palette className="w-5 h-5 text-blue-600" /> Paletas de cores </h2>
+          <div className="bg-surface p-6 rounded-xl shadow-sm border border-line">
+            <h2 className="text-sm font-bold text-ink uppercase mb-3 flex items-center gap-2"><Palette className="w-5 h-5 text-brand" /> Paletas de cores </h2>
             
-            <form onSubmit={adicionarCorPersonalizada} className="flex gap-2 mb-4 border-b border-gray-100 pb-4">
-              <input type="text" placeholder="Nova cor para a paleta..." value={novaCor} onChange={(e) => setNovaCor(e.target.value)} className="flex-1 border border-gray-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50" />
-              <button type="submit" disabled={!novaCor || loading} className="bg-blue-600 text-white px-3 font-bold rounded-lg hover:bg-blue-700 transition active:scale-[0.97] disabled:opacity-50 text-sm">Salvar</button>
+            <form onSubmit={adicionarCorPersonalizada} className="flex gap-2 mb-4 border-b border-line pb-4">
+              <input type="text" placeholder="Nova cor para a paleta..." value={novaCor} onChange={(e) => setNovaCor(e.target.value)} className="flex-1 border border-line rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-brand bg-surface-2" />
+              <button type="submit" disabled={!novaCor || loading} className="bg-brand text-on-brand px-3 font-bold rounded-lg hover:bg-brand transition active:scale-[0.97] disabled:opacity-50 text-sm">Salvar</button>
             </form>
 
             <div className="grid grid-cols-2 gap-3 mb-4 max-h-48 overflow-y-auto pr-1">
               {todasCoresRenderizar.map(cor => (
-                <label key={cor} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1.5 rounded-lg transition">
-                  <input type="checkbox" checked={coresSelecionadas.includes(cor)} onChange={(e) => e.target.checked ? setCoresSelecionadas([...coresSelecionadas, cor]) : setCoresSelecionadas(coresSelecionadas.filter(c => c !== cor))} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-600 shrink-0" />
+                <label key={cor} className="flex items-center gap-2 text-sm text-ink cursor-pointer hover:bg-surface-2 p-1.5 rounded-lg transition">
+                  <input type="checkbox" checked={coresSelecionadas.includes(cor)} onChange={(e) => e.target.checked ? setCoresSelecionadas([...coresSelecionadas, cor]) : setCoresSelecionadas(coresSelecionadas.filter(c => c !== cor))} className="w-4 h-4 text-brand border-line rounded focus:ring-brand shrink-0" />
                   <span className="truncate leading-tight">{cor}</span>
                 </label>
               ))}
@@ -695,11 +700,11 @@ export default function GenerateSchedule() {
           </div>
         )}
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-sm font-bold text-gray-800 uppercase mb-4 flex items-center gap-2">
-            <UserMinus className="w-5 h-5 text-red-600" /> Membros em Pausa / Off
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-line">
+          <h2 className="text-sm font-bold text-ink uppercase mb-4 flex items-center gap-2">
+            <UserMinus className="w-5 h-5 text-danger" /> Membros em Pausa / Off
           </h2>
-          <p className="text-xs text-gray-500 mb-4">
+          <p className="text-xs text-ink-2 mb-4">
             Selecione membros que estão de férias ou que <b>não devem</b> participar da escala deste mês. Pode adicionar vários!
           </p>
           
@@ -711,7 +716,7 @@ export default function GenerateSchedule() {
                 setMembrosExcluidos([...membrosExcluidos, idSelecionado]);
               }
             }} 
-            className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-red-500 bg-gray-50 cursor-pointer"
+            className="w-full border border-line rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-danger bg-surface-2 cursor-pointer"
           >
             <option value="">Clique para adicionar um membro à pausa...</option>
             {membrosEquipe.filter(m => !membrosExcluidos.includes(m.id)).map(m => (
@@ -724,13 +729,14 @@ export default function GenerateSchedule() {
               {membrosExcluidos.map(id => {
                 const m = membrosEquipe.find(x => x.id === id);
                 return (
-                  <div key={id} className="flex items-center gap-1.5 bg-red-50 border border-red-100 px-3 py-1.5 rounded-full text-[11px] font-bold text-red-700 shadow-sm animate-in zoom-in duration-200">
+                  <div key={id} className="flex items-center gap-1.5 bg-danger-soft border border-danger/30 px-3 py-1.5 rounded-full text-[11px] font-bold text-danger shadow-sm animate-in zoom-in duration-200">
                     <UserMinus className="w-3 h-3 opacity-70" />
                     {m?.nome}
-                    <button 
-                      onClick={() => setMembrosExcluidos(membrosExcluidos.filter(x => x !== id))} 
-                      className="ml-1 text-red-400 hover:text-red-700 hover:bg-red-200 rounded-full p-0.5 transition"
-                      title="Remover pausa deste membro"
+                    <button
+                      type="button"
+                      onClick={() => setMembrosExcluidos(membrosExcluidos.filter(x => x !== id))}
+                      className="ml-1 text-danger hover:text-danger hover:bg-danger-soft rounded-full p-0.5 transition"
+                      aria-label={`Tirar ${m?.nome || 'membro'} da pausa`}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -741,35 +747,35 @@ export default function GenerateSchedule() {
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-sm font-bold text-gray-800 uppercase mb-4 flex items-center gap-2"><ListChecks className="w-5 h-5 text-green-600" /> Resumo do Mês ({listaCultos.length})</h2>
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-line">
+          <h2 className="text-sm font-bold text-ink uppercase mb-4 flex items-center gap-2"><ListChecks className="w-5 h-5 text-success" /> Resumo do Mês ({listaCultos.length})</h2>
           {listaCultos.length > 0 && (
             <div className="space-y-3 mb-6 max-h-[300px] overflow-y-auto pr-2">
               {listaOrdenada.map((culto) => (
-                <div key={culto.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <div key={culto.id} className="flex justify-between items-center bg-surface-2 p-3 rounded-lg border border-line">
                   <div>
-                    <span className="font-bold text-gray-800 text-sm">{formatarDataComDia(culto.data)}</span>
-                    <span className="ml-2 bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">{culto.turno}</span>
+                    <span className="font-bold text-ink text-sm">{formatarDataComDia(culto.data)}</span>
+                    <span className="ml-2 bg-line text-ink text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">{culto.turno}</span>
                   </div>
-                  <button onClick={() => removerDaLista(culto.id)} className="text-red-400 hover:text-red-600 p-2"><Trash2 className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => removerDaLista(culto.id)} aria-label={`Remover culto de ${formatarDataComDia(culto.data)}`} className="text-danger hover:text-danger p-2 rounded-ctl"><Trash2 className="w-4 h-4" /></button>
                 </div>
               ))}
             </div>
           )}
           {loading ? (
-            <div className="w-full bg-white border-2 border-green-200 rounded-2xl overflow-hidden shadow-sm">
-              <div className="bg-green-50 px-5 py-3 border-b border-green-100 flex items-center gap-3">
-                <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                <p className="text-sm font-bold text-green-800 truncate">{progresso.texto || 'Processando...'}</p>
+            <div className="w-full bg-surface border-2 border-success/30 rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-success-soft px-5 py-3 border-b border-success/30 flex items-center gap-3">
+                <div className="w-4 h-4 border-2 border-success border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <p className="text-sm font-bold text-success truncate">{progresso.texto || 'Processando...'}</p>
               </div>
               {progresso.cultoTotal > 0 && (
-                <div className="px-5 py-3 border-b border-green-50">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1.5 font-medium">
+                <div className="px-5 py-3 border-b border-success/30">
+                  <div className="flex justify-between text-xs text-ink-2 mb-1.5 font-medium">
                     <span>Culto {progresso.cultoAtual} de {progresso.cultoTotal}</span>
                     <span>{Math.round((progresso.cultoAtual / progresso.cultoTotal) * 100)}%</span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  <div className="w-full bg-surface-2 rounded-full h-2 overflow-hidden">
+                    <div className="bg-success h-2 rounded-full transition-all duration-300"
                       style={{ width: `${(progresso.cultoAtual / progresso.cultoTotal) * 100}%` }} />
                   </div>
                 </div>
@@ -778,33 +784,33 @@ export default function GenerateSchedule() {
                 {[{n:1,label:'Equipe'},{n:2,label:'Histórico'},{n:3,label:'Gerando'},{n:4,label:'Notif.'}].map(e => (
                   <div key={e.n} className="flex flex-col items-center gap-1">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                      progresso.etapa > e.n  ? 'bg-green-500 text-white' :
-                      progresso.etapa === e.n ? 'bg-green-100 text-green-700 ring-2 ring-green-400' :
-                      'bg-gray-100 text-gray-400'}`}>
+                      progresso.etapa > e.n  ? 'bg-success text-on-success' :
+                      progresso.etapa === e.n ? 'bg-success-soft text-success ring-2 ring-success' :
+                      'bg-surface-2 text-muted'}`}>
                       {progresso.etapa > e.n ? '✓' : e.n}
                     </div>
-                    <span className={`text-[10px] font-medium text-center ${progresso.etapa >= e.n ? 'text-green-700' : 'text-gray-400'}`}>{e.label}</span>
+                    <span className={`text-[10px] font-medium text-center ${progresso.etapa >= e.n ? 'text-success' : 'text-muted'}`}>{e.label}</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
             <button onClick={gerarEscalasEmLote} disabled={listaCultos.length === 0 || loading}
-              className="w-full bg-green-600 text-white font-bold py-3.5 rounded-xl hover:bg-green-700 transition active:scale-[0.97] flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
+              className="w-full bg-success text-on-success font-bold py-3.5 rounded-xl hover:bg-success transition active:scale-[0.97] flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
               {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Gerando...</> : <><Wand2 className="w-5 h-5" /> Gerar Escalas de {departamentoNome}</>}
             </button>
           )}
         </div>
 
-        <div className="mt-8 border-2 border-red-200 bg-red-50 p-6 rounded-xl">
-          <h2 className="text-sm font-bold text-red-800 uppercase mb-2 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Zona de Perigo</h2>
+        <div className="mt-8 border-2 border-danger/30 bg-danger-soft p-6 rounded-xl">
+          <h2 className="text-sm font-bold text-danger uppercase mb-2 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Zona de Perigo</h2>
           <div className="flex gap-2">
-            <input type="month" value={mesParaApagar} onChange={(e) => setMesParaApagar(e.target.value)} className="flex-1 border border-red-300 rounded-lg p-3 text-red-800 font-medium outline-none bg-white focus:ring-2 focus:ring-red-500" />
-            <button onClick={apagarMesInteiro} disabled={loading || !mesParaApagar} className="bg-red-600 text-white px-4 font-bold rounded-lg hover:bg-red-700 transition active:scale-[0.97] disabled:opacity-50 shadow-sm flex items-center gap-2"><Trash2 className="w-4 h-4" /> Apagar</button>
+            <input type="month" aria-label="Mês para apagar" value={mesParaApagar} onChange={(e) => setMesParaApagar(e.target.value)} className="flex-1 min-w-0 border border-danger/30 rounded-lg p-3 text-danger font-medium outline-none bg-surface focus:ring-2 focus:ring-danger" />
+            <button onClick={apagarMesInteiro} disabled={loading || !mesParaApagar} className="bg-danger text-on-danger px-4 font-bold rounded-lg hover:bg-danger transition active:scale-[0.97] disabled:opacity-50 shadow-sm flex items-center gap-2"><Trash2 className="w-4 h-4" /> Apagar</button>
           </div>
         </div>
 
-      </div>
+      </main>
     </div>
   )
 }
