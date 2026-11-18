@@ -7,8 +7,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useUI } from '../context/UIContext'
 import { useNavigate } from 'react-router-dom'
-import PageHeader from '../components/PageHeader'
-import { getDeptTheme, getDeptIcones } from '../utils/departmentThemes'
+import { TopBar, Button, Card, Input } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
 import { enviarNotificacaoEmMassa } from '../utils/notificacoes'
 import { Megaphone, AlertTriangle, Send, CheckCircle2, Building2 } from 'lucide-react'
 
@@ -52,7 +53,7 @@ export default function AvisoGeral() {
 
     const { data: depts } = await supabase
       .from('departamentos')
-      .select('id, nome, cor, icone')
+      .select('id, nome')
       .order('nome')
     if (depts) setDepartamentos(depts)
     setLoading(false)
@@ -139,8 +140,8 @@ export default function AvisoGeral() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-bg flex items-center justify-center" aria-busy="true">
+        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -149,111 +150,85 @@ export default function AvisoGeral() {
   const todosSelecionados = selecionados.length === departamentos.length && departamentos.length > 0
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <PageHeader
-        title="Aviso Geral"
-        subtitle="Enviar para departamentos da igreja"
-        icon={<Megaphone className="w-5 h-5" />}
-        color="bg-gray-900"
-        onBack={() => navigate('/gestao-igreja')}
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Aviso da gestão"
+        subtitulo="Enviar para vários departamentos"
+        onVoltar={() => navigate('/gestao-igreja')}
+        icone={<span className="w-10 h-10 rounded-ctl flex items-center justify-center bg-brand/10 text-brand">
+          <Megaphone className="w-5 h-5" aria-hidden="true" />
+        </span>}
       />
 
-      <div className="max-w-md mx-auto px-4">
-        <form onSubmit={enviarAviso} className="space-y-5">
+      <main className="max-w-[720px] mx-auto px-4 pb-6">
+        <form onSubmit={enviarAviso} className="space-y-4">
 
-          {/* ── Seleção de departamentos ── */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-gray-500" /> Departamentos
-              </h2>
-              <button type="button" onClick={toggleTodos}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition active:scale-[0.97]">
-                {todosSelecionados ? 'Limpar' : 'Selecionar todos'}
-              </button>
-            </div>
+          <Card>
+            <fieldset>
+              <div className="flex items-center justify-between mb-3">
+                <legend className="text-sm font-bold text-ink flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-brand" aria-hidden="true" /> Departamentos
+                </legend>
+                <button type="button" onClick={toggleTodos}
+                  className="text-xs font-semibold text-brand hover:underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                  {todosSelecionados ? 'Limpar' : 'Selecionar todos'}
+                </button>
+              </div>
 
-            <div className="space-y-2">
-              {departamentos.map(dept => {
-                const theme = getDeptTheme(dept.nome, dept.cor)
-                const icones = getDeptIcones(dept.nome, dept.icone)
-                const ativo = selecionados.includes(dept.id)
-                const pers = theme.personalizado
-                const st = theme.styles || {}
-                return (
-                  <button key={dept.id} type="button" onClick={() => toggleDept(dept.id)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                      ativo ? `${pers ? 'border-current' : theme.bgLight + ' border-current ' + theme.textPrimary}` : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-                    }`}
-                    style={ativo && pers ? { ...st.bgLight, ...st.textPrimary } : {}}>
-                    <div className={`p-2 rounded-lg ${ativo ? (pers ? 'text-white' : theme.bgPrimary + ' text-white') : 'bg-white text-gray-400'}`}
-                      style={ativo && pers ? st.bgPrimary : {}}>
-                      {icones.Pequeno}
-                    </div>
-                    <span className={`flex-1 text-sm font-bold ${ativo ? (pers ? '' : theme.textPrimary) : 'text-gray-600'}`}
-                      style={ativo && pers ? st.textPrimary : {}}>
+              <div className="flex flex-wrap gap-2">
+                {departamentos.map(dept => {
+                  const ativo = selecionados.includes(dept.id)
+                  return (
+                    <button key={dept.id} type="button" onClick={() => toggleDept(dept.id)} aria-pressed={ativo}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold border-2 transition
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand
+                        ${ativo ? `${classesDept(dept.nome).chip} border-current` : 'bg-surface text-ink-2 border-line hover:bg-surface-2'}`}>
+                      {ativo ? <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> : <IconeDept nome={dept.nome} className="w-4 h-4" />}
                       {dept.nome}
-                    </span>
-                    <div className={`w-5 h-5 rounded-md flex items-center justify-center transition ${
-                      ativo ? (pers ? 'text-white' : `${theme.bgPrimary} text-white`) : 'bg-white border-2 border-gray-200'
-                    }`}
-                    style={ativo && pers ? st.bgPrimary : {}}>
-                      {ativo && <CheckCircle2 className="w-4 h-4" />}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
+                    </button>
+                  )
+                })}
+              </div>
 
-            {selecionados.length > 0 && (
-              <p className="text-[11px] text-gray-400 mt-3 text-center font-medium">
-                {selecionados.length} departamento(s) selecionado(s)
-              </p>
-            )}
-          </div>
+              {selecionados.length > 0 && (
+                <p className="text-xs text-ink-2 mt-3" aria-live="polite">
+                  {selecionados.length} {selecionados.length === 1 ? 'departamento selecionado' : 'departamentos selecionados'}
+                </p>
+              )}
+            </fieldset>
+          </Card>
 
-          {/* ── Conteúdo do aviso ── */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1.5">Título</label>
-              <input type="text" required placeholder="Ex: Reunião geral de líderes"
-                value={titulo} onChange={e => setTitulo(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
-            </div>
+          <Card className="space-y-4">
+            <Input label="Título" required placeholder="Ex: Reunião geral de líderes"
+              value={titulo} onChange={e => setTitulo(e.target.value)} />
 
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1.5">Mensagem</label>
-              <textarea required placeholder="Escreva os detalhes aqui..." rows="4"
+              <label htmlFor="aviso-geral-mensagem" className="block text-xs font-semibold text-ink-2 mb-1.5">Mensagem</label>
+              <textarea id="aviso-geral-mensagem" required placeholder="Escreva os detalhes" rows="4"
                 value={conteudo} onChange={e => setConteudo(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 resize-none" />
+                className="w-full rounded-ctl bg-surface border border-line p-3 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand resize-none" />
             </div>
 
-            <label className="flex items-center gap-3 cursor-pointer bg-red-50 p-3 rounded-xl border border-red-100 hover:bg-red-100 transition">
+            <label className="flex items-center gap-3 cursor-pointer bg-danger-soft p-3 rounded-ctl focus-within:ring-2 focus-within:ring-brand">
               <input type="checkbox" checked={urgente} onChange={e => setUrgente(e.target.checked)}
-                className="w-5 h-5 text-red-600 rounded focus:ring-red-500 cursor-pointer" />
-              <span className="text-sm font-bold text-red-700 flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4" /> Marcar como URGENTE
+                className="w-5 h-5 rounded cursor-pointer accent-[rgb(var(--danger))]" />
+              <span className="text-sm font-bold text-danger flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4" aria-hidden="true" /> Marcar como urgente
               </span>
             </label>
-          </div>
+          </Card>
 
-          {/* ── Info ── */}
-          <div className="flex items-start gap-2 bg-gray-100 rounded-xl px-4 py-3">
-            <Megaphone className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-gray-600">
-              O aviso aparecerá no mural de cada departamento selecionado, marcado como <span className="font-bold">"Gestão da Igreja"</span>, e todos os membros serão notificados no app e no celular.
-            </p>
-          </div>
+          <p className="flex items-start gap-2 bg-surface-2 rounded-ctl px-3 py-2.5 text-xs text-ink-2">
+            <Megaphone className="w-4 h-4 text-brand flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <span>O aviso aparece no mural de cada departamento escolhido, marcado como <strong className="text-ink">Gestão da Igreja</strong>, e todos recebem no app e no celular.</span>
+          </p>
 
-          <button type="submit" disabled={enviando || !titulo || !conteudo || selecionados.length === 0}
-            className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-md transition active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-black">
-            {enviando
-              ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Enviando...</>
-              : <><Send className="w-5 h-5" /> Enviar Aviso</>
-            }
-          </button>
+          <Button type="submit" full loading={enviando} disabled={!titulo || !conteudo || selecionados.length === 0}
+            icon={<Send className="w-4 h-4" aria-hidden="true" />}>
+            {enviando ? 'Enviando...' : 'Enviar aviso'}
+          </Button>
         </form>
-      </div>
+      </main>
     </div>
   )
 }
