@@ -6,7 +6,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ListChecks, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, CalendarDays } from 'lucide-react'
-import PageHeader from '../components/PageHeader'
+import { TopBar, Card, EmptyState } from '../components/ui'
+import IconeDept from '../theme/IconeDept'
+import { classesDept } from '../theme/deptCores'
 import { useUI } from '../context/UIContext'
 
 const ITENS = [
@@ -89,29 +91,31 @@ export default function ChecklistMidia() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <PageHeader
-        title="Histórico de Checklists"
-        subtitle={`Cabine de Mídia — ${departamentoNome}`}
-        icon={<ListChecks className="w-5 h-5" />}
-        color="bg-purple-600"
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Checklists da cabine"
+        subtitulo={`${departamentoNome || 'Mídia'} · histórico`}
+        onVoltar={() => navigate(-1)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept(departamentoNome || 'Mídia').chip}`}>
+          <IconeDept nome={departamentoNome || 'Mídia'} className="w-5 h-5" />
+        </span>}
       />
 
-      <div className="max-w-2xl mx-auto px-4 space-y-4">
+      <div className="max-w-[720px] mx-auto px-4 pb-6 space-y-4">
 
         {/* Filtro de mês */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-          <CalendarDays className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          <select value={filtroMes} onChange={e => setFiltroMes(e.target.value)}
-            className="flex-1 text-sm font-medium text-gray-700 outline-none bg-transparent capitalize">
+        <div className="bg-surface p-4 rounded-2xl shadow-sm border border-line flex items-center gap-3">
+          <CalendarDays className="w-4 h-4 text-muted flex-shrink-0" aria-hidden="true" />
+          <select value={filtroMes} onChange={e => setFiltroMes(e.target.value)} aria-label="Mês"
+            className="flex-1 min-w-0 text-sm font-medium text-ink outline-none bg-transparent capitalize focus-visible:ring-2 focus-visible:ring-brand rounded">
             {mesesDisponiveis.map(m => (
               <option key={m.val} value={m.val}>{m.label}</option>
             ))}
           </select>
           {/* Stats do mês */}
           {!loading && (
-            <div className="flex items-center gap-3 text-xs text-gray-400 flex-shrink-0">
-              <span className="text-green-600 font-bold">{checklists.length} preenchidos</span>
+            <div className="flex items-center gap-1.5 text-xs text-muted flex-shrink-0">
+              <span className="text-success font-bold">{checklists.length} preenchidos</span>
               <span>/</span>
               <span>{schedules.length} escalas</span>
             </div>
@@ -121,17 +125,16 @@ export default function ChecklistMidia() {
         {loading ? (
           <div className="space-y-3">
             {[1,2,3].map(i => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-40 mb-2" />
-                <div className="h-3 bg-gray-100 rounded w-24" />
+              <div key={i} className="bg-surface rounded-2xl border border-line p-4 animate-pulse">
+                <div className="h-4 bg-line rounded w-40 mb-2" />
+                <div className="h-3 bg-surface-2 rounded w-24" />
               </div>
             ))}
           </div>
         ) : schedules.length === 0 ? (
-          <div className="bg-white p-8 rounded-2xl border border-gray-100 text-center text-gray-400">
-            <ListChecks className="w-10 h-10 mx-auto mb-3 opacity-20" />
-            <p className="text-sm font-medium">Nenhuma escala encontrada neste mês.</p>
-          </div>
+          <Card>
+            <EmptyState icon={<ListChecks className="w-6 h-6" aria-hidden="true" />} titulo="Nenhuma escala neste mês" texto="Escolha outro mês no filtro acima." />
+          </Card>
         ) : (
           <div className="space-y-3">
             {schedules.map(escala => {
@@ -140,32 +143,32 @@ export default function ChecklistMidia() {
               const score     = checklist ? calcScore(checklist) : null
 
               return (
-                <div key={escala.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div key={escala.id} className="bg-surface rounded-2xl border border-line shadow-sm overflow-hidden">
                   {/* Cabeçalho clicável */}
-                  <div
+                  <button type="button" aria-expanded={isOpen}
                     onClick={() => setExpandido(isOpen ? null : escala.id)}
-                    className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition">
+                    className="w-full text-left flex items-center gap-4 p-4 cursor-pointer hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand">
                     {/* Status */}
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${checklist ? 'bg-green-100' : 'bg-orange-50'}`}>
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${checklist ? 'bg-success-soft' : 'bg-warning-soft'}`}>
                       {checklist
-                        ? <CheckCircle2 className="w-5 h-5 text-green-600" />
-                        : <AlertCircle className="w-5 h-5 text-orange-400" />
+                        ? <CheckCircle2 className="w-5 h-5 text-success" />
+                        : <AlertCircle className="w-5 h-5 text-warning" />
                       }
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 capitalize">
+                      <p className="text-sm font-bold text-ink capitalize">
                         {formatarData(escala.data)}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-400">{escala.turno}</span>
+                        <span className="text-xs text-muted">{escala.turno}</span>
                         {checklist && (
                           <>
-                            <span className="text-gray-200">·</span>
-                            <span className="text-xs text-gray-500">{checklist.nome_responsavel}</span>
-                            <span className="text-gray-200">·</span>
-                            <span className={`text-xs font-bold ${score.pct === 100 ? 'text-green-600' : 'text-amber-500'}`}>
+                            <span className="text-muted">·</span>
+                            <span className="text-xs text-ink-2">{checklist.nome_responsavel}</span>
+                            <span className="text-muted">·</span>
+                            <span className={`text-xs font-bold ${score.pct === 100 ? 'text-success' : 'text-warning'}`}>
                               {score.ok}/{score.total} itens
                             </span>
                           </>
@@ -176,26 +179,26 @@ export default function ChecklistMidia() {
                     {/* Badge + chevron */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {checklist ? (
-                        <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ OK</span>
+                        <span className="text-[10px] font-bold bg-success-soft text-success px-2 py-0.5 rounded-full">✓ OK</span>
                       ) : escala.status === 'Publicada' ? (
-                        <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">Pendente</span>
+                        <span className="text-[10px] font-bold bg-warning-soft text-warning px-2 py-0.5 rounded-full">Pendente</span>
                       ) : (
-                        <span className="text-[10px] font-bold bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">Rascunho</span>
+                        <span className="text-[10px] font-bold bg-surface-2 text-muted px-2 py-0.5 rounded-full">Rascunho</span>
                       )}
                       {checklist && (isOpen
-                        ? <ChevronUp className="w-4 h-4 text-gray-300" />
-                        : <ChevronDown className="w-4 h-4 text-gray-300" />
+                        ? <ChevronUp className="w-4 h-4 text-muted" />
+                        : <ChevronDown className="w-4 h-4 text-muted" />
                       )}
                     </div>
-                  </div>
+                  </button>
 
                   {/* Detalhes expandidos */}
                   {isOpen && checklist && (
-                    <div className="border-t border-gray-100 px-4 py-3 bg-gray-50 space-y-3">
+                    <div className="border-t border-line px-4 py-3 bg-surface-2 space-y-3">
                       {/* Itens */}
                       <div className="grid grid-cols-1 gap-1.5">
                         {ITENS.map(item => (
-                          <div key={item.key} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${checklist[item.key] ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                          <div key={item.key} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${checklist[item.key] ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger'}`}>
                             <span className="w-4 text-center">{checklist[item.key] ? '✓' : '✗'}</span>
                             {item.label}
                           </div>
@@ -204,15 +207,15 @@ export default function ChecklistMidia() {
 
                       {/* Relato */}
                       {checklist.relato_problema && (
-                        <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl">
-                          <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">⚠️ Relato de Problema</p>
-                          <p className="text-xs text-gray-700">{checklist.relato_problema}</p>
+                        <div className="bg-warning-soft border border-warning/30 p-3 rounded-xl">
+                          <p className="text-[10px] font-bold text-warning uppercase tracking-wider mb-1">⚠️ Relato de Problema</p>
+                          <p className="text-xs text-ink">{checklist.relato_problema}</p>
                         </div>
                       )}
 
                       {/* Metadados */}
-                      <div className="flex items-center gap-3 text-[10px] text-gray-400 pt-1">
-                        <span>Preenchido por <strong className="text-gray-600">{checklist.nome_responsavel}</strong></span>
+                      <div className="flex items-center gap-3 text-[10px] text-muted pt-1">
+                        <span>Preenchido por <strong className="text-ink-2">{checklist.nome_responsavel}</strong></span>
                         <span>às {new Date(checklist.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>

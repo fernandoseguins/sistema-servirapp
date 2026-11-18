@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useUI } from '../context/UIContext'
-import PageHeader from '../components/PageHeader'
+import { TopBar, Card, Pill, Select, EmptyState } from '../components/ui'
+import { classesDept } from '../theme/deptCores'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowLeft, Monitor, Headphones, Calendar, Clock, Trash2, ShieldAlert } from 'lucide-react'
 import { hojeLocal } from '../utils/datas'
@@ -71,87 +72,83 @@ export default function Cabine() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 pb-20">
-      <PageHeader
-        title="Cabine de Controlo"
-        subtitle="Monitorização em tempo real"
-        icon={<Monitor className="w-5 h-5" />}
-        color="bg-gray-900"
+    <div className="min-h-screen bg-bg">
+      <TopBar
+        titulo="Cabine"
+        subtitulo={`${departamentoNome || 'Mídia'} · quem fica em cada culto`}
+        onVoltar={() => navigate(-1)}
+        icone={<span className={`w-10 h-10 rounded-ctl flex items-center justify-center ${classesDept(departamentoNome || 'Mídia').chip}`}>
+          <Monitor className="w-5 h-5" aria-hidden="true" />
+        </span>}
       />
 
-      <div className="max-w-xl mx-auto px-4 space-y-4">
+      <main className="max-w-[720px] mx-auto px-4 pb-6 space-y-4">
 
-        <div className="bg-gray-900 p-4 rounded-2xl border border-gray-800 flex items-start gap-3 mb-6 shadow-sm">
-          <ShieldAlert className="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-gray-400 leading-relaxed">
-            Esta área é visível apenas para os líderes. Defina aqui quem será o responsável da cabine em cada culto.
-          </p>
-        </div>
+        <p className="bg-surface-2 p-3 rounded-ctl flex items-start gap-2 text-xs text-ink-2">
+          <ShieldAlert className="w-4 h-4 text-brand mt-0.5 shrink-0" aria-hidden="true" />
+          Só líderes veem esta área. Defina quem fica responsável pela cabine em cada culto.
+        </p>
 
         {loading ? (
-          <p className="text-center py-10 font-bold text-gray-600 animate-pulse">Buscando escalas da cabine...</p>
-        ) : escalas.length === 0 ? (
-          <div className="text-center p-10 bg-gray-900 rounded-2xl border border-gray-800">
-            <Calendar className="w-10 h-10 text-gray-700 mx-auto mb-3" />
-            <p className="text-gray-400 font-bold">Nenhuma escala futura encontrada.</p>
+          <div className="space-y-3" aria-busy="true">
+            {[1, 2].map(i => <div key={i} className="h-32 bg-surface-2 rounded-card animate-pulse" />)}
           </div>
+        ) : escalas.length === 0 ? (
+          <Card>
+            <EmptyState icon={<Calendar className="w-6 h-6" aria-hidden="true" />} titulo="Nenhuma escala futura" texto="Quando houver escalas de Mídia, elas aparecem aqui." />
+          </Card>
         ) : (
-          <div className="space-y-4">
+          <ul className="space-y-3">
             {escalas.map(esc => {
               const temLider = !!esc.lider_cabine_id
               const nomeLider = membros.find(m => m.id === esc.lider_cabine_id)?.nome
 
               return (
-                <div key={esc.id} className={`p-4 rounded-2xl border transition-all ${temLider ? 'bg-gray-900 border-purple-500/30' : 'bg-gray-900/50 border-gray-800'}`}>
-                  <div className="flex justify-between items-start mb-4 border-b border-gray-800 pb-3">
-                    <div>
-                      <p className="text-sm font-bold text-gray-200 flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4 text-purple-500" /> {formatarDataLonga(esc.data)}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> {esc.turno === 'Integral' ? 'Culto Principal' : `Culto da ${esc.turno}`}
-                      </p>
-                    </div>
-                    {esc.status === 'Rascunho' && (
-                      <span className="text-[9px] font-bold bg-orange-500/20 text-orange-400 px-2 py-1 rounded border border-orange-500/20 uppercase tracking-wider">Rascunho</span>
-                    )}
-                  </div>
-
-                  {temLider ? (
-                    <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-inner">
-                          {nomeLider?.charAt(0) || '?'}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-100">{nomeLider || 'Desconhecido'}</p>
-                          <p className="text-[10px] text-purple-400 uppercase tracking-wider font-bold">Na Cabine</p>
-                        </div>
+                <li key={esc.id}>
+                  <Card className={temLider ? '!border-brand/40' : ''}>
+                    <div className="flex justify-between items-start mb-3 border-b border-line pb-3">
+                      <div>
+                        <p className="text-sm font-bold text-ink flex items-center gap-1.5 capitalize">
+                          <Calendar className="w-4 h-4 text-brand" aria-hidden="true" /> {formatarDataLonga(esc.data)}
+                        </p>
+                        <p className="text-xs text-ink-2 mt-1 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" aria-hidden="true" /> {esc.turno === 'Integral' ? 'Culto principal' : `Culto da ${esc.turno.toLowerCase()}`}
+                        </p>
                       </div>
-                      <button onClick={() => definirLiderCabine(esc.id, null)} className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition" title="Remover Líder">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {esc.status === 'Rascunho' && <Pill tom="aviso">Rascunho</Pill>}
                     </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <select 
+
+                    {temLider ? (
+                      <div className="flex items-center justify-between bg-surface-2 p-3 rounded-ctl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-brand text-on-brand flex items-center justify-center font-bold text-sm" aria-hidden="true">
+                            {nomeLider?.charAt(0) || '?'}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-ink">{nomeLider || 'Desconhecido'}</p>
+                            <p className="text-[11px] text-brand font-semibold">Na cabine</p>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => definirLiderCabine(esc.id, null)} aria-label={`Tirar ${nomeLider || 'responsável'} da cabine`}
+                          className="p-2 text-muted hover:text-danger hover:bg-danger-soft rounded-ctl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                    ) : (
+                      <Select
+                        aria-label={`Responsável pela cabine em ${formatarDataLonga(esc.data)}`}
                         onChange={(e) => definirLiderCabine(esc.id, e.target.value)}
                         value=""
-                        className="flex-1 bg-black/40 border border-gray-800 text-gray-300 text-sm rounded-xl p-3 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
-                      >
-                        <option value="" disabled>Selecionar quem vai ficar...</option>
-                        {membros.map(m => (
-                          <option key={m.id} value={m.id}>{m.nome}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
+                        options={[{ value: '', label: 'Escolher quem vai ficar' }, ...membros.map(m => ({ value: m.id, label: m.nome }))]}
+                      />
+                    )}
+                  </Card>
+                </li>
               )
             })}
-          </div>
+          </ul>
         )}
-      </div>
+      </main>
     </div>
   )
 }

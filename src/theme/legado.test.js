@@ -29,6 +29,8 @@ const TELAS_REFORMADAS = [
   { arquivo: 'pages/MinistrosSchedule.jsx', rota: '/ministros' },
   { arquivo: 'pages/InfantilLessons.jsx', rota: '/licoes' },
   { arquivo: 'pages/InfantilCheckin.jsx', rota: '/checkin' },
+  { arquivo: 'pages/Cabine.jsx',          rota: '/cabine/abc' },
+  { arquivo: 'pages/ChecklistMidia.jsx',  rota: '/checklist-midia' },
 ]
 
 const COR_ANTIGA = /\b(bg|text|border|ring|from|via|to|divide|placeholder)-(gray|slate|zinc|neutral|stone|blue|indigo|purple|violet|sky|cyan|teal|emerald|green|lime|yellow|amber|orange|red|rose|pink|fuchsia)-\d{2,3}\b/
@@ -52,6 +54,6 @@ describe.each(TELAS_REFORMADAS)('$arquivo', ({ arquivo, rota }) => {
   })
 })
 
-it('guarda distingue tela legada (/cabine ainda não reformada)', () => {
-  expect(comeca('/cabine/abc', ROTAS_NOVAS)).toBe(false)
+it('guarda distingue tela legada (/imprimir-escalas ainda não reformada)', () => {
+  expect(comeca('/imprimir-escalas', ROTAS_NOVAS)).toBe(false)
 })
